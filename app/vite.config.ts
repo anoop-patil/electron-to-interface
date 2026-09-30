@@ -1,5 +1,6 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -23,7 +24,7 @@ function selfHostedPyodide(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), selfHostedPyodide()],
+  plugins: [react(), tailwindcss(), selfHostedPyodide()],
   optimizeDeps: { exclude: ['pyodide'] },
   worker: { format: 'es' },
   test: { include: ['src/**/*.test.ts'] },

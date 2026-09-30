@@ -1,3 +1,4 @@
+import { buttonClass } from './button';
 import { useTheme } from './theme';
 
 /** Switches between the light and dark themes; the page follows the system setting until it's used. */
@@ -5,7 +6,7 @@ export function ThemeToggle() {
   const { theme, toggle } = useTheme();
   const dark = theme === 'dark';
   return (
-    <button type="button" className="btn icon-btn" aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} onClick={toggle}>
+    <button type="button" className={buttonClass({ size: 'icon' })} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} onClick={toggle}>
       {dark ? (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="4" />

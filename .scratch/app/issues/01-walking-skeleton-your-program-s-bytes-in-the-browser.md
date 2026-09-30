@@ -26,4 +26,4 @@ Built in `app/`. Decisions made along the way:
 - Besides `pythonVersion` and `bytes`, the Analysis carries `program`: the Program as analyzed, ending with its newline. Each byte records `charIndex` (its character, counted in code points, so the bytes of é share one) and `line`.
 - The schema is validated twice: pytest checks the analyzer under CPython (3.14.2 in CI), and Vitest checks the output of the real Pyodide in Node, which is the Python the browser runs. A Vitest test fails if `src/generated/analysis.ts` is out of date with the schema.
 - An empty Program is analyzed as a single newline.
-- Styling is plain CSS with prototype v8's colours. Ticket 02 added self-hosted IBM Plex; Tailwind comes in ticket 32.
+- Styling was plain CSS with prototype v8's colours. Ticket 02 added self-hosted IBM Plex, and ticket 32 moved the styles to Tailwind.

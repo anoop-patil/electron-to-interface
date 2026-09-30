@@ -22,7 +22,7 @@
 
 Built in `app/`. Decisions made along the way:
 
-- Styling is still plain CSS, reading prototype v8's design tokens from CSS variables. Tailwind, which Requirements lists, comes in ticket 32.
+- Styling was plain CSS, reading prototype v8's design tokens from CSS variables. Ticket 32 moved it to Tailwind, reading the same tokens.
 - The fonts are the Latin subset of IBM Plex Sans and Mono, weights 400 and 600, from the pinned `@fontsource` packages. Vite bundles them into the site. Characters outside the subset fall back to system fonts. Their license is in `licenses/IBM-Plex-LICENSE.txt`.
 - Any other address, including `/`, opens zoom level 1 and shows `/zoom/1`. The query and fragment are kept, because Share links (ticket 21) carry the program in the fragment.
 - A second zoom before the first has finished replaces its history entry, so Back never lands on a level the learner didn't see.
