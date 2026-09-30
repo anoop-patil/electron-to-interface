@@ -6,9 +6,7 @@
 
 **Status:** ready-for-agent
 
-**Needs a human for:** creating the public GitHub repository and pushing to it.
-
-- [ ] The project is a git repository with an MIT license for code and a note that written content is CC BY 4.0 (Requirements: Technology).
+- [x] The project is a git repository with an MIT license for code and a note that written content is CC BY 4.0 (Requirements: Technology). Done: github.com/anoop-patil/electron-to-interface, commits as anoop-patil with the account's noreply address.
 - [ ] A React + TypeScript + Vite single-page app.
 - [ ] Pyodide 314.0.x (Python 3.14.2) runs in a Web Worker and is served from our own origin, never a third-party CDN (ADR 0004).
 - [ ] A text box for the Program and a Run button. Nothing is analyzed while the learner types; Run sends the Program to the worker. Until Pyodide is ready, Run is off, with a short note saying why.
