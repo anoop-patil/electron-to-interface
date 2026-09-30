@@ -49,7 +49,7 @@ Bytecode differs between Python versions, so it is never hardcoded, and the Pyth
 
 **What the learner selects decides what the deeper levels show** ([ADR 0007](docs/adr/0007-selection-decides-what-the-deeper-levels-show.md)). Levels 1–5 show the whole program. At level 5 the learner selects a step and one of its runs: a step inside a loop or a function has several. Levels 6 and 7 show what the interpreter did for that step run, and levels 8 and 9 follow the line of output it printed, with a way to pick any other line. Every step run is its own view, because runs differ: the plates differ, and a busy step rewrites itself into a faster form, so its second run can run a different handler.
 
-**Pinned version:** Python **3.14.2**, via Pyodide **314.0.x** (the current Pyodide line). The Reference Library is built from the same exact patch release. The pinned version is upgraded about once a year, on purpose, never automatically.
+**Pinned version:** Python **3.14.2**, via Pyodide **314.0.7**, the newest release in the 314.0 line, which ships 3.14.2. The Reference Library is built from the same exact patch release. The pinned version is upgraded about once a year, on purpose, never automatically.
 
 ## Architecture
 
@@ -80,7 +80,7 @@ Example Analyses (analyzer run ahead of time)  ─┘                           
 | Fonts | IBM Plex Sans + IBM Plex Mono, self-hosted WOFF2, trimmed to needed characters, two weights each | Sans and mono designed as one family; no third-party font requests (ADR 0004) |
 | Editor | CodeMirror 6 | Lighter than Monaco and works on mobile |
 | State | Zustand | — |
-| Browser engine | Pyodide 314.0.x (Python 3.14.2) in a Web Worker, **served from our own domain** | No third-party CDN, works on school networks, keeps ADR 0004 true |
+| Browser engine | Pyodide 314.0.7 (Python 3.14.2) in a Web Worker, **served from our own domain** | No third-party CDN, works on school networks, keeps ADR 0004 true |
 | Data contract | JSON Schema, with generated TypeScript types | Keeps the Python and TypeScript sides in sync |
 | Build tooling | Python scripts (the analyzer, Template generator, Reference Library builder) | They need the exact `dis` and `ast` of the pinned version |
 | CI/CD | GitHub Actions, **public repo** | Free, unlimited minutes |
@@ -137,8 +137,8 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 
 **Engine (Pyodide in a Web Worker)**
 
-- Pin Pyodide 314.0.x, self-hosted; show its Python version in the UI.
-- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
+- Pin Pyodide 314.0.7, self-hosted; show its Python version in the UI.
+- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
 - Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, numbered from 0) that Explanations and highlights point at.
 - Events are recorded with `sys.settrace` (line, call, return, exception), with a safe, truncated repr of locals.
 - Step runs, the order the bytecode steps ran in, are recorded with `sys.monitoring` INSTRUCTION events. It doesn't report RESUME, so RESUME's runs are added where each code object starts. Each line of output is tied to the step run that printed it.

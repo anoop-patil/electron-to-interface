@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-**Decide first:** deployment is decided after tickets 01–21 are built and running locally. At that point, settle the domain name, check Cloudflare Pages' file-size and file-count limits against the Pyodide files, set long-lived caching for them, and add a launch checklist ending in a smoke test against the live URL.
+**Decide first:** deployment is decided after tickets 01–21 are built and running locally. At that point, settle the domain name, check Cloudflare Pages' file-size and file-count limits against the Pyodide files (the app serves 4; the largest, `pyodide.asm.wasm`, is 9.6 MB), set long-lived caching for them, and add a launch checklist ending in a smoke test against the live URL.
 
 **Needs a human for:** creating the Cloudflare account and Pages project and adding the deploy token to GitHub secrets. The domain name is still an open question.
 
