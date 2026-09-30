@@ -4,7 +4,8 @@ Write a short Python program, click Run, and zoom in: from your code to its byte
 
 ## What works today
 
-- **The app** (`app/`) covers zoom levels 1 and 2. You type a program and click Run, and Python 3.14.2, running in your browser, shows your code and its bytes. Click a byte to see which character it stores. This is ticket 01 of 31.
+- **The app** (`app/`) shows your program at zoom levels 1 and 2. You type a program and click Run, and Python 3.14.2, running in your browser, shows your code and its bytes. Click a byte to see which character it stores.
+- You can move through all nine zoom levels with the depth gauge, the Zoom in and Back buttons, the ↓ and ↑ keys, or the address bar (`/zoom/1` to `/zoom/9`). Levels 3 to 9 aren't built yet and say so. The app has light and dark themes and works on phones. Tickets 01 and 02 of 32 are done.
 - **The prototype** (`prototype/hello-zoom-v8.html`) shows all nine zoom levels for one 5-line Example, `prototype/examples/greet.py`. Open the file in a browser. `hello-zoom-v7.html` is the earlier hello-world version.
 
 ## Run the app
@@ -35,13 +36,14 @@ python -m pytest                  # pytest: the analyzer on CPython
 
 - `app/analyzer/analyze.py` is the Python that turns a program into an Analysis: the Facts that the zoom levels show. It runs in Pyodide (CPython compiled to WebAssembly) inside a Web Worker. Your code is analyzed in your browser and never sent anywhere, and the site serves Pyodide's files itself rather than from another site.
 - `app/schema/analysis.schema.json` defines the Analysis. The TypeScript types in `app/src/generated/` are generated from it: after editing the schema, run `npm run gen:types`.
-- `app/src/` is the React page.
+- `app/src/` is the React page. `app/src/zoom/` holds the zoom levels, the depth gauge and the navigation between levels.
+- The site serves its fonts, IBM Plex Sans and Mono, itself.
 
 ## The plan
 
 - `Requirements.md`: what the finished tool does and how it is built.
 - `CONTEXT.md`: the glossary. `docs/adr/`: the design decisions and why they were made.
-- `.scratch/app/issues/`: the 31 tickets, numbered in the order they can be built. Each one lists the tickets that block it.
+- `.scratch/app/issues/`: the 32 tickets. Most are numbered in the order they can be built; ticket 32 (Tailwind) was added later. Each one lists the tickets that block it.
 
 ## Where the prototype's facts come from
 
@@ -59,4 +61,5 @@ The shell scripts run on Linux or WSL. They download what they need into `/tmp` 
 
 - **Code:** MIT, see `LICENSE`.
 - **Written content** (explanations, Concept cards, Templates and the documents in this repository): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). You can reuse it, for example in a classroom, with credit to ElectronToInterface.
+- **Fonts:** IBM Plex Sans and Mono, under the SIL Open Font License; see `licenses/IBM-Plex-LICENSE.txt`.
 - **CPython material:** the prototype quotes CPython's C source, and `prototype/data/` holds machine code disassembled from the CPython 3.14.2 binary. That material is copyright the Python Software Foundation and is used under the PSF License; see `licenses/CPython-LICENSE.txt`.

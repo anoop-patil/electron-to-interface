@@ -284,7 +284,7 @@ Each milestone ships on its own; the next one starts only when every box above i
 - [ ] `while True: pass` times out cleanly without freezing the page.
 - [ ] Unknown opcodes and AST nodes fall back gracefully.
 - [ ] Clicking any element highlights related Facts across zoom levels.
-- [ ] Each zoom level has its own URL path.
+- [x] Each zoom level has its own URL path.
 - [ ] Share links round-trip a 20-line program and require a Run click.
 - [ ] The CSP blocks connections to other domains from the page and the worker; `import js` fails in user code.
 - [ ] The error-report scrubbing test passes.

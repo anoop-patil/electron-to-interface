@@ -12,7 +12,7 @@ Issues and specs for this repo live as markdown files in `.scratch/`.
 
 ## This project
 
-- The app build's tickets are in `.scratch/app/issues/`, numbered `01` to `31` with blockers first. Each lists its blockers on a `Blocked by:` line.
+- The app build's tickets are in `.scratch/app/issues/`, numbered `01` to `32` with blockers first. Each lists its blockers on a `Blocked by:` line.
 - A ticket with a `Needs a human for:` line has a step an agent can't do, such as creating an account or adding a secret. An agent does the rest and stops at that step.
 
 ## When a skill says "publish to the issue tracker"

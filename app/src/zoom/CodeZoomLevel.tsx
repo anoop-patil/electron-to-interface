@@ -4,8 +4,7 @@ import { charLabel, linesOf } from './characters';
 export function CodeZoomLevel({ program, selectedChar }: { program: string; selectedChar: number | null }) {
   const lines = linesOf(program);
   return (
-    <section className="zoom-level" aria-labelledby="zoom-level-1">
-      <h2 id="zoom-level-1">Zoom level 1: Your code</h2>
+    <>
       <p className="caption">
         Your whole program: {lines.length} {lines.length === 1 ? 'line' : 'lines'}.
       </p>
@@ -23,6 +22,6 @@ export function CodeZoomLevel({ program, selectedChar }: { program: string; sele
           </li>
         ))}
       </ol>
-    </section>
+    </>
   );
 }

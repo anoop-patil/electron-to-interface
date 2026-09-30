@@ -21,8 +21,7 @@ export function BytesZoomLevel({
   });
 
   return (
-    <section className="zoom-level" aria-labelledby="zoom-level-2">
-      <h2 id="zoom-level-2">Zoom level 2: Bytes</h2>
+    <>
       <p className="caption">
         Your program as a file: {analysis.bytes.length} bytes, numbers from 0 to 255, shown line by line. Each
         box shows the byte in hexadecimal, then as an ordinary number. Select one to see its character.
@@ -57,6 +56,6 @@ export function BytesZoomLevel({
           </div>
         ))}
       </div>
-    </section>
+    </>
   );
 }
