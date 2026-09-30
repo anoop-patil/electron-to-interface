@@ -1,0 +1,10 @@
+# 20: Runaway code stops after 5 seconds, and input() returns nothing
+
+**What to build:** A learner's infinite loop or `input()` call can't freeze the page.
+
+**Blocked by:** 19: Code editor, file upload and the 20-line limit
+
+**Status:** ready-for-agent
+
+- [ ] Execution stops after 5 seconds by terminating and recreating the worker. `while True: pass` ends cleanly with a message, and the page stays responsive.
+- [ ] `input()` returns an empty string, with a visible note.

@@ -1,0 +1,1355 @@
+<title>ElectronToInterface Prototype v8</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/*@V7CSS@*/
+/* ---------- v8: a program of several lines ---------- */
+.codebox.multi{display:block; padding:10px 0; font-size:13px}
+.cl{display:flex; min-height:24px}
+.cl .ln{width:32px; flex:none; text-align:right; padding-right:10px; color:var(--ink3); user-select:none}
+.cl code{white-space:pre}
+.cl.on .ln{color:var(--accent); font-weight:600}
+.edit-area{width:100%; min-height:150px; resize:vertical; border:1px solid var(--accent); border-radius:10px; background:var(--surface); color:var(--ink); font:14px/1.6 var(--mono); padding:10px 12px; tab-size:4}
+.run-row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px}
+.run-row .fine{flex-basis:100%}
+.stale{padding:12px 14px; border:1.5px solid var(--t-nl); border-radius:10px; font-size:14px; line-height:1.55; color:var(--ink2); display:grid; gap:8px}
+.stale b{color:var(--t-nl)}
+.pbtn{border:1px solid var(--rule); background:var(--surface); border-radius:8px; padding:2px 8px; font:12px var(--sans); color:var(--ink2); cursor:pointer; min-height:28px}
+.pbtn:hover{color:var(--accent); border-color:var(--accent)}
+/* L1 */
+.v-lines{display:grid; gap:6px; overflow-x:auto; padding:2px}
+.v-lines .row{display:flex; align-items:center; gap:14px}
+.v-lines .ln{font:14px var(--mono); color:var(--ink3); width:18px; text-align:right; flex:none}
+.el-line{font:clamp(16px,2vw,22px) var(--mono); padding:8px 14px; white-space:pre; text-align:left; min-width:min(100%,520px)}
+.el-line.blank{color:var(--ink3); font:14px var(--sans)}
+/* L2 */
+.byte-lines{display:grid; gap:10px}
+.byte-line{display:grid; grid-template-columns:52px minmax(0,1fr); gap:8px; align-items:start}
+.byte-line .lh{font:12px var(--mono); color:var(--ink3); padding-top:10px}
+.byte-line .bytes{grid-template-columns:repeat(auto-fill,minmax(44px,1fr)); gap:6px}
+.byte-line .byte{min-height:56px; padding:8px 0 6px}
+.byte-line .b-ch{font-size:16px}
+/* L3 */
+.tok-lines{display:grid; gap:10px; overflow-x:auto; padding:2px}
+.tok-line{display:flex; align-items:stretch; gap:6px; flex-wrap:wrap}
+.tok-line .lh{font:12px var(--mono); color:var(--ink3); width:44px; flex:none; align-self:center}
+.chip-tok{display:flex; flex-direction:column; align-items:flex-start; gap:1px; padding:6px 10px; min-height:52px; font:17px var(--mono); white-space:pre; text-align:left}
+.chip-tok small{font:600 10px var(--mono); letter-spacing:.02em}
+.chip-tok.t-name{border-color:var(--t-name)} .chip-tok.t-name small{color:var(--t-name)}
+.chip-tok.t-op{border-color:var(--t-op)} .chip-tok.t-op small{color:var(--t-op)}
+.chip-tok.t-string{border-color:var(--t-str)} .chip-tok.t-string small{color:var(--t-str)}
+.chip-tok.t-mark{border-color:var(--t-nl); border-style:dashed; color:var(--ink3); font:13px var(--sans); justify-content:center}
+.chip-tok.t-mark small{color:var(--t-nl)}
+.gap{align-self:center; font:12px var(--mono); color:var(--ink3)}
+/* L4 */
+.tree{overflow-x:auto; padding:2px}
+.tbox{border:1.5px solid var(--rule2); border-radius:12px; padding:8px 10px 10px; display:grid; gap:8px; min-width:max-content; transition:border-color .15s, background-color .15s}
+.tbox.on{border-color:var(--accent); background:var(--accent-soft)}
+.tbox.leafy{border:0; padding:0}
+.tkids{display:flex; flex-wrap:wrap; gap:10px 12px; align-items:flex-start}
+.tkids.col{flex-direction:column}
+.tfield{display:grid; gap:4px}
+.tfield > .fl{font:11px var(--mono); color:var(--ink3)}
+.tleaf{font:17px var(--mono); padding:6px 12px; min-height:44px; white-space:pre}
+.tleaf.lf-name{border-color:var(--t-name)} .tleaf.lf-str{border-color:var(--t-str)}
+/* L5 */
+.code-group{display:grid; gap:4px; align-content:start}
+.code-group h4{margin:8px 0 2px; font-size:12px; font-weight:600; color:var(--ink3); display:flex; justify-content:space-between; gap:8px}
+.code-group h4:first-child{margin-top:0}
+.bstep{grid-template-columns:22px minmax(0,1fr) auto}
+.bstep .ops{display:flex; flex-direction:column; align-items:flex-end; gap:1px}
+.bstep .runs{font:11px var(--sans); color:var(--ink3)}
+.bstep.never .w{color:var(--ink3); text-decoration:line-through; text-decoration-color:var(--rule2)}
+.bstep.now{background:var(--sunk)}
+.runbar{display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; padding:10px 12px; border:1px solid var(--rule); border-radius:10px; background:var(--surface); font-size:13px; color:var(--ink2)}
+.runbar b{color:var(--ink)}
+.runchips{display:flex; gap:4px; flex-wrap:wrap}
+.runchip{min-width:36px; min-height:32px; border:1.5px solid var(--rule2); border-radius:999px; background:var(--surface); font:500 12px var(--sans); color:var(--ink2); cursor:pointer; padding:0 10px}
+.runchip[aria-pressed="true"]{border-color:var(--accent); background:var(--accent); color:var(--on-accent)}
+.timeline{display:flex; flex-wrap:wrap; gap:3px}
+.tdot{width:14px; height:14px; border-radius:4px; border:1px solid var(--rule2); background:var(--surface); padding:0; cursor:pointer}
+.tdot.g{border-radius:50%}
+.tdot.done{background:var(--ink3); border-color:var(--ink3)}
+.tdot.cur{background:var(--accent); border-color:var(--accent)}
+.frames{display:grid; gap:8px}
+.frame{border:1.5px solid var(--rule2); border-radius:12px; background:var(--surface); padding:10px; display:grid; gap:8px}
+.frame.top{border-color:var(--accent)}
+.frame h4{margin:0; font-size:12px; font-weight:600; color:var(--ink2); display:flex; justify-content:space-between; gap:8px}
+.frame h4 span{font-weight:400; color:var(--ink3)}
+.frame .plates{min-height:0}
+.vars{display:flex; flex-wrap:wrap; gap:6px}
+.var{display:inline-flex; gap:6px; align-items:center; padding:3px 8px; border:1px solid var(--rule); border-radius:8px; font:12px var(--mono); background:var(--sunk)}
+.var .badge{width:18px; height:18px; font-size:11px}
+.became{font:12px var(--mono); color:var(--ink3)}
+/* L6/L7 */
+.hblock{border:1px solid var(--rule); border-radius:10px; overflow:hidden; background:var(--sunk)}
+.hblock + .hblock{margin-top:12px}
+.handoffs{display:grid; gap:12px; align-content:start}
+.folded{padding:12px 14px; border:1.5px solid var(--accent); border-radius:10px; background:var(--accent-soft); font-size:14px; line-height:1.55; color:var(--ink2)}
+.folded b{color:var(--ink)}
+.never-note{padding:12px 14px; border:1.5px dashed var(--rule2); border-radius:10px; font-size:14px; color:var(--ink2)}
+.ilist .runs{margin-left:auto; font:11px var(--sans); color:var(--ink3)}
+.ilist h4{margin:8px 0 2px; font-size:12px; font-weight:600; color:var(--ink3)}
+.ilist h4:first-child{margin-top:0}
+.pathtbl td.pn{color:var(--ink3); text-align:right}
+/* L8/L9 */
+.linetabs{display:flex; flex-wrap:wrap; gap:6px}
+.linetab{min-height:40px; padding:0 14px; border:1.5px solid var(--rule2); border-radius:999px; background:var(--surface); font:14px var(--mono); cursor:pointer; color:var(--ink2)}
+.linetab[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft); color:var(--ink)}
+.outbox.multi{display:block}
+.outbox .ol{display:block}
+.outbox .ol.on{background:rgba(147,174,255,.18)}
+.box-lbl.sel .tt{color:var(--on-accent); border-color:currentColor}
+@media (min-width:921px) and (max-width:1180px){ .body{grid-template-columns:280px 150px minmax(0,1fr)} }
+@media (max-width:920px){ .byte-line{grid-template-columns:minmax(0,1fr)} .byte-line .lh{padding-top:0} .tok-line .lh{width:100%} }
+</style>
+
+<div class="app">
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"></circle><circle cx="12" cy="12" r="5.5" stroke="currentColor" stroke-width="1.5" opacity=".5"></circle><circle cx="12" cy="12" r="2" style="fill:var(--accent)"></circle></svg>
+        <span>ElectronToInterface</span>
+      </div>
+      <span class="tag tag-proto">Prototype v8</span>
+      <span class="tag">Python 3.14.2</span>
+      <button class="btn" id="conceptsBtn" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"></path><path d="M4 19V5"></path><path d="M8 7h7"></path></svg>Concepts</button>
+      <button class="btn icon-btn" id="themeBtn" type="button" aria-label="Switch to dark theme"></button>
+    </header>
+
+    <div class="body">
+      <aside class="side" aria-label="Your program and your computer">
+        <section>
+          <div class="pane-h"><h2>Your code</h2><span class="meta">greet.py · Example</span></div>
+          <div id="codePane"></div>
+        </section>
+        <section>
+          <div class="pane-h"><h2>Terminal</h2><span class="meta" id="outMeta"></span></div>
+          <div class="outbox multi" id="out" aria-live="polite"></div>
+        </section>
+        <details class="map-details" id="mapDetails" open>
+          <summary>Your computer: where is everything?</summary>
+          <section aria-labelledby="mapTitle">
+            <div class="pane-h"><h2 id="mapTitle">Your computer</h2><span class="meta">tap a part</span></div>
+            <p class="map-intro">Lit parts are where things are right now.</p>
+            <div class="map" id="map"></div>
+          </section>
+        </details>
+        <div class="keys" aria-label="Keyboard shortcuts"><span><kbd>←</kbd><kbd>→</kbd> select</span><span><kbd>↓</kbd> zoom in</span><span><kbd>↑</kbd> zoom out</span></div>
+      </aside>
+
+      <nav class="gauge" id="gauge" aria-label="Zoom depth"></nav>
+
+      <main class="stage" id="stage">
+        <div id="view"></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Facts captured using CPython 3.14.2 (prototype/tools/capture-example.sh greet) ----------
+   Observed: the source, its bytes, tokens, syntax tree, both code objects, the order the steps ran in
+   (sys.monitoring) and what each step printed. Reference: which handler ran for each step and which of its
+   machine instructions ran (gdb, 3 identical runs). Derived: the plates, replayed from the steps with
+   Python's rules. Source files: prototype/data/example-greet-*, handler-paths-greet-*, machine-code-greet-*. */
+/*@DATA@*/
+var BYTES = Array.prototype.slice.call(new TextEncoder().encode(SRC));
+var NB = BYTES.length;
+var LINES = (function(){ var out = [], s = 0; SRC.split('\n').forEach(function(t, i, a){ if (i===a.length-1 && t==='') return; out.push({n:i+1, text:t, start:s, end:s+t.length}); s += t.length+1; }); return out; })();
+function lineOf(p){ for (var i=0;i<LINES.length;i++) if (p>=LINES[i].start && p<=LINES[i].end) return LINES[i]; return LINES[LINES.length-1]; }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function charLabel(ch){ return ch==='\n' ? '↵' : ch===' ' ? '␠' : ch; }
+// [[key|text]] becomes a concept tag that opens an explanation inside the app
+function T(s){ return String(s).replace(/\[\[(\w+)\|([^\]]+)\]\]/g, '<button type="button" class="term" data-term="$1">$2</button>'); }
+function plural(n, one, many){ return n+' '+(n===1 ? one : (many || one+'s')); }
+var NSTEPS = STEPS.length, NRUN = TL.length;
+var CODE_TITLE = ['Your file', 'greet'];
+var CODE_IN = ['your file', 'greet'];
+
+var LEVELS = [null,
+  {title:'Your code', short:'Code', honesty:'observed'},
+  {title:'Bytes', short:'Bytes', honesty:'observed'},
+  {title:'Tokens', short:'Tokens', honesty:'observed'},
+  {title:'Structure', short:'Structure', honesty:'observed'},
+  {title:'Bytecode', short:'Bytecode', honesty:'observed'},
+  {title:'The interpreter', short:'Interpreter', honesty:'reference'},
+  {title:'CPU instructions', short:'CPU', honesty:'reference'},
+  {title:'Operating system', short:'OS', honesty:'typical'},
+  {title:'Pixels', short:'Pixels', honesty:'typical'}
+];
+var LABELS = {
+  observed:{name:'Observed', what:'Python itself recorded this from your code. Captured using CPython 3.14.2 on Linux (x86-64).'},
+  derived:{name:'Derived', what:'Worked out from observed facts using Python’s rules. True for your code, but not recorded directly.'},
+  reference:{name:'Reference', what:'Real, but prepared in advance rather than taken from your run: CPython’s own source code, or recordings on our test laptop.'},
+  illustrative:{name:'Illustrative', what:'A made-up example that shows the kind of thing that happens. Not real data from your program.'},
+  typical:{name:'Typical', what:'How it usually works, for example on a Linux terminal. Your computer may do it differently.'}
+};
+function chip(k){ return '<button type="button" class="honesty h-'+k+'" data-label="'+k+'"><span class="h-dot"></span>'+LABELS[k].name+'</button>'; }
+function ltag(k){ return '<button type="button" class="ltag h-'+k+'" data-label="'+k+'"><span class="h-dot"></span>'+LABELS[k].name+'</button>'; }
+
+/* ---------- Plain words for every step (our wording), keyed by code object and offset ---------- */
+var W = [
+  {0:'Get ready', 2:'Get greet’s recipe card', 4:'Make the function greet', 6:'Name it greet', 8:'Get the two names', 10:'Start walking through them',
+   12:'Take the next name, or stop', 16:'Call it person', 18:'Find greet', 20:'Add an empty plate', 22:'Find person', 24:'Call greet with 1 thing',
+   32:'Throw away the answer', 34:'Back to the top of the loop', 38:'End of the loop', 40:'Put the walker away', 42:'Get None', 44:'Hand back None: done'},
+  {0:'Get ready', 2:'Find print, plus an empty plate', 12:'Get the text Hello,', 14:'Get name', 16:'Call print with 2 things', 24:'Throw away the answer',
+   26:'Get None', 28:'Hand back None to the loop'}
+];
+var HK = {'0:0':1, '0:20':1, '0:32':1, '0:38':1, '0:40':1, '0:42':1, '0:44':1, '1:0':1, '1:24':1, '1:26':1, '1:28':1};
+STEPS.forEach(function(s, i){ s.w = W[s.c][s.off]; s.hk = !!HK[s.c+':'+s.off]; s.runs = []; });
+TL.forEach(function(t, i){ STEPS[t.s].runs.push(i); });
+function stepName(i){ return STEPS[i].w; }
+function stepNo(i){ return STEPS[i].k + 1; }
+function runsOf(i){ return STEPS[i].runs; }
+function handlersOf(r){ return TL[r].h.map(function(k){ return TRACE[k]; }); }
+
+// What each step does, in plain words. r is the run being shown (or -1 for a step that never ran).
+function stepText(i, r){
+  var s = STEPS[i], t = r>=0 ? TL[r] : null, h = t ? handlersOf(r) : [], two = h.length>1;
+  var trip = t ? t.trip : 0;
+  var spec = two ? ' <b>This time it ran twice over:</b> first in its general form, '+h[0].op+', which rewrote the step into the faster '+h[1].op+' and then ran that. ' : '';
+  var key = s.c+':'+s.off;
+  switch (key) {
+    case '0:0': return 'Every piece of code starts with this step. Python checks whether anything urgent is waiting, like you pressing Ctrl+C. You didn’t write it; Python adds it.';
+    case '0:2': return 'Your <b>def</b> line doesn’t run greet. It only prepares it. Greet’s own steps were compiled into a separate recipe card, and this step puts a label for that card on a plate.';
+    case '0:4': return 'Python wraps greet’s recipe card into a function object: the card, plus which global names it should use. Now greet can be called.';
+    case '0:6': return 'The new function gets its name. Python stores <b>greet</b> in your program’s dictionary of names, pointing to the function, and takes the plate off.';
+    case '0:8': return 'You wrote a list, <code>["Ada", "Grace"]</code>, but nothing ever changes it, so the compiler stored it as a fixed pair of values, called a tuple. That saved a step: Python gets the pair ready-made from the recipe card.';
+    case '0:10': return 'To go through the pair one name at a time, Python makes a small helper object that remembers how far it has got: a walker, called an <b>iterator</b>.';
+    case '0:12':
+      if (!t) return '';
+      if (t.exhausted) return '<b>Trip 3 round the loop.</b> The walker has no names left. So Python stops looping, and jumps over the next step on the recipe card, End of the loop, straight to putting the walker away.'+spec;
+      return '<b>Trip '+trip+' round the loop.</b> Python asks the walker for the next name: <b>'+(trip===1?'Ada':'Grace')+'</b>. It goes on a plate, above the walker.'+spec;
+    case '0:16': return 'The name from the walker is stored as <b>person</b>'+(t ? ': now <b>'+(trip===1?'Ada':'Grace')+'</b>' : '')+'. Your program’s names are one dictionary, so person changes each trip round the loop.';
+    case '0:18': return 'Python looks up <b>greet</b> in your program’s names and finds the function made at step 2. A label for it goes on a plate.';
+    case '0:20': return 'An empty plate next to the function. When you call a method, like <code>name.upper()</code>, this plate holds the object. For a plain function like greet, it stays empty.';
+    case '0:22': return 'Python looks up <b>person</b> and puts a label for '+(t ? '<b>'+(trip===1?'"Ada"':'"Grace"')+'</b>' : 'its value')+' on a plate. Now there are 4 plates: the walker, greet, the empty plate and the name.';
+    case '0:24': return 'Python calls greet. Because greet is written in Python, not C, Python doesn’t leave the interpreter to run it: it sets up a fresh [[frame|frame]] for greet, with its own plates and its own variable <b>name</b>, and carries on with greet’s steps.'+spec;
+    case '0:32': return 'greet has handed back None. Nobody needs it, so Python takes the plate off.';
+    case '0:34': return 'The end of the loop’s body: go back to step 7 and ask the walker for another name.'+spec;
+    case '0:38': return 'This step is on the recipe card but <b>never runs</b>. When the walker runs out, step 7 jumps over it, doing its work itself. It is there for the rare cases where Python has to come here the long way round.';
+    case '0:40': return 'The loop is over. Python takes the walker off its plate and lets it go.';
+    case '0:42': return 'Every piece of code hands back an answer when it finishes. Your file doesn’t give one, so Python takes None from the recipe card.';
+    case '0:44': return 'Python hands None back to whoever started the program, and clears away its [[frame|frame]]. <b>Your program is finished.</b>';
+    case '1:0': return t && t.folded ? 'greet starts again. This step has already been rewritten into a quicker form, RESUME_CHECK, and this time its work was done by the machine code of the step before it. Zoom in to see how.' : 'greet starts. Like every piece of code, its first step checks whether anything urgent is waiting. The first time, it also rewrites itself into a quicker form for next time.';
+    case '1:2': return 'Python looks for <b>print</b>. It isn’t one of greet’s own variables, so Python looks in the global names, then in its built-in toolbox, where it finds the print function. It puts a label for print on a plate, then an empty plate.'+spec;
+    case '1:12': return 'Python takes the fixed value <b>"Hello,"</b> from greet’s recipe card and puts a label for it on a plate.'+spec;
+    case '1:14': return 'Python gets greet’s own variable <b>name</b>'+(t ? ', which is <b>'+(trip===1?'"Ada"':'"Grace"')+'</b> on this call' : '')+'. It borrows the label rather than making a new one, which is quicker.';
+    case '1:16': return 'Python calls print with 2 things. <b>print runs and a line appears in the terminal'+(t && t.out!==undefined ? ': '+esc(OUTL[t.out]) : '')+'.</b> print puts a space between the things it’s given, and a newline at the end. It answers with [[none|None]].'+spec;
+    case '1:24': return 'Nobody needs print’s answer, so Python takes the plate off.';
+    case '1:26': return 'greet doesn’t say what to give back, so it gives back None, taken from its recipe card.'+spec;
+    case '1:28': return 'greet hands None back to the loop. Its frame is cleared away, and Python carries on with your file’s steps, where it left off.';
+  }
+  return '';
+}
+
+/* ---------- Level 6: real C source, Python/bytecodes.c at v3.14.2. Each pair: [our sentence, the C, first line, last line].
+   Checked by prototype/tools/check-c-refs.mjs. Keys match the handler that ran and how it ran. */
+var GH = 'https://github.com/python/cpython/blob/v3.14.2/Python/bytecodes.c#L';
+var CPAIRS = [
+  {key:'RESUME', note:'RESUME is built from 4 parts (see line 224). Shown: 2 lines of <code>_QUICKEN_RESUME</code>, which rewrites the step the first time it runs, and 2 lines of <code>_CHECK_PERIODIC_IF_NOT_YIELD_FROM</code>, which checks for urgent work.', pairs:[
+    ['Is this the plain RESUME, and is no debugger watching?','if (tstate->tracing == 0 && this_instr->op.code == RESUME) {',177,177],
+    ['Then rewrite this step into RESUME_CHECK, a quicker check for next time','FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);',178,178],
+    ['Is anything urgent waiting, like Ctrl+C?','if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {',168,168],
+    ['If so, deal with it before going on','int err = _Py_HandlePending(tstate);',169,169]]},
+  {key:'RESUME_CHECK', note:'The quicker form of RESUME, used from the second time on. Shown: the lines that do the check.', pairs:[
+    ['Read the flags that say something urgent is waiting','uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);',235,235],
+    ['Read the version number this code expects','uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);',236,236],
+    ['Anything different? Then fall back to the full RESUME','DEOPT_IF(eval_breaker != version);',238,238]]},
+  {key:'LOAD_CONST', note:'Shown: the 2 lines that do the work, and the 2 lines that rewrite the step the first time it runs.', pairs:[
+    ['Get the fixed value from this code’s list of fixed values','PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);',314,314],
+    ['Put a new label for it on a plate','value = PyStackRef_FromPyObjectNew(obj);',315,315],
+    ['Is this step still the plain LOAD_CONST?','if (this_instr->op.code == LOAD_CONST) {',326,326],
+    ['Rewrite it for next time: one form for values that live forever, like None, one for the rest','this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;',327,327]]},
+  {key:'LOAD_CONST_MORTAL', note:'Shown: the whole instruction. It no longer checks whether to rewrite itself.', pairs:[
+    ['Get the fixed value from this code’s list of fixed values','PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);',334,334],
+    ['Put a new label for it on a plate, counting one more label on it','value = PyStackRef_FromPyObjectNewMortal(obj);',335,335]]},
+  {key:'LOAD_CONST_IMMORTAL', note:'Shown: the 2 lines that do the work.', pairs:[
+    ['Get None from this code’s list of fixed values','PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);',339,339],
+    ['Put a label for it on a plate. None lives forever, so there are no labels to count','value = PyStackRef_FromPyObjectImmortal(obj);',341,341]]},
+  {key:'MAKE_FUNCTION', note:'Shown: the key lines.', pairs:[
+    ['Take greet’s recipe card from the plate','PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);',4965,4965],
+    ['Make a new function from the card and your program’s global names','PyFunctionObject *func_obj = (PyFunctionObject *) PyFunction_New(codeobj, GLOBALS());',4967,4968],
+    ['Give the function the card’s version number, used later to check nothing changed','_PyFunction_SetVersion( func_obj, ((PyCodeObject *)codeobj)->co_version);',4973,4974],
+    ['Put a label for the function on the plate','func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);',4975,4975]]},
+  {key:'STORE_NAME', note:'Shown: the key lines.', pairs:[
+    ['Get the name to store, like greet or person','PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);',1506,1506],
+    ['Find the dictionary of names. At the top level of a file, that’s the global names','PyObject *ns = LOCALS();',1507,1507],
+    ['Store the name, pointing to the value on the top plate','err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));',1516,1516],
+    ['Take the plate off','PyStackRef_CLOSE(v);',1521,1521]]},
+  {key:'GET_ITER', note:'Shown: the key lines.', pairs:[
+    ['Ask the pair for a walker that goes through it','PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));',3101,3101],
+    ['Take the pair’s plate off','PyStackRef_CLOSE(iterable);',3102,3102],
+    ['Put a label for the walker on a plate','iter = PyStackRef_FromPyObjectSteal(iter_o);',3104,3104]]},
+  {key:'FOR_ITER', note:'FOR_ITER is built from 2 parts (see line 3222). Shown: key lines of <code>_FOR_ITER</code>, the general way to take the next item from any walker.', pairs:[
+    ['Find the walker’s own “next” function','iternextfunc func = Py_TYPE(iter_o)->tp_iternext;',3166,3166],
+    ['Ask it for the next item: Ada','PyObject *next_o = func(iter_o);',3173,3173],
+    ['Put a label for the item on a plate','next = PyStackRef_FromPyObjectSteal(next_o);',3190,3190]]},
+  {key:'FOR_ITER/spec', note:'Shown: the first part, <code>_SPECIALIZE_FOR_ITER</code>. On this run it rewrote the step and handed over at once.', pairs:[
+    ['Has this step run often enough to be worth making faster? Yes, now','if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {',3153,3153],
+    ['Go back to the start of this step','next_instr = this_instr;',3154,3154],
+    ['Look at the walker, and rewrite the step into a form made for it: FOR_ITER_TUPLE','_Py_Specialize_ForIter(iter, next_instr, oparg);',3155,3155],
+    ['Run the step again, in its new form','DISPATCH_SAME_OPARG();',3156,3156]]},
+  {key:'FOR_ITER_TUPLE', note:'FOR_ITER_TUPLE is built from 3 parts (see line 3429). Shown: one key line from each.', pairs:[
+    ['Is the walker still a walker through a tuple? If not, go back to the general FOR_ITER','EXIT_IF(Py_TYPE(iter_o) != &PyTupleIter_Type);',3374,3374],
+    ['Has it reached the end of the pair? Not yet','if (seq == NULL || (size_t)it->it_index >= (size_t)PyTuple_GET_SIZE(seq)) {',3390,3390],
+    ['Take the next item straight out of the tuple, move the walker on, and put a label on a plate','next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));',3426,3426]]},
+  {key:'FOR_ITER_TUPLE/end', note:'Shown: the lines that end the loop.', pairs:[
+    ['Has it reached the end of the pair? Yes','if (seq == NULL || (size_t)it->it_index >= (size_t)PyTuple_GET_SIZE(seq)) {',3390,3390],
+    ['Jump past the loop, and past the End of the loop step too','JUMPBY(oparg + 1);',3398,3398],
+    ['Go straight to the next step: put the walker away','DISPATCH();',3399,3399]]},
+  {key:'END_FOR', note:'This step never ran for your program. Shown: its only line.', pairs:[
+    ['Take the item’s plate off','PyStackRef_CLOSE(value);',414,414]]},
+  {key:'LOAD_NAME', note:'Shown: the whole instruction.', pairs:[
+    ['Get the name, like greet or person, from your code’s list of names','PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);',1741,1741],
+    ['Search for it: your variables, then global names, then built-ins','PyObject *v_o = _PyEval_LoadName(tstate, frame, name);',1742,1742],
+    ['Not found anywhere? Stop with a NameError','ERROR_IF(v_o == NULL);',1743,1743],
+    ['Found it: put a label for it on a plate','v = PyStackRef_FromPyObjectSteal(v_o);',1744,1744]]},
+  {key:'PUSH_NULL', note:'Shown: the whole instruction.', pairs:[['Put an empty plate on the stack','res = PyStackRef_NULL;',405,405]]},
+  {key:'CALL/py', note:'CALL is built from 4 parts (see line 3853). Shown: the counter check of <code>_SPECIALIZE_CALL</code>, and the route <code>_DO_CALL</code> takes for a function written in Python.', pairs:[
+    ['Has this step run often enough to be worth making faster? Not yet: this is its first run','if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {',3741,3741],
+    ['Count down towards rewriting it','ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);',3747,3747],
+    ['Is this a function written in Python? greet is','if (Py_TYPE(callable_o) == &PyFunction_Type && …',3775,3775],
+    ['Set up a new frame for greet, and move the name onto it as greet’s variable','_PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit( tstate, callable, locals, arguments, total_args, NULL, frame );',3781,3784],
+    ['Remember where to come back to: just after this step','frame->return_offset = INSTRUCTION_SIZE;',3795,3795],
+    ['Carry straight on with greet’s first step, without leaving the interpreter','DISPATCH_INLINED(new_frame);',3796,3796]]},
+  {key:'CALL/c', note:'CALL is built from 4 parts (see line 3853). Shown: the counter check, and 5 key lines of <code>_DO_CALL</code>, the part that runs print.', pairs:[
+    ['Has this step run often enough to be worth making faster? Not yet','if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {',3741,3741],
+    ['Count down towards rewriting it','ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);',3747,3747],
+    ['Is this a function written in Python? print isn’t: it’s written in C','if (Py_TYPE(callable_o) == &PyFunction_Type && …',3775,3775],
+    ['Collect what to give it: "Hello," and the name','STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);',3799,3799],
+    ['Run print. This is where the line gets written','PyObject *res_o = PyObject_Vectorcall(callable_o, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);',3804,3807],
+    ['Something went wrong? Stop with the error','ERROR_IF(res_o == NULL);',3828,3828],
+    ['Put print’s answer, None, on a plate','res = PyStackRef_FromPyObjectSteal(res_o);',3829,3829]]},
+  {key:'CALL/spec', note:'Shown: <code>_SPECIALIZE_CALL</code>, the first of CALL’s 4 parts. On this run it rewrote the step and handed over at once, so the rest of CALL didn’t run.', pairs:[
+    ['Has this step run often enough to be worth making faster? Yes, now','if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {',3741,3741],
+    ['Go back to the start of this step','next_instr = this_instr;',3742,3742],
+    ['Look at what is being called, and rewrite the step into a form made for it','_Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));',3743,3743],
+    ['Run the step again, in its new form','DISPATCH_SAME_OPARG();',3744,3744]]},
+  {key:'CALL_PY_EXACT_ARGS', note:'CALL_PY_EXACT_ARGS is built from 8 parts (see line 4058). Shown: one or two key lines from the parts that check and set up the call.', pairs:[
+    ['Does greet take exactly this many things? If not, fall back to the general CALL','EXIT_IF(code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null)));',4001,4001],
+    ['Is there room for another frame? If not, fall back','DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));',4008,4008],
+    ['Are calls nested too deeply? If so, fall back','DEOPT_IF(tstate->py_recursion_remaining <= 1);',4012,4012],
+    ['Set up greet’s new frame, with no further checks','new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);',4018,4018],
+    ['Move the name onto it as greet’s variable','first_non_self_local[i] = args[i];',4022,4022],
+    ['Make greet’s frame the one being run','frame = tstate->current_frame = temp;',4037,4037]]},
+  {key:'LOAD_GLOBAL', note:'LOAD_GLOBAL is built from 3 parts (see line 1778). Shown: the counter check, the lookup and the empty plate.', pairs:[
+    ['Has this step run often enough to be worth making faster? Not yet','if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {',1754,1754],
+    ['Get the name: print','PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);',1767,1767],
+    ['Search the global names, then the built-ins, and put what it finds on a plate','_PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);',1768,1768],
+    ['Asked to add an empty plate as well? Yes','if (oparg & 1) {',1773,1773],
+    ['Put an empty plate on the stack','null[0] = PyStackRef_NULL;',1774,1774]]},
+  {key:'LOAD_GLOBAL/spec', note:'Shown: the first part, <code>_SPECIALIZE_LOAD_GLOBAL</code>. On this run it rewrote the step and handed over at once.', pairs:[
+    ['Has this step run often enough to be worth making faster? Yes, now','if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {',1754,1754],
+    ['Get the name: print','PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);',1755,1755],
+    ['Look it up once, remember where it was found, and rewrite the step into LOAD_GLOBAL_BUILTIN','_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);',1757,1757],
+    ['Run the step again, in its new form','DISPATCH_SAME_OPARG();',1758,1758]]},
+  {key:'LOAD_GLOBAL_BUILTIN', note:'Shown: key lines. It doesn’t search by name any more: it checks nothing has changed, then goes straight to the remembered place.', pairs:[
+    ['Get the global names','PyDictObject *dict = (PyDictObject *)GLOBALS();',1787,1787],
+    ['Have the global names changed since the step was rewritten? If so, fall back to LOAD_GLOBAL','DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);',1790,1790],
+    ['Get the built-in names','PyDictObject *dict = (PyDictObject *)BUILTINS();',1816,1816],
+    ['Read print straight from the remembered position','PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);',1822,1822],
+    ['Put a label for it on a plate','res = PyStackRef_FromPyObjectNew(res_o);',1828,1828],
+    ['Put an empty plate on the stack','null[0] = PyStackRef_NULL;',1774,1774]]},
+  {key:'LOAD_FAST_BORROW', note:'Shown: the line that does the work.', pairs:[
+    ['Borrow the label of greet’s variable name, and put it on a plate','value = PyStackRef_Borrow(GETLOCAL(oparg));',284,284]]},
+  {key:'CALL_BUILTIN_FAST_WITH_KEYWORDS', note:'Shown: key lines of <code>_CALL_BUILTIN_FAST_WITH_KEYWORDS</code>.', pairs:[
+    ['Is it still a built-in function? If not, fall back to the general CALL','DEOPT_IF(!PyCFunction_CheckExact(callable_o));',4332,4332],
+    ['Does it still take its inputs the fast way? If not, fall back','DEOPT_IF(PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS));',4333,4333],
+    ['Get the address of print’s C code','PyCFunctionFastWithKeywords cfunc = _PyCFunctionFastWithKeywords_CAST(PyCFunction_GET_FUNCTION(callable_o));',4336,4337],
+    ['Run print, directly. This is where the line gets written','PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);',4344,4344],
+    ['Put print’s answer, None, on a plate','res = PyStackRef_FromPyObjectSteal(res_o);',4349,4349]]},
+  {key:'POP_TOP', note:'Shown: the whole instruction.', pairs:[['Take the top plate off and let go of what it pointed to','PyStackRef_CLOSE(value);',401,401]]},
+  {key:'POP_ITER', note:'POP_ITER is POP_TOP under another name (line 417).', pairs:[
+    ['The same code as POP_TOP','macro(POP_ITER) = POP_TOP;',417,417],
+    ['Take the walker’s plate off and let it go','PyStackRef_CLOSE(value);',401,401]]},
+  {key:'JUMP_BACKWARD', note:'JUMP_BACKWARD is built from 3 parts (see line 2944). Shown: the first, <code>_SPECIALIZE_JUMP_BACKWARD</code>. On this run it rewrote the step and handed over at once.', pairs:[
+    ['Is this step still the plain JUMP_BACKWARD?','if (this_instr->op.code == JUMP_BACKWARD) {',2907,2907],
+    ['Rewrite it: is the JIT compiler switched on? It isn’t, so JUMP_BACKWARD_NO_JIT','this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;',2908,2908],
+    ['Go back to the start of this step','next_instr = this_instr;',2910,2910],
+    ['Run it again, in its new form','DISPATCH_SAME_OPARG();',2911,2911]]},
+  {key:'JUMP_BACKWARD_NO_JIT', note:'JUMP_BACKWARD_NO_JIT is built from 2 parts (see line 2950): a check for urgent work, and the jump.', pairs:[
+    ['Is anything urgent waiting, like Ctrl+C?','if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {',158,158],
+    ['If so, deal with it before going on','int err = _Py_HandlePending(tstate);',159,159],
+    ['Jump back to the top of the loop','JUMPBY(-oparg);',3047,3047]]},
+  {key:'RETURN_VALUE', note:'Shown: 4 key lines. The rest keeps Python’s bookkeeping correct.', pairs:[
+    ['Take the answer off the last plate','_PyStackRef temp = PyStackRef_MakeHeapSafe(retval);',1200,1200],
+    ['Go back to the frame that made the call','frame = tstate->current_frame = dying->previous;',1207,1207],
+    ['Throw away this frame','_PyEval_FrameClearAndPop(tstate, dying);',1208,1208],
+    ['Put the answer on the caller’s plates','res = temp;',1211,1211]]}
+];
+var CP = {}; CPAIRS.forEach(function(c){ CP[c.key] = c; });
+function cRange(cp){ var a = 1e9, b = 0; cp.pairs.forEach(function(p){ a = Math.min(a, p[2]); b = Math.max(b, p[3]); }); return {a:a, b:b}; }
+function cLines(a, b){ return a===b ? 'line '+a : 'lines '+a+'–'+b; }
+function cLink(cp){ var r = cRange(cp); return GH + r.a + (r.b!==r.a ? '-L'+r.b : ''); }
+
+// Real machine code of every handler that ran, disassembled (Capstone) from the CPython 3.14.2 binary used for
+// every capture on this page: python-build-standalone 20251205, x86_64-unknown-linux-gnu, which keeps its symbols.
+// Each instruction: [address, bytes (decimal), mnemonic, operands, note]. 'more' holds the .warm and .cold parts.
+/*@MCD@*/
+function kindOf(m){
+  if (/^(j|call|ret)/.test(m)) return 'jump';
+  if (/^(cmp|test)/.test(m)) return 'cmp';
+  if (/^(add|sub|inc|dec|imul|mul|div|idiv|and|or|xor|not|neg|shl|shr|sar|sal|rol|ror)/.test(m)) return 'math';
+  if (/^(mov|lea|push|pop|cmov)/.test(m)) return 'move';
+  return 'other';
+}
+var KIND = {move:'Move', math:'Math', cmp:'Compare', jump:'Jump', other:'Other'};
+// Plain-English glosses for the functions these handlers call (our wording)
+var FN_SAY = {
+  PyDict_GetItemRef:'look up a name in a dictionary',
+  PyDict_SetItem:'store a name and what it points to in a dictionary',
+  PyObject_SetItem:'store a name in something that isn’t a plain dictionary',
+  PyDict_New:'make a new, empty dictionary',
+  PyFunction_New:'make a new function object',
+  PySeqIter_New:'make a walker for a sequence',
+  tuple_iter:'make a walker for a tuple',
+  list_iter:'make a walker for a list',
+  tupleiter_next:'ask the walker for the next item',
+  tuple_dealloc:'free a tuple nobody uses any more',
+  _PyTuple_FromStackRefStealOnSuccess:'pack the plates into a tuple',
+  _Py_Dealloc:'free an object nobody uses any more',
+  _Py_Specialize_Call:'rewrite this step into a faster, specialized form',
+  _Py_Specialize_LoadGlobal:'rewrite this step into a faster, specialized form',
+  _Py_dict_lookup_threadsafe_stackref:'look up a name in a dictionary',
+  method_vectorcall_NOARGS:'call a method that takes no arguments',
+  cfunction_vectorcall_FASTCALL_KEYWORDS:'start a built-in function, like print',
+  builtin_print:'print’s own C code, which writes the line',
+  force_instrument_lock_held:'switch on monitoring tools, such as a debugger',
+  _PyFrame_ClearExceptCode:'clear away the frame',
+  frame_dealloc:'free the frame object'
+};
+TRACE.forEach(function(t){ var a = t.pcs.split(' '); t.n = a.length; t.order = a; t.at = {}; a.forEach(function(x, k){ if (t.at[x]===undefined) t.at[x] = k; }); });
+function allRows(op){ var d = MCD.ops[op], rows = d.ins.map(function(r){ return {r:r, part:'main'}; }); ['warm','cold'].forEach(function(p){ ((d.more||{})[p]||[]).forEach(function(r){ rows.push({r:r, part:p}); }); }); return rows; }
+var ROWS = {}; Object.keys(MCD.ops).forEach(function(op){ var m = {}; allRows(op).forEach(function(x){ m[x.r[0]] = x; }); ROWS[op] = m; });
+function insText(r){
+  var n = r[4];
+  if (n.indexOf('fn:')===0) return r[2]+'  '+n.slice(3);
+  if (n==='rare') return r[2]+'  <rare-case code>';
+  return r[2]+(r[3]?'  '+r[3]:'');
+}
+function keySay(op, r, first, last){
+  var n = r[4];
+  if (n==='dispatch') return 'Jump straight into the handler for the next step, looked up in a table of handlers';
+  if (n.indexOf('fn:_TAIL_CALL_')===0) {
+    var to = n.slice(14);
+    if (r[2]==='jmp' || last) return 'Jump straight into the handler for '+to;
+    return 'A check: does it need to fall back to '+to+'? No, so carry on';
+  }
+  if (r[2]==='call' && n.indexOf('fn:')===0) { var f = n.slice(3); return 'Call '+f+': '+(FN_SAY[f] || 'another function inside Python'); }
+  if (n==='indirect') return 'Call a function whose address is only known when the program runs';
+  if (first) return 'The handler starts here';
+  return '';
+}
+var PATHNOTE = {
+  'RESUME':'The first time a piece of code starts, RESUME also rewrites itself into RESUME_CHECK, a quicker check for next time.',
+  'LOAD_CONST':'This was the step’s first run, so it also rewrote itself into a faster form for next time.',
+  'LOAD_CONST_MORTAL':'The rewritten form: it gets the value without checking whether to rewrite itself.',
+  'LOAD_CONST_IMMORTAL':'The rewritten form for values that live forever, like None: no labels to count.',
+  'FOR_ITER':'The general way to ask any walker for its next item: by calling the walker’s own “next” function.',
+  'FOR_ITER/spec':'This is where the step rewrote itself into FOR_ITER_TUPLE, then handed over to it.',
+  'FOR_ITER_TUPLE':'The rewritten form takes the next item straight out of the tuple, without calling a function.',
+  'FOR_ITER_TUPLE/end':'The pair has run out: the loop ends here, and the handler jumps past End of the loop.',
+  'CALL/py':'This was the step’s first run, so it wasn’t rewritten. greet is a Python function, so no function is called: the handler sets up greet’s frame and jumps straight to greet’s first step.',
+  'CALL/c':'This was the step’s first run, so it wasn’t rewritten. print is written in C, so the handler calls it, and the line is written during that call.',
+  'CALL/spec':'This is where the step rewrote itself, calling _Py_Specialize_Call, then jumped into the handler for its new form.',
+  'CALL_PY_EXACT_ARGS':'Most of this handler’s instructions sit in parts the build tools moved elsewhere in the program. Its last instructions do greet’s RESUME_CHECK: when Python was built, the compiler copied RESUME_CHECK’s code onto the end of this handler, so the check runs without a jump.',
+  'LOAD_GLOBAL':'This was the step’s first run: it searched the global names, then the built-ins.',
+  'LOAD_GLOBAL/spec':'This is where the step rewrote itself, calling _Py_Specialize_LoadGlobal, then jumped into the handler for its new form.',
+  'LOAD_GLOBAL_BUILTIN':'The rewritten form doesn’t search for print: it checks that nothing has changed, then reads print from the place it remembered.',
+  'CALL_BUILTIN_FAST_WITH_KEYWORDS':'The rewritten form calls print’s C code directly, through builtin_print, without the general-purpose route the first call took.',
+  'JUMP_BACKWARD':'The loop’s first jump back: the step rewrote itself into JUMP_BACKWARD_NO_JIT, because the JIT compiler is switched off, then jumped into that handler.',
+  'JUMP_BACKWARD_NO_JIT':'The rewritten form: check for urgent work, then jump back to the top of the loop.',
+  'RETURN_VALUE':'After this, Python carries on in the frame that made the call.'
+};
+
+/* ---------- Operating system: the stages of one line of output ---------- */
+function osStages(li){
+  var line = OUTL[li], n = line.length+1, name = line.split(' ')[1];
+  return [
+    {zone:0, w:'print hands the pieces to Python’s output layer', c:'sys.stdout.write("Hello,") · write(" ") · write("'+name+'") · write("\\n")', say:'print gives each thing it was given to <b>sys.stdout</b>, Python’s own “output” object, with a space in between and a [[newline|newline]] at the end: 4 small pieces. Nothing has left Python yet.'},
+    {zone:0, w:'The text becomes '+n+' bytes and waits in a small buffer', c:'UTF-8 → '+Array.prototype.slice.call(new TextEncoder().encode(line+'\n')).join(' '), say:'The characters are turned back into bytes with [[utf8|UTF-8]]: '+line.length+' characters plus the newline makes <b>'+n+' bytes</b>. They wait in a small buffer in RAM. Because the output goes to a terminal, the newline tells Python to send the whole line now, in one go.'},
+    {zone:1, w:'Python knocks on the operating system’s door number 1', c:'write(1, "'+line+'\\n", '+n+')', say:'This is a [[syscall|system call]]: Python asks the operating system to write '+n+' bytes to [[fd|door number 1]]. The CPU switches into a special mode where only the operating system runs. Your program waits. Your program makes '+OUTL.length+' of these calls in all, one per line. (In a Windows console, Python uses a different call, WriteConsoleW.)'},
+    {zone:2, w:'The operating system delivers the bytes', c:'kernel → terminal device', say:'The operating system copies the '+n+' bytes to the terminal’s end of the connection and wakes up the terminal app. Your program never touched the screen. It only asked.'},
+    {zone:3, w:'The terminal app reads them and draws the letters', c:n+' bytes → "'+line+'" + a new line', say:'Your [[terminal|terminal]] app reads the '+n+' bytes, turns them back into characters, moves to a new line for the newline byte, and draws each character. Zoom in to see how.'}
+  ];
+}
+
+/* ---------- Concept cards: self-contained explanations, opened from tags ---------- */
+/*@CARDS@*/
+
+/* ---------- Bridges: why the next layer has to exist ---------- */
+var BRIDGE = {
+  1:'You typed '+LINES.length+' lines and clicked Run. Your editor saved them on the [[disk|disk]] as a file called <b>'+FILE+'</b>. Highlighted words, like that one, open a short explanation.',
+  2:'A disk can’t hold letters as such: it stores [[byte|bytes]], numbers from 0 to 255. So each character of your program was saved as a number, using an agreement called [[utf8|UTF-8]]. Even the spaces at the start of a line, and the ends of lines, are stored.',
+  3:'To understand code, Python first needs its words, just as you read words rather than single letters. When you run the file, the operating system reads its '+NB+' bytes into [[ram|RAM]]; Python [[encoding|decodes]] them into text using [[utf8|UTF-8]] and picks out the meaningful pieces, called [[token|tokens]]. In Python, indentation matters, so the tokens also mark where an indented block starts and ends.',
+  4:'Words alone don’t say what goes with what. So Python works out the [[structure|structure]]: which lines belong inside the function, which belong inside the loop, and what each line does, recorded as boxes inside boxes.',
+  5:'Boxes describe meaning, but they aren’t something a program can carry out step by step. So Python compiles them into lists of simple steps, called [[code|bytecode]]: one list for your file, and a separate one for greet. By default, CPython interprets bytecode rather than compiling your program to native machine code. Then it runs them, and some steps run more than once.',
+  6:'Steps don’t carry themselves out. Something has to read each one and do it: the [[py|interpreter]], Python’s own program, written in [[clang|C]]. Think of a kitchen: your bytecode is the recipe, the interpreter is the cook, and this C code is how the cook knows how to do each kind of step. A step that runs again can run different C the second time, because Python rewrites busy steps into faster forms.',
+  7:'The interpreter is a program too, so it also needs something to run on. When Python itself was built, a [[compiler|compiler]] turned its C code into [[machine|machine code]], the only language your [[cpu|CPU]] understands. Each kind of step has its own piece of machine code, called a handler.',
+  8:'print now has text to show, but programs aren’t allowed to touch the screen themselves. On a typical Linux terminal, Python eventually asks the kernel to write the bytes to standard output, using a [[syscall|system call]]: once for each line your program prints. (In a Windows console, Python uses a different call, WriteConsoleW.)',
+  9:'Bytes still aren’t something you can see. Your [[terminal|terminal]] turns them back into letters, looks up each letter’s shape in a [[font|font]], and lights up [[pixel|pixels]] on your screen.'
+};
+
+/* ---------- Try it yourself: the command, what each part does, the exact output, and how to read it ---------- */
+function bytesRows(){
+  return LINES.map(function(l){
+    var b = BYTES.slice(l.start, l.end+1).join(', ');
+    var what = l.text==='' ? 'line '+l.n+': empty, so just the [[newline|newline]], 10' : 'line '+l.n+': '+esc(l.text.replace(/^ +/, function(sp){ return sp.length+' spaces, then '; }))+', then the newline, 10';
+    return [b, what];
+  });
+}
+var TIME_S = parseFloat(CMD.time.split('\n').pop());
+var TRY = {
+  1:{intro:'Save the program in a file called greet.py, open a [[terminal|terminal]] in the same folder, and type:',
+     cmd:'python greet.py',
+     parts:[['python','Start Python. On Windows you can also type py.'],['greet.py','The file for Python to run.']],
+     out:CMD.run,
+     rows:[[OUTL[0],'Printed on the first trip round the loop, when person is Ada.'],[OUTL[1],'Printed on the second trip, when person is Grace.']],
+     read:['Indent the two inner lines with 4 spaces each, and press Enter after the last line before you save. Then your file matches this page exactly: '+NB+' bytes.']},
+  2:{intro:'Ask Python to show the numbers stored in your file:',
+     cmd:'python -c "print(list(open(\'greet.py\', \'rb\').read()))"',
+     parts:[['python -c "…"','Run the small piece of Python inside the quotes, without making a new file.'],
+            ['open(\'greet.py\', \'rb\')','Open your file. <b>r</b> means read it, <b>b</b> means as raw bytes, not as text.'],
+            ['.read()','Read the whole file.'],['list(…)','Turn the bytes into a list of ordinary numbers.'],['print(…)','Show the list.']],
+     out:CMD.bytes, rows:bytesRows(),
+     read:['Each space is 32. The newline is 10. The empty line 3 is a newline on its own.']},
+  3:{intro:'Ask Python’s tokenizer to list the tokens it finds in your file:',
+     cmd:'python -m tokenize greet.py',
+     parts:[['python -m tokenize','Run <b>tokenize</b>, the tokenizer that comes with Python, as a program.'],['greet.py','The file to read.']],
+     out:CMD.tokenize,
+     rows:[["0,0-0,0  ENCODING 'utf-8'",'Not a place in your file. Python’s note that it read the bytes using [[utf8|UTF-8]].'],
+           ["1,0-1,3  NAME 'def'",'Line 1, columns 0 to 2. In each pair, the first number is the line and the second is the column. The end is the first column after the token. Columns count from 0.'],
+           ["1,16-1,17  NEWLINE '\\n'",'The end of a complete line of code.'],
+           ["2,0-2,4  INDENT '    '",'The 4 spaces at the start of line 2: a block starts here, inside the function.'],
+           ["3,0-3,1  NL '\\n'",'Line 3 is empty. Its newline is an NL, not a NEWLINE: it ends a line on the screen, but not a line of code.'],
+           ["4,0-4,0  DEDENT ''",'An empty token: the indented block has ended, because line 4 starts at column 0 again.'],
+           ["6,0-6,0  ENDMARKER ''",'The file has ended, so the token is empty. The DEDENT just before it closes the loop’s block.']]},
+  4:{intro:'Ask Python to print the structure of your file as text:',
+     cmd:'python -m ast greet.py',
+     parts:[['python -m ast','Run <b>ast</b>, Python’s module for the structure of code, as a program.'],['greet.py','The file to read.']],
+     out:CMD.ast,
+     rows:[['Module(body=[…])','Your file. <b>body</b> is its list of statements: here, 2.'],
+           ["FunctionDef(name='greet', args=…, body=[…])",'The function: its name, what it takes, and its own list of statements.'],
+           ["arg(arg='name')",'The one thing greet takes: name.'],
+           ["For(target=…, iter=…, body=[…])",'The loop: <b>target</b> is the name each item gets, <b>iter</b> is what to go through, <b>body</b> is what to do each time.'],
+           ['ctx=Store() / ctx=Load()','Store means the name is given a value (person, each trip). Load means it is read.']],
+     read:['The indentation shows which box sits inside which.']},
+  5:{intro:'Ask Python to show the bytecode it made from your file:',
+     cmd:'python -m dis greet.py',
+     parts:[['python -m dis','Run <b>dis</b>, which shows bytecode in a readable form. The name is short for “disassemble”.'],['greet.py','The file to read.']],
+     out:CMD.dis,
+     rows:[['1, 4, 5 (far left)','The line of your file each group of steps comes from. 0 is Python’s own setup step.'],
+           ['L1: … L2:','Labels for places the steps jump to. FOR_ITER jumps to L2 when the names run out; JUMP_BACKWARD goes back to L1.'],
+           ["LOAD_CONST 2 (('Ada', 'Grace'))",'Your list, stored as a fixed tuple.'],
+           ['Disassembly of <code object greet at 0x…>','greet’s own recipe card. The number after <b>at</b> is where it sat in memory; it changes every time you run it.'],
+           ['LOAD_GLOBAL 1 (print + NULL)','Find print, and add an empty plate. In the raw bytes the 1 means name number 0, plus “add the empty plate”.'],
+           ['LOAD_FAST_BORROW 0 (name)','greet’s variable number 0: name.']],
+     read:['dis shows the steps as they are before the program runs. It doesn’t show how they are rewritten while it runs.']},
+  6:{intro:'Every line of C on the right is real, copied from CPython’s source file <b>Python/bytecodes.c</b>. An automatic check (prototype/tools/check-c-refs.mjs) confirms each quoted line appears at exactly the line number shown, in the v3.14.2 source. This link opens GitHub, outside this app.', link:true},
+  7:{intro:'Measure how long your whole program takes on your own computer:',
+     cmd:'python -c "import time; t = time.perf_counter(); exec(open(\'greet.py\').read()); print(time.perf_counter() - t)"',
+     parts:[['time.perf_counter()','Read a very precise clock, in seconds.'],['t = …','Remember the time before starting.'],['exec(open(\'greet.py\').read())','Read your file and run it.'],['print(time.perf_counter() - t)','Show how many seconds passed in between.']],
+     out:CMD.time,
+     rows:[[OUTL[0]+' / '+OUTL[1],'Your program’s own output, as usual.'],
+           [CMD.time.split('\n').pop(),'How long it took, in seconds: about '+Math.round(TIME_S*1e6)+' millionths of a second, including reading the file and compiling it. Most of the rest is writing to the terminal. We got it on Linux with CPython 3.14.2.']],
+     read:['Your number will be different: it depends on your computer, your terminal and what else is running.']},
+  8:{intro:'On Linux, you can watch the system calls happen:',
+     cmd:'strace -e trace=write python3 greet.py',
+     parts:[['strace','A Linux tool that shows the system calls a program makes.'],['-e trace=write','Show only the calls named write.'],['python3 greet.py','Run your program.']],
+     out:CMD.strace,
+     rows:[['write(…)','The system call: “please write some bytes”. There are '+OUTL.length+', one per line.'],
+           ['1','[[fd|Door]] number 1: standard output, your terminal.'],
+           ['"'+OUTL[0]+'\\n"','The bytes to write: '+OUTL[0].length+' characters and the newline.'],
+           [String(OUTL[0].length+1)+' and '+String(OUTL[1].length+1),'How many bytes each call writes.'],
+           ['= '+(OUTL[0].length+1),'The operating system’s answer: it wrote them all.'],
+           ['exited with 0','Your program finished. 0 means “no error”.']],
+     read:['Your program’s own lines may appear in the middle of strace’s, because both go to the same terminal at the same moment. We removed them from the output above.','strace works on Linux only.']},
+  9:{intro:'Put a small drop of water on your phone screen, or zoom in on your computer screen with your phone’s camera. On most displays you’ll see each [[pixel|pixel]] is made of red, green and blue subpixels.'}
+};
+
+/* ---------- Plain names for syntax-tree boxes and tokens ---------- */
+var NODE_NAME = {Module:'Your file', FunctionDef:'Define a function', arguments:'What it takes', arg:'One input', Expr:'One statement', Call:'Call a function',
+  Name:'A name', Constant:'A fixed value', For:'A loop', List:'A list'};
+function nodeName(a){
+  if (a.type==='Name') return a.ctx==='Store' ? 'The name each item gets' : a.field==='func' ? 'What to call' : a.field==='args' ? 'What to give it' : 'A name';
+  if (a.type==='Constant') return a.field==='args' ? 'What to give it' : 'An item';
+  return NODE_NAME[a.type] || a.type;
+}
+var FIELD = {body:'its steps', args:'what it takes', value:'what it does', func:'what to call', iter:'what to go through', target:'each item is called', elts:'the items'};
+function nodeText(a){
+  var lb = esc(a.label.replace(/^'|'$/g, ''));
+  switch (a.type) {
+    case 'Module': return 'The biggest box is the whole file. It holds a list of statements, and yours has two: the function definition and the loop. Python calls this box a <b>Module</b>.';
+    case 'FunctionDef': return 'Everything from <b>def</b> to the end of the indented block. It has a name, <b>greet</b>, a list of what it takes, and its own list of statements: just one, the print line. Defining it doesn’t run it. Python calls this box a <b>FunctionDef</b>.';
+    case 'arguments': return 'The list of what greet takes. Python calls this box <b>arguments</b>. It doesn’t match any single piece of your code, so selecting it highlights nothing.';
+    case 'arg': return 'The one input greet takes: <b>name</b>. When greet is called, whatever it is given gets this name, inside greet only. Python calls this an <b>arg</b>.';
+    case 'For': return 'Everything from <b>for</b> to the end of its indented block. It has three parts: the name each item gets (person), what to go through (the list) and what to do each time (call greet). Python calls this box a <b>For</b>.';
+    case 'List': return 'The list <b>["Ada", "Grace"]</b>, with its two items. Python calls this box a <b>List</b>. At the next level you’ll see the compiler store it as something simpler.';
+    case 'Expr': return 'A statement that does something and doesn’t keep the answer, which is fine: nobody needs it. Python calls it an <b>Expr</b> statement.';
+    case 'Call': return 'A call has two slots: what to call, and what to give it. This one calls <b>'+esc(node(a.kids[0][1]).label)+'</b>. Python calls this box a <b>Call</b>.';
+    case 'Name':
+      if (a.ctx==='Store') return 'The name <b>'+lb+'</b> is given a value each trip round the loop. Python calls this a <b>Name</b> being stored.';
+      return 'Just a name for now: <b>'+lb+'</b>. Python doesn’t know yet what it points to. It looks the name up when the program runs. Python calls this a <b>Name</b>.';
+    case 'Constant': return 'A fixed value typed straight into your code: <b>'+lb+'</b>. The quote marks are gone; they only marked where the text starts and ends. Python calls this a <b>Constant</b>.';
+  }
+  return 'Python calls this box a <b>'+a.type+'</b>.';
+}
+var TOK_PLAIN = {NAME:'a name', OP:'punctuation', STRING:'a piece of text', NEWLINE:'end of a line of code', NL:'an empty line', INDENT:'a block starts', DEDENT:'a block ends', ENDMARKER:'end of the file'};
+var KEYWORDS = {def:'The word <b>def</b> starts a function definition. It’s a keyword: a name reserved by Python, which you can’t use for your own things.', 'for':'The word <b>for</b> starts a loop. It’s a keyword: a name reserved by Python.', 'in':'The word <b>in</b> separates the loop’s name from what to go through. It’s a keyword too.'};
+function tokText(t){
+  switch (t.type) {
+    case 'NAME': return KEYWORDS[t.text] ? [esc(t.text)+' is a keyword', KEYWORDS[t.text]+' The tokenizer still calls it a <b>NAME</b>; working out that it’s special comes next.'] : [esc(t.text)+' is a name', 'Python has read the letters of <b>'+esc(t.text)+'</b> and decided they form one word: a <b>name</b>. It doesn’t know yet what the name means.'];
+    case 'OP': return [esc(t.text)+' is punctuation', {LPAR:'An opening bracket.', RPAR:'A closing bracket.', COLON:'A colon: an indented block comes next.', COMMA:'A comma: it separates things in a list.', LSQB:'An opening square bracket: a list starts.', RSQB:'A closing square bracket: the list ends.'}[t.exact]+' The tokenizer calls every piece of punctuation <b>OP</b>, short for operator, and notes the exact kind: <b>'+t.exact+'</b>.'];
+    case 'STRING': return [esc(t.text)+' is one piece of text', 'The whole text is one token, quote marks included. Python saw the opening quote mark and kept reading until the closing one.'];
+    case 'NEWLINE': return ['End of line '+t.start[0], 'This token comes from byte 10, the invisible [[newline|newline]]. It tells Python the line of code is complete.'];
+    case 'NL': return ['An empty line', 'Line 3 is empty. Its newline becomes an <b>NL</b> token, not a NEWLINE: it ends a line on the screen, but no line of code. Python ignores it from here on.'];
+    case 'INDENT': return ['A block starts', 'The 4 spaces at the start of line '+t.start[0]+' are deeper than the line before, so a block starts here: '+(t.start[0]===2 ? 'the body of greet' : 'the body of the loop')+'. In Python, indentation is part of the meaning.'];
+    case 'DEDENT': return ['A block ends', 'An empty token: line '+t.start[0]+' '+(t.start[0]===6 ? 'doesn’t exist, the file has ended' : 'starts at column 0 again')+', so the indented block above has ended.'];
+    case 'ENDMARKER': return ['End of the file', 'An empty token with no characters at all. Python adds it when the file runs out, so it knows it has seen everything.'];
+  }
+  return [t.type, ''];
+}
+
+/* ---------- Elements ---------- */
+var E = {}, LV = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]};
+function add(level, el){ el.level = level; E[el.id] = el; LV[level].push(el); return el; }
+function node(id){ for (var i=0;i<AST.length;i++) if (AST[i].id===id) return AST[i]; return null; }
+function spanLen(s){ return s[1]-s[0]; }
+function smallestNode(p){
+  var best = null;
+  AST.forEach(function(a){ if (a.type!=='arguments' && p>=a.span[0] && p<a.span[1] && (!best || spanLen(a.span)<=spanLen(best.span))) best = a; });
+  return best || AST[0];
+}
+function stepFor(span){
+  if (!span) return 0;
+  var inside = null, cover = null;
+  STEPS.forEach(function(s, i){
+    if (!s.span || s.op==='RESUME') return;
+    if (s.span[0]>=span[0] && s.span[1]<=span[1] && inside===null) inside = i;
+    if (s.span[0]<=span[0] && s.span[1]>=span[1] && (cover===null || spanLen(s.span)<spanLen(STEPS[cover].span))) cover = i;
+  });
+  return inside!==null ? inside : cover!==null ? cover : 0;
+}
+LINES.forEach(function(l){ add(1, {id:'line-'+l.n, line:l.n, span:[l.start, l.end+1]}); });
+BYTES.forEach(function(b,i){ add(2, {id:'byte-'+i, idx:i, span:[i,i+1]}); });
+TOK.forEach(function(t){ add(3, {id:t.id, tok:t, span:t.span}); });
+AST.forEach(function(a){ add(4, {id:a.id, span:a.type==='arguments' ? null : a.span, node:a}); });
+STEPS.forEach(function(s,i){ add(5, {id:'bc-'+i, idx:i, span:s.span}); add(6, {id:'c-'+i, idx:i, span:s.span}); add(7, {id:'cpu-'+i, idx:i, span:s.span}); });
+for (var oi=0; oi<5; oi++) add(8, {id:'os-'+(oi+1), idx:oi});
+var PX = []; OUTL.forEach(function(l, li){ l.split('').forEach(function(ch, i){ PX.push(add(9, {id:'px-'+li+'-'+i, li:li, idx:i})); }); });
+LV[9] = []; // level 9 elements are per output line; filled on demand
+function pxList(){ return PX.filter(function(e){ return e.li===state.outLine; }); }
+var PRINT_STEP = STEPS.findIndex(function(s){ return s.c===1 && s.op==='CALL'; });
+
+var DEFAULT = {1:'line-1',2:'byte-0',3:'tok-1',4:'ast-2',5:'bc-0',6:'c-1',7:'cpu-1',8:'os-1',9:'px-0-0'};
+function firstRun(i){ var r = runsOf(i); return r.length ? r[0] : -1; }
+function bestMatch(el, L){
+  if (el.level===L) return el;
+  var sp = el.span;
+  if (el.level>=5 && el.level<=7) sp = STEPS[el.idx].span || null;
+  if (el.level>=8) sp = STEPS[PRINT_STEP].span;
+  switch (L) {
+    case 1: return E['line-'+(sp ? lineOf(sp[0]).n : 1)];
+    case 2: return E['byte-'+(sp ? sp[0] : 0)];
+    case 3:
+      if (!sp) return E['tok-1'];
+      for (var j=0;j<TOK.length;j++){ var s = TOK[j].span; if (s && s[1]>s[0] && sp[0]>=s[0] && sp[0]<s[1]) return E[TOK[j].id]; }
+      return E['tok-1'];
+    case 4: return E[(sp ? smallestNode(sp[0]) : AST[0]).id];
+    case 5: case 6: case 7:
+      var k = (el.level>=5 && el.level<=7) ? el.idx : el.level>=8 ? PRINT_STEP : stepFor(sp);
+      return E[['','','','','','bc-','c-','cpu-'][L]+k];
+    case 8: return E['os-1'];
+    case 9: return E['px-'+state.outLine+'-0'];
+  }
+  return LV[L][0];
+}
+
+var state = {level:1, el:E['line-1'], run:0, outLine:0, tryTab:'does', tryOpen:false, editing:false, draft:null};
+var m0 = /^#level-([1-9])$/.exec(location.hash);
+if (m0) { state.level = +m0[1]; state.el = E[DEFAULT[state.level]]; syncRun(); }
+function syncRun(){
+  var el = state.el;
+  if (el.level>=5 && el.level<=7) { if (!(state.run>=0 && TL[state.run] && TL[state.run].s===el.idx)) state.run = firstRun(el.idx); }
+}
+function outLineFromRun(r){ if (r<0) return 0; var t = TL[r]; return Math.max(0, Math.min(OUTL.length-1, (t.trip||1)-1)); }
+
+/* ---------- Machine map ---------- */
+function printedBy(r){ var n = 0; for (var i=0;i<=r && i<NRUN;i++) if (TL[i].out!==undefined) n = TL[i].out+1; return n; }
+function outState(){
+  var L = state.level;
+  if (L<=4) return {mode:'wait', msg:'Nothing yet. Your code hasn’t run.'};
+  if (L>=5 && L<=7) { var n = state.run<0 ? 0 : printedBy(state.run); return n ? {mode:'show', n:n} : {mode:'wait', msg:'Nothing yet. The first line appears when print runs, in greet.'}; }
+  return {mode:'show', n:OUTL.length, sel:state.outLine};
+}
+function screenPx(){
+  var dpr = window.devicePixelRatio || 1, w = Math.round(screen.width*dpr), h = Math.round(screen.height*dpr);
+  return {w:w, h:h, label:w+' × '+h+' pixels', mp:w*h/1e6};
+}
+function platesAt(r){ var n = 0; if (r>=0) TL[r].frames.forEach(function(f){ n += f.p.length; }); return n; }
+function mapState(){
+  var L = state.level, el = state.el, on = {}, note = {};
+  if (L===1){ on.disk=1; note.disk=FILE+' saved here'; }
+  if (L===2){ on.disk=1; note.disk=FILE+' · '+NB+' bytes'; }
+  if (L===3){ on.ram=1; note.ram='the '+NB+' bytes, copied from disk, now read as tokens'; note.disk=FILE+' · '+NB+' bytes'; }
+  if (L===4){ on.ram=1; note.ram='the boxes: '+AST.length+' of them, temporary'; }
+  if (L>=5 && L<=7){
+    var s = STEPS[el.idx], r = state.run;
+    note.code = CODE_IN[s.c]+', step '+stepNo(el.idx)+(r>=0 ? ' · run '+(r+1)+' of '+NRUN : ' · never ran');
+  }
+  if (L===5){
+    var r5 = state.run, used = {}, fr = r5>=0 ? TL[r5].frames : [];
+    on.code=1; on.heap=1; on.stack=1; on.ram=1;
+    note.stack = plural(platesAt(r5), 'plate')+(fr.length>1 ? ', in '+fr.length+' frames' : '');
+    fr.forEach(function(f){ f.p.forEach(function(p){ if (p!=='0') used[p]=1; }); f.v.forEach(function(v){ used[v[1]]=1; }); });
+    note.heap = Object.keys(used).length+' in use';
+  }
+  if (L===6){ on.py=1; on.code=1; on.ram=1; on.cpu=1; note.py = state.run>=0 ? 'running the C for '+handlersOf(state.run).map(function(h){ return h.op; }).join(', then ') || 'RESUME_CHECK' : 'this step never ran'; }
+  if (L===7){ on.cpu=1; on.reg=1; on.cache=1; on.py=1; on.ram=1; note.reg='bookmark, top plate, frame'; note.cache='busy machine code'; note.py='machine code for '+(state.run>=0 ? (handlersOf(state.run).map(function(h){ return h.op; }).join(', then ') || 'RESUME_CHECK') : 'a step that never ran'); }
+  if (L===8){ on.os=1; var n8 = OUTL[state.outLine].length+1; note.os = el.idx>=2 ? 'door 1 → terminal · '+n8+' bytes' : 'not asked yet'; if (el.idx<2){ on.ram=1; note.ram=n8+' bytes waiting in a buffer'; } }
+  if (L===9){ on.screen=1; note.screen=screenPx().label; }
+  return {on:on, note:note};
+}
+function renderMap(){
+  var st = mapState(), on = st.on, note = st.note;
+  function part(k){
+    var p = CARDS[k];
+    if (!on[k]) return '<button type="button" class="part mini" data-term="'+k+'"><span class="p-name">'+p.name+(p.sub?'<small>'+p.sub+'</small>':'')+'</span></button>';
+    return '<button type="button" class="part on" data-term="'+k+'"><span class="p-top"><span class="p-name">'+p.name+(p.sub?'<small>'+p.sub+'</small>':'')+'</span>'+(p.speed?'<span class="p-speed">'+p.speed+'</span>':'')+'</span><span class="p-note">'+esc(note[k]||'')+'</span></button>';
+  }
+  document.getElementById('map').innerHTML = part('disk')
+    + '<div class="flow" aria-hidden="true">↓ copied into RAM when you run it</div>'
+    + '<div class="group'+(on.ram?' on':'')+'"><button type="button" class="g-title" data-term="ram"><b>RAM <small>memory</small></b><span>big · fast</span></button>'
+    + (note.ram ? '<span class="p-note" style="padding:0 2px">'+esc(note.ram)+'</span>' : '')
+    + part('py') + part('code') + '<div class="twin">'+part('heap')+part('stack')+'</div></div>'
+    + '<div class="flow" aria-hidden="true">↕ the CPU reads and writes RAM</div>'
+    + '<div class="group'+(on.cpu?' on':'')+'"><button type="button" class="g-title" data-term="cpu"><b>CPU <small>processor</small></b><span>'+(navigator.hardwareConcurrency ? navigator.hardwareConcurrency+' cores here' : '')+'</span></button>'
+    + '<div class="twin">'+part('reg')+part('cache')+'</div></div>'
+    + part('os') + part('screen');
+}
+
+/* ---------- Concept dialog ---------- */
+var dlgHistory = [];
+function bitsHtml(n){
+  var vals = [128,64,32,16,8,4,2,1], bin = n.toString(2).padStart(8,'0'), on = [];
+  var h = '<div class="bits" role="img" aria-label="'+n+' in binary is '+bin+'">';
+  vals.forEach(function(v,i){ var one = bin[i]==='1'; if (one) on.push(v); h += '<div class="bitcol"><span class="bit'+(one?' one':'')+'">'+bin[i]+'</span><span class="bitval'+(one?' one':'')+'">'+v+'</span></div>'; });
+  return h + '</div><p class="sum">'+(on.length ? on.join(' + ') : '0')+' = '+n+'</p>';
+}
+function cardVis(k){
+  var c = CARDS[k];
+  if (c.vis==='bits41') return '<div>'+bitsHtml(41)+'<p class="sub">The byte for <b>)</b>: switches 32, 8 and 1 are on.</p></div>';
+  if (c.vis==='bits112') return bitsHtml(112);
+  if (c.vis==='utf8') return '<table class="ctable"><thead><tr><th>Character</th><th>Stored as</th><th>Bytes</th></tr></thead><tbody>'
+    + UTF8_TABLE.map(function(r){ return '<tr><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[1].split(' ').length+'</td></tr>'; }).join('') + '</tbody></table>';
+  if (c.vis==='labels') return '<div class="lbl-list">'+Object.keys(LABELS).map(function(k){ return '<div class="lbl-row"><span class="honesty h-'+k+'"><span class="h-dot"></span>'+LABELS[k].name+'</span><p>'+LABELS[k].what+'</p></div>'; }).join('')+'</div>';
+  if (c.vis==='doors') return '<div class="doors"><div class="door"><b>0</b>input: your keyboard</div><div class="door use"><b>1</b>output: your terminal. print uses this</div><div class="door"><b>2</b>errors: also your terminal</div></div>';
+  return '';
+}
+function openCard(k, push){
+  var c = CARDS[k]; if (!c) return;
+  if (push===false) {} else dlgHistory.push(k);
+  var yours = '';
+  if (c.map) { var st = mapState(); if (st.note[k]) yours = '<div class="yours"><b>Right now, for your program</b>'+esc(st.note[k])+'</div>'; }
+  var live = '';
+  if (k==='ram' && navigator.deviceMemory) live = '<dt>This device</dt><dd>at least '+navigator.deviceMemory+' GB, as reported by your browser</dd>';
+  if (k==='cpu' && navigator.hardwareConcurrency) live = '<dt>This device</dt><dd>'+navigator.hardwareConcurrency+' cores, as reported by your browser. Your program uses one.</dd>';
+  if (k==='screen') { var s = screenPx(); live = '<dt>Your screen</dt><dd>'+s.w+' × '+s.h+' = '+s.mp.toFixed(1)+' million pixels</dd>'; }
+  var facts = (c.size || live) ? '<dl class="facts">'+(c.size?'<dt>Typical size</dt><dd>'+c.size+'</dd>':'')+live+'</dl>' : '';
+  var ladder = c.rung ? '<div class="ladder"><h3>How long it takes to fetch something</h3><small>Typical numbers, stretched so that one CPU clock cycle takes one second</small>'
+      + LADDER.map(function(r){ return '<div class="rung'+(r.k===c.rung?' me':'')+'"><span>'+r.label+'</span><div class="bar'+(r.w>60?' full':'')+'" style="width:'+r.w+'%"><span>'+r.t+'</span></div></div>'; }).join('') + '</div>' : '';
+  var rel = c.rel ? '<div class="related"><span>Related:</span>'+c.rel.map(function(r){ return '<button type="button" class="chip" data-term="'+r+'">'+CARDS[r].name+'</button>'; }).join('')+'</div>' : '';
+  var back = dlgHistory.length>1 ? '<button type="button" class="btn btn-sm" data-dlgback>← Back</button>' : '<button type="button" class="btn btn-sm" data-index>All concepts</button>';
+  document.getElementById('dlgBody').innerHTML =
+    '<div class="dlg-bar">'+back+'<button type="button" class="btn icon-btn" data-close aria-label="Close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>'
+    + '<div><div class="dlg-kicker">Concept</div><h2 id="dlgTitle">'+c.name+(c.sub?' <span style="font-weight:400;color:var(--ink3);font-size:15px">'+c.sub+'</span>':'')+'</h2><p class="like">'+c.like+'</p></div>'
+    + '<p>'+T(c.what)+'</p>' + cardVis(k) + facts + ladder + yours + rel;
+  showDlg();
+}
+function openIndex(){
+  dlgHistory = ['__index'];
+  document.getElementById('dlgBody').innerHTML =
+    '<div class="dlg-bar"><span class="dlg-kicker">Explained inside the app, no internet needed</span><button type="button" class="btn icon-btn" data-close aria-label="Close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>'
+    + '<h2 id="dlgTitle">Concepts</h2>'
+    + INDEX.map(function(g){ return '<div class="idx-group"><h3>'+g[0]+'</h3><div>'+g[1].map(function(k){ return '<button type="button" class="chip" data-term="'+k+'">'+CARDS[k].name+'</button>'; }).join('')+'</div></div>'; }).join('');
+  showDlg();
+}
+function showDlg(){
+  var d = document.getElementById('dlg');
+  if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open','');
+  d.scrollTop = 0; var body = document.getElementById('dlgBody'); body.scrollTop = 0;
+}
+
+/* ---------- Left pane: your code (with Edit and Run), the terminal, the map ---------- */
+var TOKAT = []; TOK.forEach(function(t){ if (t.span && t.type!=='INDENT' && t.type!=='DEDENT') for (var i=t.span[0]; i<t.span[1]; i++) TOKAT[i] = t; });
+function colorRange(a, b, span){
+  var h = '';
+  for (var i=a;i<b;i++){
+    var t = TOKAT[i], cls = t ? 'c-'+(t.type==='NAME'?'name':t.type==='STRING'?'string':'op') : '';
+    var on = span && i>=span[0] && i<span[1];
+    h += '<span class="'+cls+(on?' hl':'')+'">'+esc(SRC[i])+'</span>';
+  }
+  return h;
+}
+function nlMark(l, span){ var on = span && l.end>=span[0] && l.end<span[1]; return '<span class="c-nl'+(on?' hl':'')+'" aria-hidden="true">↵</span>'; }
+function codePane(){
+  if (state.editing) {
+    var changed = state.draft!==SRC;
+    return '<textarea class="edit-area" id="editArea" spellcheck="false" aria-label="Your program">'+esc(state.draft)+'</textarea>'
+      + '<div class="run-row"><button type="button" class="btn btn-sm btn-primary" data-run>Run</button><button type="button" class="btn btn-sm" data-cancel>Cancel</button>'
+      + '<p class="fine">'+(changed ? 'Edited. The zoom view on the right is now out of date.' : 'Type your changes, then click Run. Nothing is analyzed while you type.')+'</p></div>';
+  }
+  var span = state.level===1 ? null : state.el.span, sl = span ? lineOf(span[0]).n : 0;
+  return '<div class="codebox multi">'+LINES.map(function(l){
+      return '<div class="cl'+(state.level>1 && span && span[0]<=l.end && span[1]>l.start ? ' on' : '')+'"><span class="ln">'+l.n+'</span><code>'+colorRange(l.start, l.end, span)+nlMark(l, span)+'</code></div>';
+    }).join('')+'</div>'
+    + '<div class="run-row"><button type="button" class="btn btn-sm" data-edit>Edit</button><span class="fine">In the app you type your own program here, then click Run.</span></div>';
+}
+var lastOut = '';
+function renderSide(){
+  if (!state.editing || !document.getElementById('editArea')) document.getElementById('codePane').innerHTML = codePane();
+  var os = outState(), box = document.getElementById('out'), meta = document.getElementById('outMeta'), h;
+  if (os.mode==='wait') { h = '<span class="wait">'+os.msg+'</span>'; meta.textContent = ''; }
+  else {
+    h = OUTL.slice(0, os.n).map(function(l, i){ return '<span class="ol'+(os.sel===i && state.level>=8 ? ' on' : '')+'">'+esc(l)+'</span>'; }).join('');
+    meta.textContent = plural(os.n, 'line')+' so far';
+    if (os.n===OUTL.length) meta.textContent = plural(os.n, 'line');
+  }
+  var sig = os.mode+(os.n||0);
+  if (os.mode==='show' && lastOut!==sig) { box.classList.remove('fresh'); void box.offsetWidth; box.classList.add('fresh'); }
+  lastOut = sig;
+  box.innerHTML = h;
+  renderMap();
+}
+function renderGauge(){
+  function item(n){
+    var cls = n<state.level ? 'past' : n===state.level ? 'current' : 'future';
+    return '<li><button type="button" class="g-item '+cls+'" data-go="'+n+'"'+(n===state.level?' aria-current="step"':'')+'><span class="g-tick"></span><span class="g-n">'+n+'</span><span class="g-label">'+LEVELS[n].short+'</span></button></li>';
+  }
+  var h = '<div class="g-group">Before it runs</div><ol class="g-list">';
+  for (var n=1;n<=5;n++) h += item(n);
+  h += '</ol><div class="g-handoff"><strong><span class="long">Interpreter </span>handoff</strong><span>Your code ends here</span></div><div class="g-group">While it runs</div><ol class="g-list g-machine" start="6">';
+  for (n=6;n<=9;n++) h += item(n);
+  h += '</ol><div class="g-legend"><button type="button" data-label="observed"><b>How we know</b><span>Observed · Derived · Reference · Illustrative · Typical</span></button></div>';
+  document.getElementById('gauge').innerHTML = h;
+}
+
+/* ---------- Level visuals ---------- */
+function selCls(id){ return state.el.id===id ? ' sel' : ''; }
+function pressed(id){ return ' aria-pressed="'+(state.el.id===id)+'"'; }
+function runsLabel(i){ var n = runsOf(i).length; return n===0 ? 'never ran' : n===1 ? 'ran once' : 'ran '+n+' times'; }
+function stepList(prefix){
+  var cur = state.el.idx;
+  return '<div class="ilist" role="group" aria-label="Your steps">'+CODES.map(function(c, ci){
+    return '<h4>'+CODE_TITLE[ci]+'</h4>'+STEPS.map(function(s, i){
+      if (s.c!==ci) return '';
+      var id = prefix+i;
+      return '<button type="button" class="el ibtn'+(s.hk?' hk':'')+selCls(id)+'" data-el="'+id+'"'+pressed(id)+'><span class="o">'+stepNo(i)+'</span>'+s.w+'<span class="runs">'+(runsOf(i).length ? '×'+runsOf(i).length : '–')+'</span></button>';
+    }).join('');
+  }).join('')+'</div>';
+}
+function runChips(i){
+  var rs = runsOf(i);
+  if (rs.length<2) return '';
+  return '<div class="runchips" role="group" aria-label="Which run of this step">'+rs.map(function(r, k){ return '<button type="button" class="runchip" data-run-of="'+r+'" aria-pressed="'+(state.run===r)+'">'+(k+1)+'</button>'; }).join('')+'</div>';
+}
+function runBar(i){
+  var rs = runsOf(i), r = state.run, k = rs.indexOf(r);
+  if (!rs.length) return '<div class="runbar"><span>This step <b>never ran</b>.</span></div>';
+  var t = TL[r];
+  return '<div class="runbar"><span>Step '+stepNo(i)+' of '+CODE_IN[STEPS[i].c]+(rs.length>1 ? ' ran <b>'+rs.length+' times</b>. Showing run' : ', <b>ran once</b>')+'</span>'+runChips(i)
+    + '<span>· overall, step <b>'+(r+1)+'</b> of the '+NRUN+' that ran'+(t.trip && t.trip<=3 && STEPS[i].c===1 ? ', on the call for '+(t.trip===1?'Ada':'Grace') : t.trip ? ', trip '+t.trip+' round the loop' : '')+'</span></div>';
+}
+function platesHtml(p){
+  if (!p.length) return '<span class="no-plates">No plates</span>';
+  return p.map(function(x,i){ var top = i===p.length-1; return x==='0' ? '<div class="plate empty'+(top?' top':'')+'">empty</div>' : '<div class="plate'+(top?' top':'')+'"><span class="badge">'+x+'</span>→ '+esc(OBJS[x].name)+'</div>'; }).join('');
+}
+function framesHtml(r){
+  var fr = r>=0 ? TL[r].frames : [];
+  if (!fr.length) return '<p class="fine">No frames: the program has finished.</p>';
+  return '<div class="frames">'+fr.slice().reverse().map(function(f, k){
+    var top = k===0;
+    return '<div class="frame'+(top?' top':'')+'"><h4>'+(f.c===0 ? 'Your file’s frame' : 'greet’s frame')+'<span>'+(top ? 'running now' : 'waiting for greet')+'</span></h4>'
+      + '<div class="plates" style="min-height:'+(top?'92px':'0')+'">'+platesHtml(f.p)+'</div>'
+      + (f.v.length ? '<div class="vars">'+f.v.map(function(v){ return '<span class="var">'+esc(v[0])+' → <span class="badge">'+v[1]+'</span></span>'; }).join('')+'</div>' : '')
+      + '</div>';
+  }).join('')+'</div>';
+}
+function recipeHtml(i){
+  var s = STEPS[i], c = CODES[s.c];
+  function use(kind, k){ return (kind==='n' && /NAME|GLOBAL/.test(s.op) && ((s.op==='LOAD_GLOBAL' ? s.arg>>1 : s.arg)===k)) || (kind==='c' && s.op==='LOAD_CONST' && s.arg===k) || (kind==='l' && s.op==='LOAD_FAST_BORROW' && s.arg===k) ? ' use' : ''; }
+  var consts = c.consts.map(function(v){ return v==='<code greet>' ? 'greet’s card' : v.replace(/'/g, '"'); });
+  return '<div class="panel"><h3>'+CODE_TITLE[s.c]+'’s recipe card <span>(made by the compiler)</span>'+ltag('observed')+'</h3><div class="lists">'
+    + '<div class="lst"><h4>Names</h4>'+(c.names.length ? c.names.map(function(n,k){ return '<div class="li'+use('n',k)+'"><i>'+k+'</i>'+esc(n)+'</div>'; }).join('') : '<span class="fine">none</span>')
+    + (c.locals.length ? '<h4 style="margin-top:6px">Its own variables</h4>'+c.locals.map(function(n,k){ return '<div class="li'+use('l',k)+'"><i>'+k+'</i>'+esc(n)+'</div>'; }).join('') : '')+'</div>'
+    + '<div class="lst"><h4>Fixed values</h4>'+consts.map(function(v,k){ return '<div class="li'+use('c',k)+'"><i>'+k+'</i>'+esc(v)+'</div>'; }).join('')+'</div>'
+    + '</div></div>';
+}
+function shelfHtml(r){
+  var used = {}, seen = {};
+  if (r>=0) { TL[r].frames.forEach(function(f){ f.p.forEach(function(p){ if (p!=='0') used[p]=1; }); f.v.forEach(function(v){ used[v[1]]=1; }); });
+    for (var i=0;i<=r;i++) TL[i].frames.forEach(function(f){ f.p.forEach(function(p){ if (p!=='0') seen[p]=1; }); f.v.forEach(function(v){ seen[v[1]]=1; }); }); }
+  return '<div class="shelf">'+Object.keys(OBJS).filter(function(k){ return seen[k] || k==='N'; }).map(function(k){ var o = OBJS[k]; return '<div class="obj '+(used[k]?'used':'idle')+'"><span class="badge">'+k+'</span><span>'+esc(o.name)+'</span><span class="sz">'+o.sz+' bytes</span></div>'; }).join('')+'</div>';
+}
+function timelineHtml(){
+  return '<div class="timeline" role="group" aria-label="Every step that ran, in order">'+TL.map(function(t, i){
+    var cls = i<state.run ? ' done' : i===state.run ? ' cur' : '';
+    return '<button type="button" class="tdot'+(STEPS[t.s].c===1?' g':'')+cls+'" data-run-of="'+i+'" aria-label="Run '+(i+1)+': '+esc(STEPS[t.s].w)+'" title="'+(i+1)+': '+esc(STEPS[t.s].w)+'"></button>';
+  }).join('')+'</div>';
+}
+function treeHtml(id){
+  var a = node(id), sel = state.el.id===id;
+  var leaf = !a.kids.length && (a.type==='Name' || a.type==='Constant' || a.type==='arg');
+  if (leaf) {
+    var cls = a.type==='Constant' ? 'lf-str' : 'lf-name', txt = a.type==='Constant' ? a.label.replace(/^'|'$/g, '') : a.label;
+    return '<div class="leaf"><button type="button" class="el tleaf '+cls+selCls(id)+'" data-el="'+id+'"'+pressed(id)+'>'+esc(txt)+'</button><span class="leaf-cap">'+esc(nodeName(a))+'<span class="tt">'+a.type+'</span></span></div>';
+  }
+  var groups = [], last = null;
+  a.kids.forEach(function(k){ if (!last || last.f!==k[0]) { last = {f:k[0], ids:[]}; groups.push(last); } last.ids.push(k[1]); });
+  var col = a.type==='Module' || (a.type==='FunctionDef') || a.type==='For';
+  return '<div class="tbox'+(sel?' on':'')+'"><button type="button" class="el box-lbl'+selCls(id)+'" data-el="'+id+'"'+pressed(id)+'>'+esc(nodeName(a))+(a.type==='FunctionDef' ? ': greet' : '')+'<span class="tt">'+a.type+'</span></button>'
+    + '<div class="tkids'+(col?' col':'')+'">'+groups.map(function(g){ return '<div class="tfield"><span class="fl">'+(a.type==='Call' && g.f==='args' ? 'what to give it' : (FIELD[g.f]||g.f))+'</span><div class="tkids">'+g.ids.map(treeHtml).join('')+'</div></div>'; }).join('')+'</div></div>';
+}
+function cpairsFor(r){
+  if (r<0) return [CP['END_FOR']];
+  if (TL[r].folded) return [CP['RESUME_CHECK']];
+  return handlersOf(r).map(function(h){ return CP[h.key]; });
+}
+function visual(L){
+  var el = state.el, h = '';
+  if (L===1) {
+    h = '<div class="v-cap"><span>Your whole program: '+LINES.length+' lines</span><span>Click any line</span></div>'
+      + '<div class="v-lines">'+LINES.map(function(l){ var id='line-'+l.n; return '<div class="row"><span class="ln">'+l.n+'</span><button type="button" class="el el-line'+(l.text===''?' blank':'')+selCls(id)+'" data-el="'+id+'"'+pressed(id)+'>'+(l.text==='' ? 'an empty line' : colorRange(l.start, l.end, null))+'</button></div>'; }).join('')+'</div>'
+      + '<div class="v-file"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path></svg><span>Saved on the disk as <b>'+FILE+'</b>: '+LINES.length+' lines, '+NB+' characters in all, counting the spaces and the invisible [[newline|newline]] at the end of each line.</span></div>';
+  } else if (L===2) {
+    var b = BYTES[el.idx], ch = SRC[el.idx];
+    h = '<div class="v-cap"><span>Your file as it sits on the disk: '+NB+' bytes, one number per character, shown line by line</span><span>Click any byte</span></div><div class="byte-lines">'
+      + LINES.map(function(l){ var row = ''; for (var i=l.start;i<=l.end;i++){ var id='byte-'+i; row += '<button type="button" class="el byte'+selCls(id)+'" data-el="'+id+'"'+pressed(id)+' aria-label="Byte '+(i+1)+': '+BYTES[i]+'"><span class="b-ch">'+esc(charLabel(SRC[i]))+'</span><span class="b-num">'+BYTES[i]+'</span></button>'; }
+        return '<div class="byte-line"><span class="lh">line '+l.n+'</span><div class="bytes">'+row+'</div></div>'; }).join('')
+      + '</div><div class="panel"><h3>How the number '+b+' is stored'+ltag('derived')+'</h3><p class="sub">A byte is 8 [[bit|bits]]: 8 tiny on/off switches. Each switch has a value, shown under it. Add up the values of the switches that are on, and you get the number. This way of counting is called [[binary|binary]].</p>'
+      + bitsHtml(b) + '<p class="sub">So <b>'+esc(charLabel(ch))+'</b> is stored on the disk, and later in RAM, as the pattern <b>'+b.toString(2).padStart(8,'0')+'</b>.</p></div>';
+  } else if (L===3) {
+    h = '<div class="v-cap"><span>Your file, line by line, as the tokens Python found</span><span>Click any token</span></div><div class="tok-lines">'
+      + LINES.concat([{n:LINES.length+1, text:null}]).map(function(l){
+          var toks = TOK.filter(function(t){ return t.start[0]===l.n; });
+          if (!toks.length) return '';
+          return '<div class="tok-line"><span class="lh">line '+l.n+'</span>'+toks.map(function(t){
+            var mark = /NEWLINE|NL|INDENT|DEDENT|ENDMARKER/.test(t.type), k = mark ? 'mark' : t.type.toLowerCase();
+            var txt = t.type==='NEWLINE'||t.type==='NL' ? '↵' : t.type==='INDENT' ? '4 spaces' : t.type==='DEDENT' ? 'block ends' : t.type==='ENDMARKER' ? 'end' : t.text;
+            return '<button type="button" class="el chip-tok t-'+k+selCls(t.id)+'" data-el="'+t.id+'"'+pressed(t.id)+'><small>'+t.type+'</small>'+esc(txt)+'</button>';
+          }).join('')+'</div>';
+        }).join('')
+      + '</div><div class="extra-toks"><div class="xt"><b>ENCODING</b><span>Before line 1: Python notes it will read the bytes with [[utf8|UTF-8]]. Not part of your code.</span></div></div>';
+  } else if (L===4) {
+    h = '<div class="v-cap"><span>From tokens to meaning: boxes inside boxes</span><span>Click any box</span></div>'
+      + '<div class="tree">'+treeHtml('ast-1')+'</div>'
+      + '<div class="panel"><h3>Where did the colons, brackets and indentation go?</h3><p class="sub">They were signposts. The colon and the indentation told Python which lines belong inside the function and inside the loop. The boxes now show that directly: the print line sits inside greet’s box, and the call to greet sits inside the loop’s box. So the signposts are no longer needed.</p></div>';
+  } else if (L===5) {
+    var i5 = el.idx, r5 = state.run, s5 = STEPS[i5];
+    h = '<div class="v-cap"><span>Two recipe cards: '+STEPS.filter(function(s){ return s.c===0; }).length+' steps for your file, '+STEPS.filter(function(s){ return s.c===1; }).length+' for greet. '+NRUN+' steps ran in all</span><span>Step through with Next</span></div>'
+      + '<div class="step-grid"><div>'+CODES.map(function(c, ci){
+          return '<div class="code-group"><h4><span>'+CODE_TITLE[ci]+'</span><span>'+c.nbytes+' bytes of bytecode</span></h4><ol class="bsteps">'+STEPS.map(function(s, i){
+            if (s.c!==ci) return '';
+            var id = 'bc-'+i, now = r5>=0 && TL[r5].s===i;
+            return '<li><button type="button" class="el bstep'+(runsOf(i).length?'':' never')+(now?' now':'')+selCls(id)+'" data-el="'+id+'"'+pressed(id)+'><span class="n">'+stepNo(i)+'</span><span class="w">'+s.w+'</span><span class="ops"><span class="op">'+s.op+(s.arg!==null?' '+s.arg:'')+'</span><span class="runs">'+runsLabel(i)+'</span></span></button></li>';
+          }).join('')+'</ol></div>';
+        }).join('')+'</div><div class="mem">'
+      + runBar(i5)
+      + '<div class="panel"><h3>Every step that ran, in order'+ltag('observed')+'</h3>'+timelineHtml()+'<p class="fine" style="margin-top:6px">Squares are your file’s steps; circles are greet’s. Filled ones have run.</p></div>'
+      + '<div class="panel"><h3>Plates <span>(each frame’s [[stack|stack]]), after this step</span>'+ltag('derived')+'</h3>'+framesHtml(r5)+'</div>'
+      + recipeHtml(i5)
+      + '<div class="panel"><h3>Objects <span>(the [[heap|heap]])</span>'+ltag('derived')+'</h3>'+shelfHtml(r5)+'</div>'
+      + '</div></div>'
+      + '<div class="ctl"><button type="button" class="btn btn-sm" data-step="-1"'+(r5<=0?' disabled':'')+'>Back a step</button>'
+      + (r5===NRUN-1 ? '<button type="button" class="btn btn-sm btn-primary" data-zoom="in">All '+NRUN+' done. Next: the interpreter</button>' : '<button type="button" class="btn btn-sm btn-primary" data-step="1">Next step</button>')
+      + '<button type="button" class="btn btn-sm" data-play>'+(playing?'Stop':(r5===NRUN-1?'Play again':'Play all '+NRUN))+'</button></div>'
+      + '<p class="fine">Next and Back follow the order the steps ran in, jumping between your file and greet. The steps, their order and the recipe cards are observed from your code. The plates and the shelf are derived: worked out from what each step does, because Python’s tracer can’t see them directly. After the run, some steps had been rewritten into faster forms, shown at the next two levels.</p>';
+  } else if (L===6) {
+    var i6 = el.idx, r6 = state.run, cps = cpairsFor(r6), hs6 = r6>=0 ? handlersOf(r6) : [];
+    h = '<div class="tracks"><div class="track"><b>Your program</b><span>'+FILE+' → tokens → structure → <em>bytecode</em></span><small>Translated as far as bytecode, then followed step by step</small></div><div class="track here"><b>Python itself</b><span><em>C source</em> → machine code → CPU</span><small>Translated to machine code long before you ran anything</small></div></div>'
+      + '<div class="v-cap"><span>The interpreter repeats the same 4 moves for every step</span><span>Pick a step on the left</span></div>'
+      + '<div class="loop">'
+      + '<div class="lp"><b>1 · Read</b>the next step: '+CODE_IN[STEPS[i6].c]+'’s step '+stepNo(i6)+', <em>'+STEPS[i6].w.toLowerCase()+'</em></div>'
+      + '<div class="lp"><b>2 · Look up</b>the C code for it: '+(hs6.length ? hs6.map(function(x){ return x.op; }).join(', then ') : r6>=0 ? 'RESUME_CHECK' : STEPS[i6].op)+'</div>'
+      + '<div class="lp now"><b>3 · Run</b>that C code, shown below</div>'
+      + '<div class="lp"><b>4 · Move on</b>to '+(r6>=0 && r6<NRUN-1 ? 'the next step that runs: '+STEPS[TL[r6+1].s].w.toLowerCase() : r6<0 ? '–' : 'nothing: the program is done')+'</div>'
+      + '</div>'
+      + '<div class="split">'+stepList('c-')
+      + '<div class="handoffs">'+runBar(i6)
+      + (r6>=0 && TL[r6].folded ? '<div class="folded"><b>No handler of its own ran for this step.</b> By this call, greet’s RESUME had been rewritten into RESUME_CHECK. When Python was built, the compiler copied RESUME_CHECK’s code onto the end of CALL_PY_EXACT_ARGS, the step before it, so this check ran there. We know because the debugger recorded lines 10543 to 10571 of <code>generated_cases.c.h</code>, RESUME_CHECK’s code, inside that handler.'+ltag('reference')+'</div>' : '')
+      + (r6<0 ? '<div class="never-note">This step never ran for your program: FOR_ITER jumped over it. Here is its C code anyway.</div>' : '')
+      + cps.map(function(cp, k){
+          var rr = cRange(cp), title = hs6.length>1 ? (k===0 ? 'First, the general form: <b>'+hs6[0].op+'</b>' : 'Then the new form: <b>'+hs6[1].op+'</b>') : '<b>'+(hs6[0] ? hs6[0].op : cp.key.split('/')[0])+'</b>';
+          return '<div class="pairs hblock"><div class="pairs-head"><span>'+title+'</span><span><a href="'+cLink(cp)+'" target="_blank" rel="noopener">bytecodes.c, '+cLines(rr.a, rr.b)+'</a></span></div>'
+            + '<div class="pairs-note">'+cp.note+'</div>'
+            + cp.pairs.map(function(p,i){ return '<div class="pair"><span class="say"><i>'+(i+1)+'</i>'+esc(p[0])+'</span><code><span class="lno">'+(p[2]===p[3]?p[2]:p[2]+'–'+p[3])+'</span>'+esc(p[1])+'</code></div>'; }).join('')
+            + '</div>';
+        }).join('')
+      + '</div></div>'
+      + '<p class="fine">Which handler ran, each time, was recorded with a [[debugger|debugger]] on our test machine'+ltag('reference')+'. The C is the same for every Python program in the world that uses these steps.</p>';
+  } else if (L===7) {
+    var i7 = el.idx, r7 = state.run, hs = r7>=0 ? handlersOf(r7) : [];
+    function block(tr, k){
+      var op = tr.op, d = MCD.ops[op], rows = allRows(op), cnt = {move:0, math:0, cmp:0, jump:0, other:0};
+      rows.forEach(function(x){ cnt[kindOf(x.r[2])]++; });
+      var ranRows = tr.order.map(function(a){ return ROWS[op][a]; });
+      var keys = [], seen = {};
+      ranRows.forEach(function(x, j){
+        var say = keySay(op, x.r, j===0, j===ranRows.length-1);
+        if (!say || seen[x.r[0]]) return;
+        seen[x.r[0]] = 1;
+        var prev = keys[keys.length-1];
+        if (prev && prev.say===say) prev.count++; else keys.push({x:x, say:say, count:1});
+      });
+      function row(k){ var x = k.x, k2 = kindOf(x.r[2]); return '<div class="cpu-row ran"><span class="kind k-'+k2+'">'+KIND[k2]+'</span><span><span class="say">'+esc(k.say)+(k.count>1 ? ' ('+k.count+' checks in a row like this one; the first is shown)' : '')+'</span><code>'+esc(insText(x.r))+'</code><span class="mc"><span class="mcl">its bytes</span>'+x.r[1]+'</span></span></div>'; }
+      var parts = tr.parts, partTxt = Object.keys(parts).map(function(p){ return parts[p]+' in its '+(p==='main'?'main part':p==='warm'?'.warm part':'.cold part'); }).join(', ');
+      var calls = tr.calls.map(function(c){ return '<code>'+c[0]+'</code>'+(c[1]>1?' '+c[1]+' times':''); });
+      return '<div class="pairs hblock"><div class="pairs-head"><span>'+(hs.length>1 ? (k===0 ? 'First: ' : 'Then: ') : '')+'<b>'+op+'</b></span><span><code>'+d.sym+'</code></span></div>'
+        + '<div class="hsum">'+rows.length+' instructions in all: '+d.ins.length+' in its main part ('+d.size+' bytes)'+(d.warm+d.cold ? ', and '+(d.warm+d.cold)+' bytes in .warm and .cold parts that the build tools moved elsewhere in the program' : '')+'. On this run, <b>'+tr.n+'</b> ran: '+partTxt+'.'+(calls.length ? ' Functions it called: '+calls.join(', ')+'.' : '')+'</div>'
+        + '<div class="kcount">'+['move','math','cmp','jump','other'].filter(function(x){ return cnt[x]; }).map(function(x){ return '<span class="kind k-'+x+'">'+KIND[x]+' '+cnt[x]+'</span>'; }).join('')+'</div>'
+        + '<div class="pathnote">'+ltag('reference')+' Highlighted: the '+tr.n+' instructions that ran, recorded one at a time with a [[debugger|debugger]] on our test machine.'+(PATHNOTE[tr.key] ? ' '+PATHNOTE[tr.key] : '')+'</div>'
+        + '<div class="klines"><h4>Key lines, in the order they ran</h4>'+keys.map(row).join('')+'</div>'
+        + '<details class="alllines"><summary>Show the '+tr.n+' instructions that ran, in order</summary><div class="lst-scroll"><table class="asm pathtbl"><tbody>'
+        + ranRows.map(function(x, j){ var k2 = kindOf(x.r[2]); return '<tr class="ran"><td class="pn">'+(j+1)+'</td><td><span class="kd k-'+k2+'" title="'+KIND[k2]+'"></span></td><td class="i">'+esc(insText(x.r))+'</td><td>'+(x.part==='main'?'':x.part)+'</td><td>'+x.r[1]+'</td></tr>'; }).join('')
+        + '</tbody></table></div></details>'
+        + '<details class="alllines"><summary>Show all '+rows.length+' instructions of this handler</summary><div class="lst-scroll"><table class="asm"><tbody>'
+        + rows.map(function(x, j){ var k2 = kindOf(x.r[2]); return '<tr'+(tr.at[x.r[0]]!==undefined?' class="ran"':'')+'><td class="n">'+(j+1)+'</td><td><span class="kd k-'+k2+'" title="'+KIND[k2]+'"></span></td><td class="i">'+esc(insText(x.r))+'</td><td>'+(x.part==='main'?'':x.part)+'</td><td>'+x.r[1]+'</td></tr>'; }).join('')
+        + '</tbody></table></div></details></div>';
+    }
+    h = '<div class="tracks"><div class="track"><b>Your program</b><span>'+FILE+' → tokens → structure → <em>bytecode</em></span><small>Translated as far as bytecode, then followed step by step</small></div><div class="track here"><b>Python itself</b><span>C source → <em>machine code</em> → CPU</span><small>Translated to machine code long before you ran anything</small></div></div>'
+      + '<div class="prov"><b>Real machine code</b>, disassembled from the CPython 3.14.2 binary used for every capture on this page: Linux x86-64, built with Clang, the tail-calling interpreter, PGO, LTO and BOLT. The highlighted instructions are the ones that ran for your program, on the run you picked.'+ltag('reference')+'</div>'
+      + '<div class="kinds">'+['move','math','cmp','jump','other'].map(function(k){ return '<span class="kind k-'+k+'">'+KIND[k]+'</span>'; }).join('')+'</div>'
+      + '<div class="split">'+stepList('cpu-')
+      + '<div class="handoffs">'+runBar(i7)
+      + (r7<0 ? '<div class="never-note">This step never ran for your program, so no machine code ran for it.</div>' : '')
+      + (r7>=0 && TL[r7].folded ? '<div class="folded"><b>No handler of its own ran for this step.</b> Its check, RESUME_CHECK, ran as the last instructions of CALL_PY_EXACT_ARGS, the step before. Pick that step’s second run to see them: the debugger recorded them as lines 10543 to 10571 of <code>generated_cases.c.h</code>, RESUME_CHECK’s code.'+ltag('reference')+'</div>' : '')
+      + hs.map(block).join('')
+      + '</div></div>'
+      + '<div class="panel"><h3>The CPU’s hands: [[reg|registers]]'+ltag('derived')+'</h3><div class="regs">'
+      + '<div class="reg"><b>r15</b><span>A bookmark: where we are in the bytecode being run</span></div>'
+      + '<div class="reg"><b>r13</b><span>The top of the plates, Python’s stack</span></div>'
+      + '<div class="reg"><b>r12</b><span>The [[frame|frame]]: the workspace of the code being run, your file’s or greet’s</span></div>'
+      + '<div class="reg"><b>edi</b><span>On arrival: the step’s argument, like name number 0</span></div>'
+      + '<div class="reg"><b>rax</b><span>At the end: which handler comes next</span></div>'
+      + '<div class="reg"><b>rsp</b><span>The top of the CPU’s own stack</span></div>'
+      + '</div><p class="fine" style="margin-top:10px">Worked out by reading this machine code. The debugger script also relies on r12 holding the frame and r15 the bookmark.</p></div>'
+      + '<p class="fine">Modern CPUs run at billions of clock cycles per second, but one instruction doesn’t necessarily take one clock cycle: a CPU can work on several instructions at once, and some instructions take many cycles.</p>';
+  } else if (L===8) {
+    var OS = osStages(state.outLine), z = OS[el.idx].zone, n8 = OUTL[state.outLine].length+1, zones = [['Your program','Python, in RAM'],['System call','the only way out'],['Operating system','the kernel'],['Terminal app','another program']];
+    h = '<div class="v-cap"><span>On a typical Linux terminal: where one line of output is, as print runs</span><span>Pick a line, then a stage</span></div>'
+      + lineTabs()
+      + '<div class="zones">'+zones.map(function(zz,i){ return '<div class="zone'+(i===1?' wall':'')+(i===z?' on':'')+'"><h3>'+zz[0]+'</h3><p>'+zz[1]+'</p>'+(i===z?'<span class="packet">'+(i<=1?esc(OUTL[state.outLine])+'↵ · '+n8+' bytes':i===2?n8+' bytes':esc(OUTL[state.outLine]))+'</span>':'')+'</div>'; }).join('')
+      + '</div><ol class="osteps">'
+      + OS.map(function(s,i){ var id='os-'+(i+1); return '<li><button type="button" class="el ostep'+selCls(id)+'" data-el="'+id+'"'+pressed(id)+'><span class="n">'+(i+1)+'</span><span><span class="w">'+esc(s.w)+'</span><code>'+esc(s.c)+'</code></span></button></li>'; }).join('')
+      + '</ol><div class="panel"><h3>Your program’s three [[fd|doors]] <span>(given by the operating system when it started)</span></h3><div class="doors"><div class="door"><b>0</b>input: your keyboard</div><div class="door use"><b>1</b>output: your terminal. print uses this one</div><div class="door"><b>2</b>errors: also your terminal</div></div></div>';
+  } else if (L===9) {
+    var line9 = OUTL[state.outLine], c9 = line9[el.idx], code = c9.charCodeAt(0);
+    h = '<div class="v-cap"><span>Follow one character from byte to pixels</span><span>Pick a line, then a character</span></div>'
+      + lineTabs()
+      + '<div class="glyphs" role="group" aria-label="Characters">'+line9.split('').map(function(c,i){ var id='px-'+state.outLine+'-'+i; return '<button type="button" class="el glyph'+(c===' '?' sp':'')+selCls(id)+'" data-el="'+id+'"'+pressed(id)+' aria-label="'+(c===' '?'space':esc(c))+'">'+(c===' '?'space':esc(c))+'</button>'; }).join('')+'</div>'
+      + '<div class="journey"><span class="jstep"><b>'+code+'</b>byte</span>→<span class="jstep"><b>'+(c9===' '?'␠':esc(c9))+'</b>character</span>→<span class="jstep"><b>✎</b>font outline</span>→<span class="jstep"><b>▦</b>pixels</span></div>'
+      + '<div class="px-big"><canvas id="pxBig" role="img" aria-label="The selected character as a pixel grid, with the font outline drawn on top"></canvas><div class="px-stats" id="pxStats"></div></div>'
+      + '<div class="px-line"><canvas id="pxLine" aria-label="'+esc(line9)+' at actual size"></canvas><span>Actual size</span></div>'
+      + '<div class="screen-fact" id="screenFact"></div>';
+  }
+  return T(h);
+}
+function lineTabs(){
+  return '<div class="linetabs" role="group" aria-label="Which line of output">'+OUTL.map(function(l, i){ return '<button type="button" class="linetab" data-outline="'+i+'" aria-pressed="'+(state.outLine===i)+'">'+esc(l)+'</button>'; }).join('')+'</div>';
+}
+
+function posText(t){
+  var s = t.span, a = t.start, b = t.end;
+  var where = '<b>Where:</b> line '+a[0]+', '+(b[1]-a[1]>1 ? 'columns '+a[1]+' to '+(b[1]-1) : b[1]===a[1] ? 'column '+a[1]+', taking up no space' : 'column '+a[1])+'. tokenize writes this as <code>'+a.join(',')+'-'+b.join(',')+'</code>.';
+  return where + (s && s[1]>s[0] ? ' <b>Bytes:</b> <code>'+BYTES.slice(s[0],s[1]).join(' ')+'</code>' : '');
+}
+function explain(el){
+  var L = el.level;
+  if (L===1) {
+    var l = LINES[el.line-1];
+    var what = {1:'The first line starts a function called <b>greet</b>, which takes one thing, <b>name</b>. The colon at the end says an indented block follows.',
+      2:'Indented by 4 spaces, so it belongs to greet: the one thing greet does is print <b>Hello,</b> and the name.',
+      3:'An empty line. It changes nothing, but it is still stored in the file.',
+      4:'Not indented, so it is outside greet. It starts a loop over two names, <b>Ada</b> and <b>Grace</b>. Each time round, the name is called <b>person</b>.',
+      5:'Indented, so it belongs to the loop: call greet with the person. It runs twice, once for each name.'}[l.n];
+    return {t:'Line '+l.n+(l.text==='' ? ': empty' : ''), b:what+' Right now it is all just text in a file. Nothing has run.'};
+  }
+  if (L===2) {
+    var b = BYTES[el.idx], ch = SRC[el.idx], ln = lineOf(el.idx);
+    var what = ch==='\n' ? 'The [[newline|newline]] at the end of line '+ln.n+'. You can’t see it, but it is stored as number <b>10</b>, and it tells Python the line is over.'
+      : ch===' ' ? (el.idx-ln.start<4 && /^ +$/.test(SRC.slice(ln.start, el.idx+1)) ? 'One of the 4 spaces that indent line '+ln.n+'. Indentation is stored like any other character, as number <b>32</b>, and for Python it matters: it says which lines belong together.' : 'A space, stored as number <b>32</b>.')
+      : ch==='"' ? 'A quote mark is stored like any other character. Python uses the pair of them to find where a piece of text starts and ends.'
+      : 'Every character has an agreed number. <b>'+esc(ch)+'</b> is '+b+'. This agreement is called [[utf8|UTF-8]], and for English letters and common symbols, each character takes exactly one [[byte|byte]].';
+    return {t:'Byte '+(el.idx+1)+' of '+NB+': <b>'+esc(charLabel(ch))+'</b> is stored as '+b, b:what};
+  }
+  if (L===3) { var tt = tokText(el.tok); return {t:tt[0], b:tt[1]+'</p><p class="pos">'+posText(el.tok)}; }
+  if (L===4) { var a = el.node; return {t:esc(nodeName(a)), b:nodeText(a)}; }
+  if (L===5) { var s = STEPS[el.idx], af = AFTER[s.c===0?'<module>':'greet'][s.off];
+    return {t:CODE_TITLE[s.c]+', step '+stepNo(el.idx)+': '+s.w, b:stepText(el.idx, state.run)+(af && af!==s.op ? '</p><p><span class="became">After the run, this step had been rewritten into <b>'+af+'</b>.</span>'+ltag('observed') : '')}; }
+  if (L===6) return {t:'How the interpreter does '+CODE_IN[STEPS[el.idx].c]+'’s step '+stepNo(el.idx), b:(STEPS[el.idx].hk ? 'A housekeeping step: short and simple. ' : '')+'Each sentence on the left matches the real line of [[clang|C]] on its right. If this step ran more than once, pick a run above: a busy step can run different C code the second time.'};
+  if (L===7) { var hs7 = state.run>=0 ? handlersOf(state.run) : [];
+    return {t:'The real machine code for '+CODE_IN[STEPS[el.idx].c]+'’s step '+stepNo(el.idx)+': '+STEPS[el.idx].w.toLowerCase(), b:'Whenever any Python program reaches this kind of step, your CPU runs a handler like this. '+(hs7.length ? 'On this run, '+hs7.map(function(x){ return '<b>'+x.n+'</b> instructions of '+x.op; }).join(', then ')+' ran.' : state.run>=0 ? 'On this run, its check ran inside the step before.' : 'This step never ran.')+' Each is one small action, like moving a number or comparing two numbers.'}; }
+  if (L===8) { var st = osStages(state.outLine)[el.idx]; return {t:st.w, b:st.say}; }
+  var c9 = OUTL[state.outLine][el.idx];
+  if (c9===' ') return {t:'A space lights no pixels', b:'The terminal still gives the space a full cell, as wide as every other character, but leaves it dark. <span id="pxStat"></span>'};
+  return {t:'How <b>'+esc(c9)+'</b> becomes pixels', b:'The terminal looks up <b>'+esc(c9)+'</b> in its [[font|font]]. The font stores each character as an <b>outline</b>, the blue line. The outline is laid over a grid of [[pixel|pixels]]: pixels fully inside it are lit, and pixels it only partly covers get a shade of gray. That softening is called [[aa|anti-aliasing]]. <span id="pxStat"></span>'};
+}
+
+var TABS = [['does','What it does'],['see','What you’ll see'],['read','How to read it']];
+function tryHtml(L){
+  var t = TRY[L];
+  var cps = L===6 ? cpairsFor(state.run) : null;
+  var sum = t.cmd ? '<code>'+esc(t.cmd)+'</code>' : '<span style="font-weight:400;color:var(--ink2)">'+(t.link ? 'check the C source' : 'see the subpixels')+'</span>';
+  var h = '<details class="try" id="tryBox"'+(state.tryOpen?' open':'')+'><summary>Try it yourself'+sum+'</summary><div class="try-body"><p>'+T(t.intro)+(t.link ? ' '+cps.map(function(cp){ var r = cRange(cp); return '<a href="'+cLink(cp)+'" target="_blank" rel="noopener">Python/bytecodes.c, '+cLines(r.a, r.b)+'</a>'; }).join(' · ') : '')+'</p>';
+  if (t.cmd) {
+    var tab = state.tryTab;
+    var panel = tab==='does'
+      ? '<dl class="parts-list">'+t.parts.map(function(p){ return '<div><dt><code>'+esc(p[0])+'</code></dt><dd>'+p[1]+'</dd></div>'; }).join('')+'</dl>'
+      : tab==='see'
+      ? '<pre class="out">'+esc(t.out)+'</pre><p class="fine" style="margin-top:8px">Captured using CPython 3.14.2 on Linux (Ubuntu under WSL2, x86-64), with the output going to a terminal.</p>'
+      : (t.rows ? '<table class="rtable"><tbody>'+t.rows.map(function(r){ return '<tr><td>'+esc(r[0])+'</td><td>'+T(r[1])+'</td></tr>'; }).join('')+'</tbody></table>' : '')
+        + (t.read ? '<ul class="read" style="margin-top:10px">'+t.read.map(function(r){ return '<li>'+T(r)+'</li>'; }).join('')+'</ul>' : '');
+    h += '<div class="cmd"><code>'+esc(t.cmd)+'</code><button type="button" data-copy="'+esc(t.cmd)+'">Copy</button></div>'
+      + '<div class="tabs" role="tablist" aria-label="About this command">'
+      + TABS.map(function(x){ return '<button type="button" class="tab" role="tab" id="tab-'+x[0]+'" aria-controls="tabpanel" aria-selected="'+(tab===x[0])+'" tabindex="'+(tab===x[0]?'0':'-1')+'" data-tab="'+x[0]+'">'+x[1]+'</button>'; }).join('')
+      + '</div><div class="tabpanel" id="tabpanel" role="tabpanel" aria-labelledby="tab-'+tab+'">'+panel+'</div>';
+  }
+  return h + '</div></details>';
+}
+
+function staleHtml(){
+  if (state.draft===null || state.draft===SRC) return '';
+  return '<div class="stale"><span><b>Out of date.</b> You edited the program, so what you see here no longer matches it. In the app, clicking Run analyzes your version. This prototype carries only the analysis of the Example, greet.py.</span><span><button type="button" class="btn btn-sm" data-restore>Put the Example back</button></span></div>';
+}
+function renderView(){
+  var L = state.level, el = state.el, lv = LEVELS[L], ex = explain(el);
+  var head = '<div class="lvl-head"><div><div class="lvl-num">Level '+L+' of 9</div><h1>'+lv.title+'</h1></div><div class="badges">'
+    + chip(lv.honesty)+'</div></div>';
+  var crossed = L===6 ? '<p class="crossed">You crossed the interpreter handoff. From here on, you are looking at Python’s program, not yours.</p>' : '';
+  var bridge = '<p class="bridge">'+T(BRIDGE[L])+'</p>';
+  var vis = '<section class="visual frame-'+lv.honesty+'" aria-label="'+lv.title+'">'+visual(L)+'</section>';
+  var nextBtn = L<9 ? '<button type="button" class="btn btn-primary" data-zoom="in">Zoom in: '+LEVELS[L+1].title+'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"></path></svg></button>' : '';
+  var backBtn = L>1 ? '<button type="button" class="btn" data-zoom="out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>Back: '+LEVELS[L-1].title+'</button>' : '';
+  var detail = '<section class="detail" aria-live="polite"><h2>'+ex.t+'</h2><p>'+T(ex.b)+'</p><div class="actions">'+nextBtn+backBtn+'</div></section>';
+  var handoff = L===5 ? '<div class="detail"><p><b>Next is the interpreter handoff.</b> By default, CPython doesn’t turn your code into CPU instructions. Below this level you see the program that follows these steps: pick any step, and any run of it.</p></div>' : '';
+  document.getElementById('view').innerHTML = staleHtml() + head + crossed + bridge + vis + detail + handoff + tryHtml(L);
+  document.getElementById('stage').setAttribute('data-level', L);
+  if (L===9) drawPixels();
+}
+function renderAll(){ renderSide(); renderGauge(); renderView(); }
+
+/* ---------- Pixels: real rasterization by this browser ---------- */
+function parseHex(s){ s = s.trim(); if (s.charAt(0)!=='#' || s.length<7) return [128,128,128]; return [parseInt(s.slice(1,3),16), parseInt(s.slice(3,5),16), parseInt(s.slice(5,7),16)]; }
+var pxToken = 0;
+function drawPixels(){
+  var OUT = OUTL[state.outLine];
+  var my = ++pxToken, size = 20, fam = '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace', font = '400 '+size+'px '+fam;
+  var ready = (document.fonts && document.fonts.load) ? document.fonts.load(font, OUT).catch(function(){}) : Promise.resolve();
+  ready.then(function(){
+    if (my!==pxToken || state.level!==9) return;
+    var line = document.getElementById('pxLine'), big = document.getElementById('pxBig'); if (!line || !big) return;
+    var cs = getComputedStyle(document.documentElement);
+    var ink = parseHex(cs.getPropertyValue('--ink')), surf = parseHex(cs.getPropertyValue('--surface'));
+    var rule = cs.getPropertyValue('--rule').trim(), acc = cs.getPropertyValue('--accent').trim(), inkS = cs.getPropertyValue('--ink').trim();
+    var off = document.createElement('canvas'), o = off.getContext('2d', {willReadFrequently:true});
+    o.font = font; var adv = o.measureText('M').width, pad = 2, H = 28, base = 21, W = Math.ceil(pad*2 + adv*OUT.length);
+    off.width = W; off.height = H; o.font = font; o.fillStyle = '#000'; o.textBaseline = 'alphabetic'; o.fillText(OUT, pad, base);
+    var data = o.getImageData(0,0,W,H).data;
+    var i = state.el.idx, x0 = Math.floor(pad + adv*i), x1 = Math.ceil(pad + adv*(i+1)), w = x1 - x0;
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    var avail = Math.max(140, (big.parentElement.clientWidth || 300) - 220);
+    var cell = Math.max(8, Math.min(18, Math.floor(Math.min(avail/w, 480/H))));
+    big.width = Math.round(w*cell*dpr); big.height = Math.round(H*cell*dpr); big.style.width = (w*cell)+'px'; big.style.height = (H*cell)+'px';
+    var b = big.getContext('2d'); b.setTransform(dpr,0,0,dpr,0,0);
+    var full = 0, part = 0;
+    for (var y=0;y<H;y++) for (var x=0;x<w;x++) {
+      var al = data[((y*W)+(x0+x))*4+3], t = al/255;
+      if (al>=200) full++; else if (al>0) part++;
+      b.fillStyle = 'rgb('+Math.round(surf[0]+(ink[0]-surf[0])*t)+','+Math.round(surf[1]+(ink[1]-surf[1])*t)+','+Math.round(surf[2]+(ink[2]-surf[2])*t)+')';
+      b.fillRect(x*cell, y*cell, cell, cell);
+    }
+    b.strokeStyle = rule; b.lineWidth = 1; b.beginPath();
+    for (x=0;x<=w;x++){ b.moveTo(x*cell+0.5,0); b.lineTo(x*cell+0.5,H*cell); }
+    for (y=0;y<=H;y++){ b.moveTo(0,y*cell+0.5); b.lineTo(w*cell,y*cell+0.5); }
+    b.stroke();
+    if (OUT[i]!==' ') { b.font = '400 '+(size*cell)+'px '+fam; b.textBaseline = 'alphabetic'; b.strokeStyle = acc; b.lineWidth = 2; b.strokeText(OUT[i], (pad + adv*i - x0)*cell, base*cell); }
+    line.width = Math.round(W*dpr); line.height = Math.round(H*dpr); line.style.width = W+'px'; line.style.height = H+'px';
+    var l = line.getContext('2d'); l.setTransform(dpr,0,0,dpr,0,0); l.clearRect(0,0,W,H);
+    l.font = font; l.fillStyle = inkS; l.textBaseline = 'alphabetic'; l.fillText(OUT, pad, base);
+    l.strokeStyle = acc; l.lineWidth = 1; l.strokeRect(x0+0.5, 0.5, w-1, H-1);
+    var mid = 'rgb('+Math.round((surf[0]+ink[0])/2)+','+Math.round((surf[1]+ink[1])/2)+','+Math.round((surf[2]+ink[2])/2)+')';
+    document.getElementById('pxStats').innerHTML =
+      '<div>One character cell: <b>'+w+' × '+H+'</b> pixels</div>'
+      + '<div><span class="sw" style="background:'+inkS+'"></span><b>'+full+'</b> fully lit</div>'
+      + '<div><span class="sw" style="background:'+mid+'"></span><b>'+part+'</b> partly lit</div>'
+      + '<div><span class="sw" style="background:rgb('+surf.join(',')+')"></span><b>'+(w*H-full-part)+'</b> dark</div>'
+      + '<div><span class="olsw"></span>the font’s outline</div>'
+      + '<div>Each square is one pixel, drawn by your browser just now.'+ltag('observed')+'</div>';
+    var s = screenPx();
+    document.getElementById('screenFact').innerHTML = 'Your screen has <b>'+s.w+' × '+s.h+'</b> pixels: about <b>'+s.mp.toFixed(1)+' million</b>. Most displays create colors using red, green and blue subpixels<span class="rgb" aria-hidden="true"><i style="background:#E5484D"></i><i style="background:#30A46C"></i><i style="background:#3E63DD"></i></span>. The screen redraws the whole picture many times a second, typically 60.'+ltag('observed');
+    var ps = document.getElementById('pxStat');
+    if (ps) ps.textContent = OUT[i]===' ' ? 'All '+(w*H)+' pixels of its cell stay dark.' : 'Here, '+full+' pixels are fully lit and '+part+' are partly lit.';
+  });
+}
+
+/* ---------- Navigation ---------- */
+var reduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : {matches:false};
+var busy = false, skipHash = false, playing = false, playTimer = null;
+function stopPlay(){ playing = false; clearTimeout(playTimer); }
+function setHash(L){ var h = '#level-'+L; if (location.hash!==h) { skipHash = true; try { location.hash = h; } catch(e){ skipHash = false; } } }
+function go(L, el, how, opts){
+  if (busy || L<1 || L>9) return;
+  stopPlay(); opts = opts || {};
+  var from = state.el, fromLevel = state.level;
+  var target = el || bestMatch(state.el, L), view = document.getElementById('view'), origin = view.querySelector('.el.sel');
+  function commit(){
+    if (L>=8 && fromLevel>=5 && fromLevel<=7) state.outLine = outLineFromRun(state.run);
+    state.level = L; state.el = L===9 && !el ? E['px-'+state.outLine+'-0'] : target; syncRun(); renderAll();
+    if (!opts.noHash) setHash(L);
+    if (view.getBoundingClientRect().top < 0) view.scrollIntoView({block:'start'});
+    if (opts.focus) { var s = view.querySelector('[data-el="'+state.el.id+'"]'); if (s) s.focus({preventScroll:true}); }
+  }
+  if (how==='none' || !view.animate) { commit(); return; }
+  busy = true;
+  if (reduce.matches) {
+    view.animate([{opacity:1},{opacity:0}], {duration:110}).onfinish = function(){ commit(); view.animate([{opacity:0},{opacity:1}], {duration:150}).onfinish = function(){ busy = false; }; };
+    return;
+  }
+  var zin = how==='in';
+  if (origin) { var r = origin.getBoundingClientRect(), v = view.getBoundingClientRect(); view.style.transformOrigin = (r.left+r.width/2-v.left)+'px '+(r.top+r.height/2-v.top)+'px'; }
+  else view.style.transformOrigin = '50% 20%';
+  view.animate([{opacity:1, transform:'scale(1)'},{opacity:0, transform: zin?'scale(1.35)':'scale(0.9)'}], {duration:120, easing:'cubic-bezier(.4,0,1,1)'}).onfinish = function(){
+    commit(); view.style.transformOrigin = '50% 0';
+    view.animate([{opacity:0, transform: zin?'scale(0.95)':'scale(1.05)'},{opacity:1, transform:'scale(1)'}], {duration:170, easing:'cubic-bezier(0,0,.2,1)'}).onfinish = function(){ busy = false; };
+  };
+}
+function zoomIn(focus){ if (state.level<9) go(state.level+1, null, 'in', {focus:focus}); }
+function zoomOut(focus){ if (state.level>1) go(state.level-1, null, 'out', {focus:focus}); }
+function select(id, focus){
+  state.el = E[id]; syncRun(); renderSide(); renderView();
+  if (focus) { var s = document.querySelector('#view [data-el="'+id+'"]'); if (s) s.focus({preventScroll:true}); }
+}
+var PREFIX = {5:'bc-', 6:'c-', 7:'cpu-'};
+function setRun(r){
+  if (r<0 || r>=NRUN) return false;
+  state.run = r; state.el = E[PREFIX[state.level]+TL[r].s]; renderSide(); renderView(); return true;
+}
+function listFor(L){ return L===9 ? pxList() : LV[L]; }
+function step(delta){
+  if (state.level>=5 && state.level<=7 && state.run>=0) return setRun(state.run+delta);
+  var list = listFor(state.level), i = list.indexOf(state.el), j = Math.max(0, Math.min(list.length-1, i+delta));
+  if (j!==i) select(list[j].id, false);
+  return j!==i;
+}
+function play(){
+  if (playing) { stopPlay(); renderView(); return; }
+  playing = true;
+  if (state.run>=NRUN-1) setRun(0); else renderView();
+  (function tick(){
+    playTimer = setTimeout(function(){
+      if (!playing || state.level!==5) { stopPlay(); return; }
+      if (!step(1) || state.run===NRUN-1) { stopPlay(); renderView(); return; }
+      tick();
+    }, reduce.matches ? 1300 : 950);
+  })();
+}
+
+document.addEventListener('click', function(e){
+  var t = e.target.closest('button'); if (!t || t.disabled) return;
+  var dlg = document.getElementById('dlg');
+  if (t.hasAttribute('data-close')) { dlg.close(); return; }
+  if (t.hasAttribute('data-dlgback')) { dlgHistory.pop(); var prev = dlgHistory[dlgHistory.length-1]; if (prev==='__index') openIndex(); else openCard(prev, false); return; }
+  if (t.hasAttribute('data-index')) { openIndex(); return; }
+  if (t.hasAttribute('data-label')) { if (!dlg.open) dlgHistory = []; openCard('labels'); return; }
+  if (t.hasAttribute('data-tab')) { setTab(t.getAttribute('data-tab')); return; }
+  if (t.hasAttribute('data-term')) { if (!dlg.open) dlgHistory = []; openCard(t.getAttribute('data-term')); return; }
+  if (t.id==='conceptsBtn') { openIndex(); return; }
+  if (t.hasAttribute('data-edit')) { state.editing = true; if (state.draft===null) state.draft = SRC; renderSide(); var ta = document.getElementById('editArea'); if (ta) ta.focus(); return; }
+  if (t.hasAttribute('data-cancel')) { state.editing = false; renderSide(); renderView(); return; }
+  if (t.hasAttribute('data-run')) { var ta2 = document.getElementById('editArea'); if (ta2) state.draft = ta2.value; state.editing = false; renderAll(); return; }
+  if (t.hasAttribute('data-restore')) { state.draft = null; state.editing = false; renderAll(); return; }
+  if (t.hasAttribute('data-run-of')) { stopPlay(); setRun(+t.getAttribute('data-run-of')); return; }
+  if (t.hasAttribute('data-outline')) { state.outLine = +t.getAttribute('data-outline'); state.el = state.level===9 ? E['px-'+state.outLine+'-0'] : state.el; renderSide(); renderView(); return; }
+  if (t.hasAttribute('data-el')) { stopPlay(); select(t.getAttribute('data-el'), true); }
+  else if (t.hasAttribute('data-go')) { var L = +t.getAttribute('data-go'); go(L, null, L>state.level?'in':L<state.level?'out':'none'); }
+  else if (t.hasAttribute('data-zoom')) { if (t.getAttribute('data-zoom')==='in') zoomIn(false); else zoomOut(false); }
+  else if (t.hasAttribute('data-step')) { stopPlay(); step(+t.getAttribute('data-step')); var nb = document.querySelector('[data-step="'+t.getAttribute('data-step')+'"]'); if (nb && !nb.disabled) nb.focus({preventScroll:true}); }
+  else if (t.hasAttribute('data-play')) { play(); }
+  else if (t.hasAttribute('data-copy')) {
+    var txt = t.getAttribute('data-copy');
+    var done = function(){ t.textContent = 'Copied'; setTimeout(function(){ t.textContent = 'Copy'; }, 1400); };
+    var fallback = function(){ var c = t.previousElementSibling, r = document.createRange(); r.selectNodeContents(c); var s = getSelection(); s.removeAllRanges(); s.addRange(r); t.textContent = 'Selected'; setTimeout(function(){ t.textContent = 'Copy'; }, 1400); };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch(err) { fallback(); }
+  }
+});
+document.addEventListener('input', function(e){
+  if (e.target && e.target.id==='editArea') {
+    var was = state.draft!==null && state.draft!==SRC;
+    state.draft = e.target.value;
+    var now = state.draft!==SRC;
+    if (was!==now) { renderView(); var f = document.querySelector('#codePane .fine'); if (f) f.textContent = now ? 'Edited. The zoom view on the right is now out of date.' : 'Type your changes, then click Run. Nothing is analyzed while you type.'; }
+  }
+});
+document.getElementById('dlg').addEventListener('click', function(e){ if (e.target===this) this.close(); });
+
+function setTab(k){
+  state.tryTab = k;
+  state.tryOpen = true;
+  var sec = document.querySelector('#view .try');
+  if (sec) { sec.outerHTML = tryHtml(state.level); var b = document.getElementById('tab-'+k); if (b) b.focus({preventScroll:true}); }
+}
+document.addEventListener('keydown', function(e){
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  if (document.getElementById('dlg').open) return;
+  var tg = e.target, tag = tg && tg.tagName;
+  if (tg && tg.getAttribute && tg.getAttribute('role')==='tab' && (e.key==='ArrowRight' || e.key==='ArrowLeft')) {
+    e.preventDefault();
+    var ks = TABS.map(function(x){ return x[0]; }), i = ks.indexOf(state.tryTab);
+    setTab(ks[(i + (e.key==='ArrowRight' ? 1 : ks.length-1)) % ks.length]);
+    return;
+  }
+  if (tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT' || (tg && tg.isContentEditable)) return;
+  if (e.key==='ArrowRight') { e.preventDefault(); stopPlay(); step(1); var s1 = document.querySelector('#view .el.sel'); if (s1) s1.focus({preventScroll:true}); }
+  else if (e.key==='ArrowLeft') { e.preventDefault(); stopPlay(); step(-1); var s2 = document.querySelector('#view .el.sel'); if (s2) s2.focus({preventScroll:true}); }
+  else if (e.key==='ArrowDown') { e.preventDefault(); zoomIn(true); }
+  else if (e.key==='ArrowUp') { e.preventDefault(); zoomOut(true); }
+});
+document.addEventListener('toggle', function(e){ if (e.target && e.target.id==='tryBox') state.tryOpen = e.target.open; }, true);
+window.addEventListener('hashchange', function(){
+  if (skipHash) { skipHash = false; return; }
+  var mm = /^#level-([1-9])$/.exec(location.hash);
+  if (mm && +mm[1]!==state.level) go(+mm[1], null, +mm[1]>state.level?'in':'out', {noHash:true});
+});
+
+/* ---------- Theme ---------- */
+var root = document.documentElement, themeBtn = document.getElementById('themeBtn');
+var darkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : {matches:false};
+function isDark(){ var d = root.getAttribute('data-theme'); return d ? d==='dark' : darkMQ.matches; }
+function paintThemeBtn(){
+  var dark = isDark();
+  themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  themeBtn.innerHTML = dark
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>';
+}
+try { var th = localStorage.getItem('eti-theme'); if (th==='dark' || th==='light') root.setAttribute('data-theme', th); } catch(e) {}
+themeBtn.addEventListener('click', function(){
+  var next = isDark() ? 'light' : 'dark'; root.setAttribute('data-theme', next);
+  try { localStorage.setItem('eti-theme', next); } catch(e) {}
+  paintThemeBtn(); if (state.level===9) drawPixels();
+});
+if (darkMQ.addEventListener) darkMQ.addEventListener('change', function(){ paintThemeBtn(); if (state.level===9) drawPixels(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if (state.level===9) drawPixels(); });
+var rsz; window.addEventListener('resize', function(){ clearTimeout(rsz); rsz = setTimeout(function(){ if (state.level===9) drawPixels(); }, 150); });
+try { if (window.matchMedia('(max-width: 920px)').matches) document.getElementById('mapDetails').removeAttribute('open'); } catch(e) {}
+
+paintThemeBtn();
+renderAll();
+})();
+</script>

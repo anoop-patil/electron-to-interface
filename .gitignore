@@ -1,0 +1,32 @@
+# Secrets: these live in GitHub Actions secrets, never in the repo
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+
+# Local tool settings
+.claude/settings.local.json
+.wrangler/
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+test-results/
+playwright-report/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

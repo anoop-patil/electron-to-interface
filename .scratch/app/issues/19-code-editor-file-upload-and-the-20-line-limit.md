@@ -1,0 +1,13 @@
+# 19: Code editor, file upload and the 20-line limit
+
+**What to build:** The learner writes their Program in a proper code editor, or uploads a file, and the app holds it to the v1 limits with clear messages.
+
+**Blocked by:** 02: Zoom shell: depth gauge, navigation, URLs and themes
+
+**Status:** ready-for-agent
+
+- [ ] CodeMirror 6 replaces the skeleton's text box, and works on phones.
+- [ ] File upload loads a `.py` file into the editor. It doesn't Run by itself.
+- [ ] Any Python feature is allowed. Over 20 lines, a clear message appears and Run stays off until the Program fits.
+- [ ] Importing a package outside the standard library gives a friendly message explaining that only the standard library is available.
+- [ ] Nothing is analyzed while the learner types. Editing after a Run marks the zoom view as out of date, with a prompt to Run again.

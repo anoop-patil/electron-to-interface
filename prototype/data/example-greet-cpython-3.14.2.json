@@ -1,0 +1,1784 @@
+{
+ "python": "3.14.2 (main, Dec  5 2025, 20:23:00) [Clang 21.1.4 ]",
+ "file": "greet.py",
+ "source": "def greet(name):\n    print(\"Hello,\", name)\n\nfor person in [\"Ada\", \"Grace\"]:\n    greet(person)\n",
+ "bytes": [
+  100,
+  101,
+  102,
+  32,
+  103,
+  114,
+  101,
+  101,
+  116,
+  40,
+  110,
+  97,
+  109,
+  101,
+  41,
+  58,
+  10,
+  32,
+  32,
+  32,
+  32,
+  112,
+  114,
+  105,
+  110,
+  116,
+  40,
+  34,
+  72,
+  101,
+  108,
+  108,
+  111,
+  44,
+  34,
+  44,
+  32,
+  110,
+  97,
+  109,
+  101,
+  41,
+  10,
+  10,
+  102,
+  111,
+  114,
+  32,
+  112,
+  101,
+  114,
+  115,
+  111,
+  110,
+  32,
+  105,
+  110,
+  32,
+  91,
+  34,
+  65,
+  100,
+  97,
+  34,
+  44,
+  32,
+  34,
+  71,
+  114,
+  97,
+  99,
+  101,
+  34,
+  93,
+  58,
+  10,
+  32,
+  32,
+  32,
+  32,
+  103,
+  114,
+  101,
+  101,
+  116,
+  40,
+  112,
+  101,
+  114,
+  115,
+  111,
+  110,
+  41,
+  10
+ ],
+ "tokens": [
+  {
+   "type": "ENCODING",
+   "exact": "ENCODING",
+   "text": "utf-8",
+   "start": [
+    0,
+    0
+   ],
+   "end": [
+    0,
+    0
+   ],
+   "span": null
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "def",
+   "start": [
+    1,
+    0
+   ],
+   "end": [
+    1,
+    3
+   ],
+   "span": [
+    0,
+    3
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "greet",
+   "start": [
+    1,
+    4
+   ],
+   "end": [
+    1,
+    9
+   ],
+   "span": [
+    4,
+    9
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "LPAR",
+   "text": "(",
+   "start": [
+    1,
+    9
+   ],
+   "end": [
+    1,
+    10
+   ],
+   "span": [
+    9,
+    10
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "name",
+   "start": [
+    1,
+    10
+   ],
+   "end": [
+    1,
+    14
+   ],
+   "span": [
+    10,
+    14
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "RPAR",
+   "text": ")",
+   "start": [
+    1,
+    14
+   ],
+   "end": [
+    1,
+    15
+   ],
+   "span": [
+    14,
+    15
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "COLON",
+   "text": ":",
+   "start": [
+    1,
+    15
+   ],
+   "end": [
+    1,
+    16
+   ],
+   "span": [
+    15,
+    16
+   ]
+  },
+  {
+   "type": "NEWLINE",
+   "exact": "NEWLINE",
+   "text": "\n",
+   "start": [
+    1,
+    16
+   ],
+   "end": [
+    1,
+    17
+   ],
+   "span": [
+    16,
+    17
+   ]
+  },
+  {
+   "type": "INDENT",
+   "exact": "INDENT",
+   "text": "    ",
+   "start": [
+    2,
+    0
+   ],
+   "end": [
+    2,
+    4
+   ],
+   "span": [
+    17,
+    21
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "print",
+   "start": [
+    2,
+    4
+   ],
+   "end": [
+    2,
+    9
+   ],
+   "span": [
+    21,
+    26
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "LPAR",
+   "text": "(",
+   "start": [
+    2,
+    9
+   ],
+   "end": [
+    2,
+    10
+   ],
+   "span": [
+    26,
+    27
+   ]
+  },
+  {
+   "type": "STRING",
+   "exact": "STRING",
+   "text": "\"Hello,\"",
+   "start": [
+    2,
+    10
+   ],
+   "end": [
+    2,
+    18
+   ],
+   "span": [
+    27,
+    35
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "COMMA",
+   "text": ",",
+   "start": [
+    2,
+    18
+   ],
+   "end": [
+    2,
+    19
+   ],
+   "span": [
+    35,
+    36
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "name",
+   "start": [
+    2,
+    20
+   ],
+   "end": [
+    2,
+    24
+   ],
+   "span": [
+    37,
+    41
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "RPAR",
+   "text": ")",
+   "start": [
+    2,
+    24
+   ],
+   "end": [
+    2,
+    25
+   ],
+   "span": [
+    41,
+    42
+   ]
+  },
+  {
+   "type": "NEWLINE",
+   "exact": "NEWLINE",
+   "text": "\n",
+   "start": [
+    2,
+    25
+   ],
+   "end": [
+    2,
+    26
+   ],
+   "span": [
+    42,
+    43
+   ]
+  },
+  {
+   "type": "NL",
+   "exact": "NL",
+   "text": "\n",
+   "start": [
+    3,
+    0
+   ],
+   "end": [
+    3,
+    1
+   ],
+   "span": [
+    43,
+    44
+   ]
+  },
+  {
+   "type": "DEDENT",
+   "exact": "DEDENT",
+   "text": "",
+   "start": [
+    4,
+    0
+   ],
+   "end": [
+    4,
+    0
+   ],
+   "span": [
+    44,
+    44
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "for",
+   "start": [
+    4,
+    0
+   ],
+   "end": [
+    4,
+    3
+   ],
+   "span": [
+    44,
+    47
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "person",
+   "start": [
+    4,
+    4
+   ],
+   "end": [
+    4,
+    10
+   ],
+   "span": [
+    48,
+    54
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "in",
+   "start": [
+    4,
+    11
+   ],
+   "end": [
+    4,
+    13
+   ],
+   "span": [
+    55,
+    57
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "LSQB",
+   "text": "[",
+   "start": [
+    4,
+    14
+   ],
+   "end": [
+    4,
+    15
+   ],
+   "span": [
+    58,
+    59
+   ]
+  },
+  {
+   "type": "STRING",
+   "exact": "STRING",
+   "text": "\"Ada\"",
+   "start": [
+    4,
+    15
+   ],
+   "end": [
+    4,
+    20
+   ],
+   "span": [
+    59,
+    64
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "COMMA",
+   "text": ",",
+   "start": [
+    4,
+    20
+   ],
+   "end": [
+    4,
+    21
+   ],
+   "span": [
+    64,
+    65
+   ]
+  },
+  {
+   "type": "STRING",
+   "exact": "STRING",
+   "text": "\"Grace\"",
+   "start": [
+    4,
+    22
+   ],
+   "end": [
+    4,
+    29
+   ],
+   "span": [
+    66,
+    73
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "RSQB",
+   "text": "]",
+   "start": [
+    4,
+    29
+   ],
+   "end": [
+    4,
+    30
+   ],
+   "span": [
+    73,
+    74
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "COLON",
+   "text": ":",
+   "start": [
+    4,
+    30
+   ],
+   "end": [
+    4,
+    31
+   ],
+   "span": [
+    74,
+    75
+   ]
+  },
+  {
+   "type": "NEWLINE",
+   "exact": "NEWLINE",
+   "text": "\n",
+   "start": [
+    4,
+    31
+   ],
+   "end": [
+    4,
+    32
+   ],
+   "span": [
+    75,
+    76
+   ]
+  },
+  {
+   "type": "INDENT",
+   "exact": "INDENT",
+   "text": "    ",
+   "start": [
+    5,
+    0
+   ],
+   "end": [
+    5,
+    4
+   ],
+   "span": [
+    76,
+    80
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "greet",
+   "start": [
+    5,
+    4
+   ],
+   "end": [
+    5,
+    9
+   ],
+   "span": [
+    80,
+    85
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "LPAR",
+   "text": "(",
+   "start": [
+    5,
+    9
+   ],
+   "end": [
+    5,
+    10
+   ],
+   "span": [
+    85,
+    86
+   ]
+  },
+  {
+   "type": "NAME",
+   "exact": "NAME",
+   "text": "person",
+   "start": [
+    5,
+    10
+   ],
+   "end": [
+    5,
+    16
+   ],
+   "span": [
+    86,
+    92
+   ]
+  },
+  {
+   "type": "OP",
+   "exact": "RPAR",
+   "text": ")",
+   "start": [
+    5,
+    16
+   ],
+   "end": [
+    5,
+    17
+   ],
+   "span": [
+    92,
+    93
+   ]
+  },
+  {
+   "type": "NEWLINE",
+   "exact": "NEWLINE",
+   "text": "\n",
+   "start": [
+    5,
+    17
+   ],
+   "end": [
+    5,
+    18
+   ],
+   "span": [
+    93,
+    94
+   ]
+  },
+  {
+   "type": "DEDENT",
+   "exact": "DEDENT",
+   "text": "",
+   "start": [
+    6,
+    0
+   ],
+   "end": [
+    6,
+    0
+   ],
+   "span": [
+    94,
+    94
+   ]
+  },
+  {
+   "type": "ENDMARKER",
+   "exact": "ENDMARKER",
+   "text": "",
+   "start": [
+    6,
+    0
+   ],
+   "end": [
+    6,
+    0
+   ],
+   "span": [
+    94,
+    94
+   ]
+  }
+ ],
+ "ast": [
+  {
+   "type": "Module",
+   "parent": null,
+   "field": null,
+   "kids": [
+    [
+     "body",
+     1
+    ],
+    [
+     "body",
+     9
+    ]
+   ],
+   "span": [
+    0,
+    94
+   ]
+  },
+  {
+   "type": "FunctionDef",
+   "parent": 0,
+   "field": "body",
+   "kids": [
+    [
+     "args",
+     2
+    ],
+    [
+     "body",
+     4
+    ]
+   ],
+   "span": [
+    0,
+    42
+   ],
+   "name": "greet"
+  },
+  {
+   "type": "arguments",
+   "parent": 1,
+   "field": "args",
+   "kids": [
+    [
+     "args",
+     3
+    ]
+   ],
+   "span": [
+    0,
+    94
+   ]
+  },
+  {
+   "type": "arg",
+   "parent": 2,
+   "field": "args",
+   "kids": [],
+   "span": [
+    10,
+    14
+   ],
+   "arg": "name"
+  },
+  {
+   "type": "Expr",
+   "parent": 1,
+   "field": "body",
+   "kids": [
+    [
+     "value",
+     5
+    ]
+   ],
+   "span": [
+    21,
+    42
+   ]
+  },
+  {
+   "type": "Call",
+   "parent": 4,
+   "field": "value",
+   "kids": [
+    [
+     "func",
+     6
+    ],
+    [
+     "args",
+     7
+    ],
+    [
+     "args",
+     8
+    ]
+   ],
+   "span": [
+    21,
+    42
+   ]
+  },
+  {
+   "type": "Name",
+   "parent": 5,
+   "field": "func",
+   "kids": [],
+   "span": [
+    21,
+    26
+   ],
+   "id": "print",
+   "ctx": "Load"
+  },
+  {
+   "type": "Constant",
+   "parent": 5,
+   "field": "args",
+   "kids": [],
+   "span": [
+    27,
+    35
+   ],
+   "value": "'Hello,'"
+  },
+  {
+   "type": "Name",
+   "parent": 5,
+   "field": "args",
+   "kids": [],
+   "span": [
+    37,
+    41
+   ],
+   "id": "name",
+   "ctx": "Load"
+  },
+  {
+   "type": "For",
+   "parent": 0,
+   "field": "body",
+   "kids": [
+    [
+     "target",
+     10
+    ],
+    [
+     "iter",
+     11
+    ],
+    [
+     "body",
+     14
+    ]
+   ],
+   "span": [
+    44,
+    93
+   ]
+  },
+  {
+   "type": "Name",
+   "parent": 9,
+   "field": "target",
+   "kids": [],
+   "span": [
+    48,
+    54
+   ],
+   "id": "person",
+   "ctx": "Store"
+  },
+  {
+   "type": "List",
+   "parent": 9,
+   "field": "iter",
+   "kids": [
+    [
+     "elts",
+     12
+    ],
+    [
+     "elts",
+     13
+    ]
+   ],
+   "span": [
+    58,
+    74
+   ],
+   "ctx": "Load"
+  },
+  {
+   "type": "Constant",
+   "parent": 11,
+   "field": "elts",
+   "kids": [],
+   "span": [
+    59,
+    64
+   ],
+   "value": "'Ada'"
+  },
+  {
+   "type": "Constant",
+   "parent": 11,
+   "field": "elts",
+   "kids": [],
+   "span": [
+    66,
+    73
+   ],
+   "value": "'Grace'"
+  },
+  {
+   "type": "Expr",
+   "parent": 9,
+   "field": "body",
+   "kids": [
+    [
+     "value",
+     15
+    ]
+   ],
+   "span": [
+    80,
+    93
+   ]
+  },
+  {
+   "type": "Call",
+   "parent": 14,
+   "field": "value",
+   "kids": [
+    [
+     "func",
+     16
+    ],
+    [
+     "args",
+     17
+    ]
+   ],
+   "span": [
+    80,
+    93
+   ]
+  },
+  {
+   "type": "Name",
+   "parent": 15,
+   "field": "func",
+   "kids": [],
+   "span": [
+    80,
+    85
+   ],
+   "id": "greet",
+   "ctx": "Load"
+  },
+  {
+   "type": "Name",
+   "parent": 15,
+   "field": "args",
+   "kids": [],
+   "span": [
+    86,
+    92
+   ],
+   "id": "person",
+   "ctx": "Load"
+  }
+ ],
+ "codes": [
+  {
+   "name": "<module>",
+   "qualname": "<module>",
+   "names": [
+    "greet",
+    "person"
+   ],
+   "consts": [
+    "<code greet>",
+    "None",
+    "('Ada', 'Grace')"
+   ],
+   "locals": [],
+   "size_code_bytes": 46,
+   "sizeof": 256,
+   "ins": [
+    {
+     "off": 0,
+     "op": "RESUME",
+     "arg": 0,
+     "argrepr": "",
+     "line": 0,
+     "span": null,
+     "caches": 0,
+     "bytes": [
+      128,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 2,
+     "op": "LOAD_CONST",
+     "arg": 0,
+     "argrepr": "<code object greet at 0x75be80276100, file \"greet.py\", line 1>",
+     "line": 1,
+     "span": [
+      0,
+      42
+     ],
+     "caches": 0,
+     "bytes": [
+      82,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 4,
+     "op": "MAKE_FUNCTION",
+     "arg": null,
+     "argrepr": "",
+     "line": 1,
+     "span": [
+      0,
+      42
+     ],
+     "caches": 0,
+     "bytes": [
+      23,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 6,
+     "op": "STORE_NAME",
+     "arg": 0,
+     "argrepr": "greet",
+     "line": 1,
+     "span": [
+      0,
+      42
+     ],
+     "caches": 0,
+     "bytes": [
+      116,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 8,
+     "op": "LOAD_CONST",
+     "arg": 2,
+     "argrepr": "('Ada', 'Grace')",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 0,
+     "bytes": [
+      82,
+      2
+     ],
+     "jump": null
+    },
+    {
+     "off": 10,
+     "op": "GET_ITER",
+     "arg": null,
+     "argrepr": "",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 0,
+     "bytes": [
+      16,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 12,
+     "op": "FOR_ITER",
+     "arg": 11,
+     "argrepr": "to L2",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 1,
+     "bytes": [
+      70,
+      11
+     ],
+     "jump": 38
+    },
+    {
+     "off": 16,
+     "op": "STORE_NAME",
+     "arg": 1,
+     "argrepr": "person",
+     "line": 4,
+     "span": [
+      48,
+      54
+     ],
+     "caches": 0,
+     "bytes": [
+      116,
+      1
+     ],
+     "jump": null
+    },
+    {
+     "off": 18,
+     "op": "LOAD_NAME",
+     "arg": 0,
+     "argrepr": "greet",
+     "line": 5,
+     "span": [
+      80,
+      85
+     ],
+     "caches": 0,
+     "bytes": [
+      93,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 20,
+     "op": "PUSH_NULL",
+     "arg": null,
+     "argrepr": "",
+     "line": 5,
+     "span": [
+      80,
+      85
+     ],
+     "caches": 0,
+     "bytes": [
+      33,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 22,
+     "op": "LOAD_NAME",
+     "arg": 1,
+     "argrepr": "person",
+     "line": 5,
+     "span": [
+      86,
+      92
+     ],
+     "caches": 0,
+     "bytes": [
+      93,
+      1
+     ],
+     "jump": null
+    },
+    {
+     "off": 24,
+     "op": "CALL",
+     "arg": 1,
+     "argrepr": "",
+     "line": 5,
+     "span": [
+      80,
+      93
+     ],
+     "caches": 3,
+     "bytes": [
+      52,
+      1
+     ],
+     "jump": null
+    },
+    {
+     "off": 32,
+     "op": "POP_TOP",
+     "arg": null,
+     "argrepr": "",
+     "line": 5,
+     "span": [
+      80,
+      93
+     ],
+     "caches": 0,
+     "bytes": [
+      31,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 34,
+     "op": "JUMP_BACKWARD",
+     "arg": 13,
+     "argrepr": "to L1",
+     "line": 5,
+     "span": [
+      80,
+      93
+     ],
+     "caches": 1,
+     "bytes": [
+      75,
+      13
+     ],
+     "jump": 12
+    },
+    {
+     "off": 38,
+     "op": "END_FOR",
+     "arg": null,
+     "argrepr": "",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 0,
+     "bytes": [
+      9,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 40,
+     "op": "POP_ITER",
+     "arg": null,
+     "argrepr": "",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 0,
+     "bytes": [
+      30,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 42,
+     "op": "LOAD_CONST",
+     "arg": 1,
+     "argrepr": "None",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 0,
+     "bytes": [
+      82,
+      1
+     ],
+     "jump": null
+    },
+    {
+     "off": 44,
+     "op": "RETURN_VALUE",
+     "arg": null,
+     "argrepr": "",
+     "line": 4,
+     "span": [
+      58,
+      74
+     ],
+     "caches": 0,
+     "bytes": [
+      35,
+      0
+     ],
+     "jump": null
+    }
+   ]
+  },
+  {
+   "name": "greet",
+   "qualname": "greet",
+   "names": [
+    "print"
+   ],
+   "consts": [
+    "'Hello,'",
+    "None"
+   ],
+   "locals": [
+    "name"
+   ],
+   "size_code_bytes": 30,
+   "sizeof": 240,
+   "ins": [
+    {
+     "off": 0,
+     "op": "RESUME",
+     "arg": 0,
+     "argrepr": "",
+     "line": 1,
+     "span": [
+      0,
+      0
+     ],
+     "caches": 0,
+     "bytes": [
+      128,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 2,
+     "op": "LOAD_GLOBAL",
+     "arg": 1,
+     "argrepr": "print + NULL",
+     "line": 2,
+     "span": [
+      21,
+      26
+     ],
+     "caches": 4,
+     "bytes": [
+      92,
+      1
+     ],
+     "jump": null
+    },
+    {
+     "off": 12,
+     "op": "LOAD_CONST",
+     "arg": 0,
+     "argrepr": "'Hello,'",
+     "line": 2,
+     "span": [
+      27,
+      35
+     ],
+     "caches": 0,
+     "bytes": [
+      82,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 14,
+     "op": "LOAD_FAST_BORROW",
+     "arg": 0,
+     "argrepr": "name",
+     "line": 2,
+     "span": [
+      37,
+      41
+     ],
+     "caches": 0,
+     "bytes": [
+      86,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 16,
+     "op": "CALL",
+     "arg": 2,
+     "argrepr": "",
+     "line": 2,
+     "span": [
+      21,
+      42
+     ],
+     "caches": 3,
+     "bytes": [
+      52,
+      2
+     ],
+     "jump": null
+    },
+    {
+     "off": 24,
+     "op": "POP_TOP",
+     "arg": null,
+     "argrepr": "",
+     "line": 2,
+     "span": [
+      21,
+      42
+     ],
+     "caches": 0,
+     "bytes": [
+      31,
+      0
+     ],
+     "jump": null
+    },
+    {
+     "off": 26,
+     "op": "LOAD_CONST",
+     "arg": 1,
+     "argrepr": "None",
+     "line": 2,
+     "span": [
+      21,
+      42
+     ],
+     "caches": 0,
+     "bytes": [
+      82,
+      1
+     ],
+     "jump": null
+    },
+    {
+     "off": 28,
+     "op": "RETURN_VALUE",
+     "arg": null,
+     "argrepr": "",
+     "line": 2,
+     "span": [
+      21,
+      42
+     ],
+     "caches": 0,
+     "bytes": [
+      35,
+      0
+     ],
+     "jump": null
+    }
+   ]
+  }
+ ],
+ "ran": [
+  {
+   "code": "<module>",
+   "off": 2
+  },
+  {
+   "code": "<module>",
+   "off": 4
+  },
+  {
+   "code": "<module>",
+   "off": 6
+  },
+  {
+   "code": "<module>",
+   "off": 8
+  },
+  {
+   "code": "<module>",
+   "off": 10
+  },
+  {
+   "code": "<module>",
+   "off": 12
+  },
+  {
+   "code": "<module>",
+   "off": 16
+  },
+  {
+   "code": "<module>",
+   "off": 18
+  },
+  {
+   "code": "<module>",
+   "off": 20
+  },
+  {
+   "code": "<module>",
+   "off": 22
+  },
+  {
+   "code": "<module>",
+   "off": 24
+  },
+  {
+   "code": "greet",
+   "off": 2
+  },
+  {
+   "code": "greet",
+   "off": 12
+  },
+  {
+   "code": "greet",
+   "off": 14
+  },
+  {
+   "code": "greet",
+   "off": 16,
+   "printed": "Hello, Ada\n"
+  },
+  {
+   "code": "greet",
+   "off": 24
+  },
+  {
+   "code": "greet",
+   "off": 26
+  },
+  {
+   "code": "greet",
+   "off": 28
+  },
+  {
+   "code": "<module>",
+   "off": 32
+  },
+  {
+   "code": "<module>",
+   "off": 34
+  },
+  {
+   "code": "<module>",
+   "off": 12
+  },
+  {
+   "code": "<module>",
+   "off": 16
+  },
+  {
+   "code": "<module>",
+   "off": 18
+  },
+  {
+   "code": "<module>",
+   "off": 20
+  },
+  {
+   "code": "<module>",
+   "off": 22
+  },
+  {
+   "code": "<module>",
+   "off": 24
+  },
+  {
+   "code": "greet",
+   "off": 2
+  },
+  {
+   "code": "greet",
+   "off": 12
+  },
+  {
+   "code": "greet",
+   "off": 14
+  },
+  {
+   "code": "greet",
+   "off": 16,
+   "printed": "Hello, Grace\n"
+  },
+  {
+   "code": "greet",
+   "off": 24
+  },
+  {
+   "code": "greet",
+   "off": 26
+  },
+  {
+   "code": "greet",
+   "off": 28
+  },
+  {
+   "code": "<module>",
+   "off": 32
+  },
+  {
+   "code": "<module>",
+   "off": 34
+  },
+  {
+   "code": "<module>",
+   "off": 12
+  },
+  {
+   "code": "<module>",
+   "off": 40
+  },
+  {
+   "code": "<module>",
+   "off": 42
+  },
+  {
+   "code": "<module>",
+   "off": 44
+  }
+ ],
+ "stdout": "Hello, Ada\nHello, Grace\n",
+ "stack_effects": {
+  "RESUME": [
+   0
+  ],
+  "LOAD_CONST": [
+   1
+  ],
+  "MAKE_FUNCTION": [
+   0
+  ],
+  "STORE_NAME": [
+   -1
+  ],
+  "GET_ITER": [
+   0
+  ],
+  "FOR_ITER": [
+   1,
+   1
+  ],
+  "LOAD_NAME": [
+   1
+  ],
+  "PUSH_NULL": [
+   1
+  ],
+  "CALL": [
+   -3
+  ],
+  "POP_TOP": [
+   -1
+  ],
+  "JUMP_BACKWARD": [
+   0,
+   0
+  ],
+  "END_FOR": [
+   -1
+  ],
+  "POP_ITER": [
+   -1
+  ],
+  "RETURN_VALUE": [
+   0
+  ],
+  "LOAD_GLOBAL": [
+   2
+  ],
+  "LOAD_FAST_BORROW": [
+   1
+  ]
+ },
+ "after_run": {
+  "<module>": {
+   "0": "RESUME_CHECK",
+   "2": "LOAD_CONST_MORTAL",
+   "4": "MAKE_FUNCTION",
+   "6": "STORE_NAME",
+   "8": "LOAD_CONST_MORTAL",
+   "10": "GET_ITER",
+   "12": "FOR_ITER_TUPLE",
+   "16": "STORE_NAME",
+   "18": "LOAD_NAME",
+   "20": "PUSH_NULL",
+   "22": "LOAD_NAME",
+   "24": "CALL_PY_EXACT_ARGS",
+   "32": "POP_TOP",
+   "34": "JUMP_BACKWARD_NO_JIT",
+   "38": "END_FOR",
+   "40": "POP_ITER",
+   "42": "LOAD_CONST_IMMORTAL",
+   "44": "RETURN_VALUE"
+  },
+  "greet": {
+   "0": "RESUME_CHECK",
+   "2": "LOAD_GLOBAL_BUILTIN",
+   "12": "LOAD_CONST_MORTAL",
+   "14": "LOAD_FAST_BORROW",
+   "16": "CALL_BUILTIN_FAST_WITH_KEYWORDS",
+   "24": "POP_TOP",
+   "26": "LOAD_CONST_IMMORTAL",
+   "28": "RETURN_VALUE"
+  }
+ },
+ "sizes": {
+  "'Hello,'": 47,
+  "'Ada'": 44,
+  "'Grace'": 46,
+  "('Ada', 'Grace')": 64,
+  "None": 16,
+  "print": 72,
+  "function": 168,
+  "tuple_iterator": 48
+ },
+ "variants": {
+  "RESUME": [
+   "RESUME_CHECK"
+  ],
+  "LOAD_CONST": [
+   "LOAD_CONST_IMMORTAL",
+   "LOAD_CONST_MORTAL"
+  ],
+  "MAKE_FUNCTION": [],
+  "STORE_NAME": [],
+  "GET_ITER": [],
+  "FOR_ITER": [
+   "FOR_ITER_GEN",
+   "FOR_ITER_LIST",
+   "FOR_ITER_RANGE",
+   "FOR_ITER_TUPLE"
+  ],
+  "LOAD_NAME": [],
+  "PUSH_NULL": [],
+  "CALL": [
+   "CALL_ALLOC_AND_ENTER_INIT",
+   "CALL_BOUND_METHOD_EXACT_ARGS",
+   "CALL_BOUND_METHOD_GENERAL",
+   "CALL_BUILTIN_CLASS",
+   "CALL_BUILTIN_FAST",
+   "CALL_BUILTIN_FAST_WITH_KEYWORDS",
+   "CALL_BUILTIN_O",
+   "CALL_ISINSTANCE",
+   "CALL_LEN",
+   "CALL_LIST_APPEND",
+   "CALL_METHOD_DESCRIPTOR_FAST",
+   "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
+   "CALL_METHOD_DESCRIPTOR_NOARGS",
+   "CALL_METHOD_DESCRIPTOR_O",
+   "CALL_NON_PY_GENERAL",
+   "CALL_PY_EXACT_ARGS",
+   "CALL_PY_GENERAL",
+   "CALL_STR_1",
+   "CALL_TUPLE_1",
+   "CALL_TYPE_1"
+  ],
+  "POP_TOP": [],
+  "JUMP_BACKWARD": [
+   "JUMP_BACKWARD_JIT",
+   "JUMP_BACKWARD_NO_JIT"
+  ],
+  "END_FOR": [],
+  "POP_ITER": [],
+  "RETURN_VALUE": [],
+  "LOAD_GLOBAL": [
+   "LOAD_GLOBAL_BUILTIN",
+   "LOAD_GLOBAL_MODULE"
+  ],
+  "LOAD_FAST_BORROW": []
+ },
+ "commands": {
+  "run": "Hello, Ada\nHello, Grace\n",
+  "bytes": "[100, 101, 102, 32, 103, 114, 101, 101, 116, 40, 110, 97, 109, 101, 41, 58, 10, 32, 32, 32, 32, 112, 114, 105, 110, 116, 40, 34, 72, 101, 108, 108, 111, 44, 34, 44, 32, 110, 97, 109, 101, 41, 10, 10, 102, 111, 114, 32, 112, 101, 114, 115, 111, 110, 32, 105, 110, 32, 91, 34, 65, 100, 97, 34, 44, 32, 34, 71, 114, 97, 99, 101, 34, 93, 58, 10, 32, 32, 32, 32, 103, 114, 101, 101, 116, 40, 112, 101, 114, 115, 111, 110, 41, 10]\n",
+  "tokenize": "0,0-0,0:            ENCODING       'utf-8'        \n1,0-1,3:            NAME           'def'          \n1,4-1,9:            NAME           'greet'        \n1,9-1,10:           OP             '('            \n1,10-1,14:          NAME           'name'         \n1,14-1,15:          OP             ')'            \n1,15-1,16:          OP             ':'            \n1,16-1,17:          NEWLINE        '\\n'           \n2,0-2,4:            INDENT         '    '         \n2,4-2,9:            NAME           'print'        \n2,9-2,10:           OP             '('            \n2,10-2,18:          STRING         '\"Hello,\"'     \n2,18-2,19:          OP             ','            \n2,20-2,24:          NAME           'name'         \n2,24-2,25:          OP             ')'            \n2,25-2,26:          NEWLINE        '\\n'           \n3,0-3,1:            NL             '\\n'           \n4,0-4,0:            DEDENT         ''             \n4,0-4,3:            NAME           'for'          \n4,4-4,10:           NAME           'person'       \n4,11-4,13:          NAME           'in'           \n4,14-4,15:          OP             '['            \n4,15-4,20:          STRING         '\"Ada\"'        \n4,20-4,21:          OP             ','            \n4,22-4,29:          STRING         '\"Grace\"'      \n4,29-4,30:          OP             ']'            \n4,30-4,31:          OP             ':'            \n4,31-4,32:          NEWLINE        '\\n'           \n5,0-5,4:            INDENT         '    '         \n5,4-5,9:            NAME           'greet'        \n5,9-5,10:           OP             '('            \n5,10-5,16:          NAME           'person'       \n5,16-5,17:          OP             ')'            \n5,17-5,18:          NEWLINE        '\\n'           \n6,0-6,0:            DEDENT         ''             \n6,0-6,0:            ENDMARKER      ''             \n",
+  "ast": "Module(\n   body=[\n      FunctionDef(\n         name='greet',\n         args=arguments(\n            args=[\n               arg(arg='name')]),\n         body=[\n            Expr(\n               value=Call(\n                  func=Name(id='print', ctx=Load()),\n                  args=[\n                     Constant(value='Hello,'),\n                     Name(id='name', ctx=Load())]))]),\n      For(\n         target=Name(id='person', ctx=Store()),\n         iter=List(\n            elts=[\n               Constant(value='Ada'),\n               Constant(value='Grace')],\n            ctx=Load()),\n         body=[\n            Expr(\n               value=Call(\n                  func=Name(id='greet', ctx=Load()),\n                  args=[\n                     Name(id='person', ctx=Load())]))])])\n",
+  "dis": "  0           RESUME                   0\n\n  1           LOAD_CONST               0 (<code object greet at 0x70fcc12cbe10, file \"greet.py\", line 1>)\n              MAKE_FUNCTION\n              STORE_NAME               0 (greet)\n\n  4           LOAD_CONST               2 (('Ada', 'Grace'))\n              GET_ITER\n      L1:     FOR_ITER                11 (to L2)\n              STORE_NAME               1 (person)\n\n  5           LOAD_NAME                0 (greet)\n              PUSH_NULL\n              LOAD_NAME                1 (person)\n              CALL                     1\n              POP_TOP\n              JUMP_BACKWARD           13 (to L1)\n\n  4   L2:     END_FOR\n              POP_ITER\n              LOAD_CONST               1 (None)\n              RETURN_VALUE\n\nDisassembly of <code object greet at 0x70fcc12cbe10, file \"greet.py\", line 1>:\n  1           RESUME                   0\n\n  2           LOAD_GLOBAL              1 (print + NULL)\n              LOAD_CONST               0 ('Hello,')\n              LOAD_FAST_BORROW         0 (name)\n              CALL                     2\n              POP_TOP\n              LOAD_CONST               1 (None)\n              RETURN_VALUE\n",
+  "strace": "\u001b[33mwrite\u001b[0m(\u001b[35m1\u001b[0m, \u001b[35m\"Hello, Ada\\n\"\u001b[0m, \u001b[35m11\u001b[0mHello, Ada\n\u001b[0m)\u001b[0m            \u001b[0m=\u001b[0m\u001b[0m \u001b[32m11\u001b[0m\u001b[0m\n\u001b[33mwrite\u001b[0m(\u001b[35m1\u001b[0m, \u001b[35m\"Hello, Grace\\n\"\u001b[0m, \u001b[35m13\u001b[0mHello, Grace\n\u001b[0m)\u001b[0m          \u001b[0m=\u001b[0m\u001b[0m \u001b[32m13\u001b[0m\u001b[0m\n+++ exited with 0 +++\u001b[0m\n",
+  "time": "Hello, Ada\nHello, Grace\n0.00022299900000177786\n"
+ },
+ "platform": "Linux (Ubuntu under WSL2, x86-64), python-build-standalone 20251205"
+}
