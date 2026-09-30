@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Analysis",
+  "description": "The complete set of Facts produced from one Program on one Python version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pythonVersion", "program", "bytes"],
+  "properties": {
+    "pythonVersion": {
+      "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "program": {
+      "description": "The Program as analyzed: the learner's text as a file saved by a code editor, so it ends with a newline.",
+      "type": "string"
+    },
+    "bytes": {
+      "description": "The Program's bytes in UTF-8, in order: zoom level 2.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/ByteFact" }
+    }
+  },
+  "$defs": {
+    "ByteFact": {
+      "title": "ByteFact",
+      "description": "One byte of the Program.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "value", "charIndex", "line"],
+      "properties": {
+        "id": {
+          "description": "Fact ID: byte-0 for the first byte, byte-1 for the next, and so on.",
+          "type": "string",
+          "pattern": "^byte-(0|[1-9][0-9]*)$"
+        },
+        "value": {
+          "description": "The byte, a number from 0 to 255.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "charIndex": {
+          "description": "Which character of the program this byte encodes, counted in Unicode code points from 0. A character can take up to 4 bytes, which then share a charIndex.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "line": {
+          "description": "The line the character is on, counted from 1. A line's newline belongs to that line.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

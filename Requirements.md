@@ -139,7 +139,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 
 - Pin Pyodide 314.0.x, self-hosted; show its Python version in the UI.
 - Expose `analyze(code)` returning an Analysis: `pythonVersion`, `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
-- Every Fact has a stable Fact ID (`byte-1`, `tok-1`, `ast-1`, `bc-1`, `run-1`, `ev-1`) that Explanations and highlights point at.
+- Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, numbered from 0) that Explanations and highlights point at.
 - Events are recorded with `sys.settrace` (line, call, return, exception), with a safe, truncated repr of locals.
 - Step runs, the order the bytecode steps ran in, are recorded with `sys.monitoring` INSTRUCTION events. It doesn't report RESUME, so RESUME's runs are added where each code object starts. Each line of output is tied to the step run that printed it.
 - Record, after the run, which **specialized** form each step had become (`dis` with `adaptive=True`; e.g. `BINARY_OP_ADD_INT`), so Phase 3 can match it in the Reference Library.

@@ -4,8 +4,9 @@ Write a short Python program (up to 20 lines, any Python feature), click Run, th
 
 ## Status
 
-Planning and prototyping. The app itself isn't built yet.
+Building the app. So far it does ticket 01: type a program, click Run, and see its code and bytes, worked out by Python 3.14.2 running inside your browser.
 
+- **Run the app:** in `app/`, run `npm install`, then `npm run dev`. The tests: `npm test` (Vitest), `npm run test:e2e` (Playwright), and `python -m pytest` after `pip install -r requirements-dev.txt`. The Analysis format is defined once, in `app/schema/analysis.schema.json`; after changing it, run `npm run gen:types`.
 - **Try the prototype:** open `prototype/hello-zoom-v8.html` in a browser. It walks through all nine zoom levels for a 5-line Example, `prototype/examples/greet.py`: a function called in a loop, printing two lines. Every step that ran more than once can be followed run by run, down to its machine code. The prototype carries only this Example's analysis; the app analyzes any program of up to 20 lines. `hello-zoom-v7.html` is the earlier one-line version.
 - **The plan:** `Requirements.md`, with the glossary in `CONTEXT.md` and design decisions in `docs/adr/`.
 - **The work:** tickets in `.scratch/app/issues/`, numbered in the order they can be built. Each lists the tickets that block it.

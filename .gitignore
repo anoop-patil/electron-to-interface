@@ -30,3 +30,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Pyodide runtime, copied from node_modules by app/vite.config.ts
+app/public/pyodide/
