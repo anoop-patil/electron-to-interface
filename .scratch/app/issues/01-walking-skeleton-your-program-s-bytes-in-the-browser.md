@@ -14,7 +14,7 @@
 - [x] The Program is treated as a file that ends with a newline, as code editors save it, whether or not the learner pressed Enter after the last line.
 - [x] A single JSON Schema defines the Analysis. TypeScript types are generated from it, and a test validates the Python output against it.
 - [x] The UI shows zoom level 1 (the whole Program, every line) and zoom level 2 (a hex grid of bytes, each linked to its character), and displays "Python 3.14.2" from the Analysis, not hardcoded.
-- [ ] Vitest, pytest and Playwright each have at least one passing test, and GitHub Actions runs all three on every push.
+- [x] Vitest, pytest and Playwright each have at least one passing test, and GitHub Actions runs all three on every push.
 - [x] A Playwright test types hello world, clicks Run, and confirms 22 bytes: the first is `p` = 112 (0x70) and the last is the newline, 10 (0x0A).
 - [x] A Playwright test types a Program of several lines, clicks Run, and confirms every line ends in a newline byte in the grid.
 
