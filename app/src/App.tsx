@@ -31,7 +31,6 @@ export function App({ engine }: { engine: Engine }) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
-  const selectedByte = analysis?.bytes.find((byte) => byte.id === selectedFactId) ?? null;
   const view = useRef<HTMLDivElement>(null);
   const { level, go } = useZoomNavigation(view);
 
@@ -130,8 +129,8 @@ export function App({ engine }: { engine: Engine }) {
             <ZoomView
               level={level}
               analysis={analysis}
-              selectedByte={selectedByte}
-              onSelectByte={(byte) => setSelectedFactId(byte.id)}
+              selection={selectedFactId}
+              onSelect={setSelectedFactId}
               onGo={go}
               viewRef={view}
             />

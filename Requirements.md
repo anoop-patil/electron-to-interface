@@ -139,7 +139,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 **Engine (Pyodide in a Web Worker)**
 
 - Pin Pyodide 314.0.7, self-hosted; show its Python version in the UI.
-- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `fileName` (the name the Try it yourself commands use), `commands` (what each Try it yourself command printed when run on the Program), `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
+- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `fileName` (the name the Try it yourself commands use), `commands` (what each Try it yourself command printed when run on the Program), `bytes`, `encoding` (the encoding `tokenize` read the bytes with), `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
 - Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, numbered from 0) that Explanations and highlights point at.
 - Events (line, call, return, exception) are recorded with the `sys.monitoring` events that `sys.settrace` is built on, in the same run as the step runs, with a safe, truncated repr of locals. With `sys.settrace` on, Python reports no INSTRUCTION events.
 - Step runs, the order the bytecode steps ran in, are recorded with `sys.monitoring` INSTRUCTION events. It doesn't report RESUME, so RESUME's runs are added where each code object starts. Each line of output is tied to the step run that printed it.

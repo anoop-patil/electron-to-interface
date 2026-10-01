@@ -13,12 +13,12 @@
  */
 export type CodeIndex = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); or line, one line of the Program (LineSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); or token, one TokenFact (TokenSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte" | "line";
+export type Subject = "program" | "byte" | "line" | "token";
 /**
  * A Fact about one line of the Program that a Template can name.
  *
@@ -32,7 +32,15 @@ export type LineSlot = "line" | "indent" | "text";
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ProgramSlot".
  */
-export type ProgramSlot = "lines" | "characters" | "bytes" | "file";
+export type ProgramSlot = "lines" | "characters" | "bytes" | "file" | "tokens" | "encoding";
+/**
+ * A Fact about one token that a Template can name.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "TokenSlot".
+ */
+export type TokenSlot =
+  "text" | "type" | "exactType" | "line" | "endLine" | "column" | "columns" | "position" | "bytes" | "indent";
 /**
  * A Fact about one byte, and the character it encodes, that a Template can name.
  *
@@ -79,6 +87,14 @@ export interface Analysis {
    * The Program's bytes in UTF-8, in order: zoom level 2.
    */
   bytes: ByteFact[];
+  /**
+   * The encoding tokenize read the bytes with, from its ENCODING token, such as utf-8. Null if it couldn't tell, because the Program names an encoding Python doesn't know.
+   */
+  encoding: string | null;
+  /**
+   * The Program's tokens, in order, as tokenize finds them, leaving out its ENCODING token: zoom level 3. A Program that breaks the tokenizer has the tokens found before the break.
+   */
+  tokens: TokenFact[];
   /**
    * Everything the Program wrote to standard output when it ran.
    */
@@ -135,6 +151,54 @@ export interface ByteFact {
    * The line the character is on, counted from 1. A line's newline belongs to that line.
    */
   line: number;
+}
+/**
+ * One token of the Program, as tokenize reports it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "TokenFact".
+ */
+export interface TokenFact {
+  /**
+   * Fact ID: tok-0 for the first token, tok-1 for the next, and so on.
+   */
+  id: string;
+  /**
+   * The kind of token, as tokenize names it: NAME, OP, STRING, NEWLINE, INDENT and so on.
+   */
+  type: string;
+  /**
+   * For an OP, the exact kind of punctuation, such as LPAR; for any other token, the same as type.
+   */
+  exactType: string;
+  /**
+   * The token's text. Empty for DEDENT and ENDMARKER.
+   */
+  text: string;
+  /**
+   * True for a NAME that Python reserves, such as for or def, as its keyword module lists them. Left out for any other token.
+   */
+  keyword?: true;
+  start: Position;
+  end: Position;
+  span: ByteSpan;
+}
+/**
+ * A place in the Program, as tokenize gives it: the line, counted from 1, and the column, counted in characters from 0. A token's end is the first column after it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Position".
+ */
+export interface Position {
+  line: number;
+  column: number;
+}
+/**
+ * The token's bytes, as positions in bytes: from start up to, but not including, end. Equal for a token that takes up no bytes.
+ */
+export interface ByteSpan {
+  start: number;
+  end: number;
 }
 /**
  * The error that stopped the Program, as the last line of its traceback names it.

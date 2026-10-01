@@ -76,6 +76,147 @@
       "subject": "byte",
       "text": "So the {placeInChar} byte of **{char}** is stored as the pattern **{bits}**."
     },
+    "level3.intro": {
+      "subject": "program",
+      "text": "To understand code, Python first needs its words, just as you read words rather than single letters. So it [[encoding|decodes]] your {bytes} into text and picks out the meaningful pieces, called [[token|tokens]]. In Python, indentation matters, so the tokens also mark where an indented block starts and ends."
+    },
+    "level3.caption": {
+      "subject": "program",
+      "text": "Your program, line by line, as the {tokens} Python found. Select one to see what it is."
+    },
+    "level3.encoding": {
+      "subject": "program",
+      "text": "**ENCODING** comes before line 1: Python’s note that it read your bytes as **{encoding}**. It isn’t part of your code."
+    },
+    "token.name": {
+      "subject": "token",
+      "title": "**{text}** is a name",
+      "text": "Python has read the letters of **{text}** and decided they form one word: a **name**. It doesn’t know yet what the name means.",
+      "term": "{type}"
+    },
+    "token.keyword": {
+      "subject": "token",
+      "title": "**{text}** is a keyword",
+      "text": "**{text}** is a keyword: a name reserved by Python, which you can’t use for your own things. The tokenizer still calls it a **NAME**; working out that it’s special comes next."
+    },
+    "token.openBracket": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "An opening bracket. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.closeBracket": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "A closing bracket. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.openSquare": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "An opening square bracket. It starts a list, as in [1, 2], or picks something out, as in names[0]. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.closeSquare": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "A closing square bracket. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.colon": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "A colon. After if, for, def and the like, it says the block they control comes next. Colons have other jobs too, as in dictionaries and slices. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.comma": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "A comma: it separates things, such as the items of a list, or what a function is given. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.equals": {
+      "subject": "token",
+      "title": "**{text}** is punctuation",
+      "text": "An equals sign. In a line like x = 1, the name on its left gets the value on its right. The tokenizer calls every piece of punctuation **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.op": {
+      "subject": "token",
+      "title": "**{text}** is punctuation or an operator",
+      "text": "The tokenizer calls every piece of punctuation, and every operator such as + or ==, **OP**, short for operator, and notes the exact kind: **{exactType}**."
+    },
+    "token.number": {
+      "subject": "token",
+      "title": "**{text}** is a number",
+      "text": "Python has read **{text}** and decided it is one number. Working out its value comes later.",
+      "term": "{type}"
+    },
+    "token.string": {
+      "subject": "token",
+      "title": "**{text}** is one piece of text",
+      "text": "The whole text is one token, quote marks included. Python saw the opening quote mark and kept reading until the closing one.",
+      "term": "{type}"
+    },
+    "token.comment": {
+      "subject": "token",
+      "title": "A comment",
+      "text": "Everything from **#** to the end of the line is a comment, written for people. The tokenizer keeps it as a token, but Python ignores it from here on.",
+      "term": "{type}"
+    },
+    "token.newline": {
+      "subject": "token",
+      "title": "End of line {line}",
+      "text": "This token comes from byte 10, the invisible [[newline|newline]]. It tells Python the line of code is complete.",
+      "term": "{type}"
+    },
+    "token.noCode": {
+      "subject": "token",
+      "title": "A line with no code",
+      "text": "Line {line} has no code on it. Its newline becomes an **NL** token, not a NEWLINE: it ends a line on the screen, but no line of code. Python ignores it from here on."
+    },
+    "token.commentLine": {
+      "subject": "token",
+      "title": "End of a comment line",
+      "text": "Line {line} holds only a comment. Its newline becomes an **NL** token, not a NEWLINE: it ends a line on the screen, but no line of code. Python ignores it from here on."
+    },
+    "token.insideBrackets": {
+      "subject": "token",
+      "title": "A line break inside brackets",
+      "text": "Line {line} ends inside brackets, so the line of code goes on to the next line. Its newline becomes an **NL** token, not a NEWLINE, and Python ignores it from here on."
+    },
+    "token.indent": {
+      "subject": "token",
+      "title": "A block starts",
+      "text": "Line {line} starts with {indent}, deeper than the line of code before it, so a block starts here. In Python, indentation is part of the meaning.",
+      "term": "{type}"
+    },
+    "token.dedent": {
+      "subject": "token",
+      "title": "A block ends",
+      "text": "An empty token: line {line} starts further left, at column {column}, so an indented block has ended. Each block that ends gets its own DEDENT."
+    },
+    "token.dedentAtEnd": {
+      "subject": "token",
+      "title": "A block ends",
+      "text": "An empty token: line {line} doesn’t exist, the file has ended, so an indented block has ended. Each block that ends gets its own DEDENT."
+    },
+    "token.endmarker": {
+      "subject": "token",
+      "title": "End of the file",
+      "text": "An empty token with no characters at all. Python adds it when the file runs out, so it knows it has seen everything.",
+      "term": "{type}"
+    },
+    "token.other": {
+      "subject": "token",
+      "title": "A token tokenize calls {type}",
+      "text": "The tokenizer calls this piece of your code a **{type}**."
+    },
+    "token.where": {
+      "subject": "token",
+      "text": "**Where:** line {line}, {columns}. tokenize writes this as **{position}**."
+    },
+    "token.whereLines": {
+      "subject": "token",
+      "text": "**Where:** from line {line} to line {endLine}. tokenize writes this as **{position}**."
+    },
+    "token.bytes": {
+      "subject": "token",
+      "text": "**Bytes:** {bytes}."
+    },
     "map.level1.ram": {
       "subject": "program",
       "text": "your program · {lines}"
@@ -83,6 +224,10 @@
     "map.level2.ram": {
       "subject": "program",
       "text": "your program · {characters}"
+    },
+    "map.level3.ram": {
+      "subject": "program",
+      "text": "your program · read as {tokens}"
     },
     "terminal.nothingPrinted": {
       "subject": "program",
@@ -131,6 +276,42 @@
     "tryIt.bytesLine.indented": {
       "subject": "line",
       "text": "line {line}: {indent}, then {text}, then the newline, 10"
+    },
+    "tryIt.level3.tokens": {
+      "subject": "program",
+      "text": "After ENCODING, each line is one of the tokens at this zoom level, in the same order."
+    },
+    "tryIt.tokenRow.encoding": {
+      "subject": "program",
+      "text": "Not a place in your file: Python’s note of the [[encoding|encoding]] it read your bytes with."
+    },
+    "tryIt.tokenRow.position": {
+      "subject": "token",
+      "text": "Line {line}, {columns}. In each pair, the first number is the line and the second is the column. The end is the first column after the token. Columns count from 0."
+    },
+    "tryIt.tokenRow.newline": {
+      "subject": "token",
+      "text": "The end of a complete line of code."
+    },
+    "tryIt.tokenRow.indent": {
+      "subject": "token",
+      "text": "The {indent} at the start of line {line}: a block starts here."
+    },
+    "tryIt.tokenRow.nl": {
+      "subject": "token",
+      "text": "Line {line}’s newline is an NL, not a NEWLINE: it ends a line on the screen, but not a line of code."
+    },
+    "tryIt.tokenRow.dedent": {
+      "subject": "token",
+      "text": "An empty token: a block has ended, because line {line} starts further left."
+    },
+    "tryIt.tokenRow.dedentAtEnd": {
+      "subject": "token",
+      "text": "An empty token: a block has ended, because the file has."
+    },
+    "tryIt.tokenRow.endmarker": {
+      "subject": "token",
+      "text": "The file has ended, so the token is empty."
     }
   },
   "tryIt": {
@@ -180,6 +361,21 @@
         "Each space is 32. The [[newline|newline]] is 10.",
         "Some Windows editors end each line with two bytes, 13 then 10. If yours does, your list has a 13 before every 10."
       ]
+    },
+    "3": {
+      "command": "python -m tokenize {file}",
+      "intro": "Ask Python’s tokenizer to list the tokens it finds in your file:",
+      "parts": [
+        {
+          "code": "python -m tokenize",
+          "text": "Run **tokenize**, the tokenizer that comes with Python, as a program."
+        },
+        {
+          "code": "{file}",
+          "text": "The file to read."
+        }
+      ],
+      "read": []
     }
   }
 }

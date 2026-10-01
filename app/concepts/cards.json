@@ -5,7 +5,7 @@
       "like": "Every part of this page says where its information comes from.",
       "text": "Not everything on this page was recorded from your code. So each zoom level, and each panel that differs from its zoom level, carries one of these labels, which says how we know what it shows. Every label opens this card.",
       "visual": { "kind": "honestyLabels" },
-      "related": []
+      "related": ["token", "code"]
     },
     "bit": {
       "name": "Bit",
@@ -45,6 +45,12 @@
       "like": "The Enter key, stored as a character.",
       "text": "An invisible character that means “start a new line”. In [[utf8|UTF-8]] it is number 10. Editors don’t show it; they just move down a line. Some Windows editors store it as two bytes, 13 then 10. Some editors don’t add one after the last line. This app always does, so every line of your program ends with one.",
       "related": ["utf8", "byte"]
+    },
+    "token": {
+      "name": "Token",
+      "like": "A word in a sentence.",
+      "text": "The smallest meaningful piece of code: a name like **print**, a piece of punctuation like **(**, a piece of text like **\"Ada\"**. Python’s tokenizer reads your characters one by one and groups them into tokens, the way you read letters and see words.",
+      "related": ["utf8", "code"]
     },
     "code": {
       "name": "Your steps",
@@ -122,7 +128,7 @@
   "index": [
     { "name": "This page", "cards": ["honesty"] },
     { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] },
-    { "name": "How Python reads your code", "cards": ["code"] },
+    { "name": "How Python reads your code", "cards": ["token", "code"] },
     { "name": "Running it", "cards": ["py"] },
     { "name": "Memory", "cards": ["disk", "ram", "heap", "stack"] },
     { "name": "The CPU", "cards": ["cpu", "reg", "cache"] },

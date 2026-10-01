@@ -71,7 +71,7 @@ function Output({ tryIt }: { tryIt: TryItExplanation }) {
   );
 }
 
-/** The reading tab: level 2's rows, then the notes. */
+/** The reading tab: the rows of levels 2 and 3, then the notes. */
 function HowToRead({ tryIt }: { tryIt: TryItExplanation }) {
   return (
     <div className="grid gap-2.5">
@@ -80,7 +80,7 @@ function HowToRead({ tryIt }: { tryIt: TryItExplanation }) {
           <tbody>
             {tryIt.rows.map((row, index) => (
               <tr key={index} className="border-b border-rule last:border-b-0">
-                <td className="w-[38%] px-2.5 py-2 align-top font-mono text-[12.5px] leading-[1.5] text-ink [overflow-wrap:anywhere]">{row.bytes}</td>
+                <td className="w-[38%] px-2.5 py-2 align-top font-mono text-[12.5px] leading-[1.5] text-ink whitespace-pre-wrap [overflow-wrap:anywhere]">{row.printed}</td>
                 <td className="px-2.5 py-2 align-top leading-[1.5] text-ink2">
                   <ExplanationText spans={row.text} />
                 </td>

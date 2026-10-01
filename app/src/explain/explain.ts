@@ -1,5 +1,5 @@
 import templateFile from '../../templates/py314.json';
-import type { Analysis, ByteFact, ByteSlot, ProgramSlot, Template, Templates } from '../generated/analysis';
+import type { Analysis, ByteFact, ByteSlot, ProgramSlot, Template, Templates, TokenFact, TokenSlot } from '../generated/analysis';
 import { bitsOf } from '../concepts/bits';
 import { charLabel, linesOf } from '../zoom/characters';
 
@@ -21,6 +21,8 @@ export interface Explanation {
   text: Span[];
   /** The technical term, shown once in small print. */
   term?: Span[];
+  /** A second paragraph, such as where a token sits and its bytes. */
+  more?: Span[];
 }
 
 /** `**`, `[[concept|words]]` or `{slot}`: the markup a Template's strings can hold. */
@@ -63,6 +65,9 @@ export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
     characters: counted(Array.from(analysis.program).length, 'character', 'characters'),
     bytes: counted(analysis.bytes.length, 'byte', 'bytes'),
     file: analysis.fileName,
+    tokens: counted(analysis.tokens.length, 'token', 'tokens'),
+    // Only filled in where the page knows tokenize named an encoding.
+    encoding: analysis.encoding ?? '',
   };
 }
 
@@ -130,4 +135,80 @@ export function explainBits(analysis: Analysis, byte: ByteFact) {
   const multiByte = aboutByte(analysis, byte).charBytes.length > 1;
   const pattern = fill(template(multiByte ? 'byte.bitsPatternMultiByte' : 'byte.bitsPattern', 'byte'), facts).text;
   return { title: title!, text, pattern };
+}
+
+/** What an INDENT is made of: 4 spaces, 1 tab, or 5 spaces and tabs. */
+export function indentOf(text: string) {
+  if (/^ +$/.test(text)) return counted(text.length, 'space', 'spaces');
+  if (/^	+$/.test(text)) return counted(text.length, 'tab', 'tabs');
+  return `${text.length} spaces and tabs`;
+}
+
+/** The columns a token takes up on its line, in words. Its end is the first column after it. */
+function columnsOf({ start, end }: TokenFact) {
+  if (end.line !== start.line || end.column - start.column === 1) return `column ${start.column}`;
+  if (end.column === start.column) return `column ${start.column}, taking up no space`;
+  return `columns ${start.column} to ${end.column - 1}`;
+}
+
+export function tokenFacts(analysis: Analysis, token: TokenFact): Record<TokenSlot, string> {
+  const { start, end, span } = token;
+  return {
+    text: token.text,
+    type: token.type,
+    exactType: token.exactType,
+    line: String(start.line),
+    endLine: String(end.line),
+    column: String(start.column),
+    columns: columnsOf(token),
+    position: `${start.line},${start.column}-${end.line},${end.column}`,
+    bytes: analysis.bytes.slice(span.start, span.end).map((byte) => byte.value).join(' '),
+    indent: indentOf(token.text),
+  };
+}
+
+/** The Templates for punctuation that has words of its own, by the exact kind tokenize names. */
+const PUNCTUATION: Record<string, TemplateId> = {
+  LPAR: 'token.openBracket',
+  RPAR: 'token.closeBracket',
+  LSQB: 'token.openSquare',
+  RSQB: 'token.closeSquare',
+  COLON: 'token.colon',
+  COMMA: 'token.comma',
+  EQUAL: 'token.equals',
+};
+
+const TOKEN_TEMPLATES: Record<string, TemplateId> = {
+  NUMBER: 'token.number',
+  STRING: 'token.string',
+  COMMENT: 'token.comment',
+  NEWLINE: 'token.newline',
+  INDENT: 'token.indent',
+  ENDMARKER: 'token.endmarker',
+};
+
+/** A DEDENT or ENDMARKER that tokenize places on the line after the Program's last, because the file has ended. */
+export const isAfterLastLine = (analysis: Analysis, token: TokenFact) => token.start.line > linesOf(analysis.program).length;
+
+/** Which kind of token this is, which picks its Template. A kind with no Template of its own gets a general one. */
+function tokenKind(analysis: Analysis, token: TokenFact): TemplateId {
+  const lines = linesOf(analysis.program);
+  if (token.type === 'NAME') return token.keyword ? 'token.keyword' : 'token.name';
+  if (token.type === 'OP') return PUNCTUATION[token.exactType] ?? 'token.op';
+  if (token.type === 'DEDENT') return isAfterLastLine(analysis, token) ? 'token.dedentAtEnd' : 'token.dedent';
+  if (token.type === 'NL') {
+    // A newline that ends no line of code: the line has no code, holds only a comment, or ends inside brackets.
+    const line = lines[token.start.line - 1].chars.map(({ char }) => char).join('').trim();
+    return !line ? 'token.noCode' : line.startsWith('#') ? 'token.commentLine' : 'token.insideBrackets';
+  }
+  return TOKEN_TEMPLATES[token.type] ?? 'token.other';
+}
+
+/** The Explanation of one token, from the Template for its kind, then where it sits and its bytes. */
+export function explainToken(analysis: Analysis, token: TokenFact): Explanation {
+  const facts = tokenFacts(analysis, token);
+  const where = template(token.end.line === token.start.line ? 'token.where' : 'token.whereLines', 'token');
+  const more = fillString(where.text, facts);
+  if (facts.bytes) more.push({ text: ' ' }, ...fillString(template('token.bytes', 'token').text, facts));
+  return { ...fill(template(tokenKind(analysis, token), 'token'), facts), more };
 }

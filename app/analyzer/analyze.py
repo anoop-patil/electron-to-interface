@@ -5,12 +5,16 @@ The shape of its output is defined by schema/analysis.schema.json.
 """
 
 import builtins
+import codecs
 import importlib.machinery
+import importlib.util
 import io
+import keyword
 import os
 import platform
 import shlex
 import sys
+import tokenize
 import traceback
 import types
 
@@ -35,11 +39,14 @@ def analyze(code, file_name="program.py", commands=(), folder=None):
         command_runs = [_run_command(command, folder) for command in commands]
     finally:
         os.remove(path)
+    encoding, tokens = _tokens(program)
     return {
         "pythonVersion": platform.python_version(),
         "program": program,
         "fileName": file_name,
         "bytes": _bytes(program),
+        "encoding": encoding,
+        "tokens": tokens,
         **recorded,
         "commands": command_runs,
     }
@@ -59,6 +66,56 @@ def _bytes(program):
         if char == "\n":
             line += 1
     return facts
+
+
+def _tokens(program):
+    """
+    The encoding tokenize read the Program's bytes with, and the tokens it found, as it reports them. A Program that
+    breaks the tokenizer, such as one with a bracket never closed, keeps the tokens found before the break.
+    """
+    raw = program.encode("utf-8")
+    encoding, facts, byte_at = None, [], None
+    try:
+        for token in tokenize.tokenize(io.BytesIO(raw).readline):
+            if token.type == tokenize.ENCODING:
+                encoding = token.string
+                byte_at = _byte_positions(raw, encoding)
+                continue
+            facts.append({
+                "id": f"tok-{len(facts)}",
+                "type": tokenize.tok_name[token.type],
+                "exactType": tokenize.tok_name[token.exact_type],
+                "text": token.string,
+                "start": {"line": token.start[0], "column": token.start[1]},
+                "end": {"line": token.end[0], "column": token.end[1]},
+                "span": {"start": byte_at(*token.start), "end": byte_at(*token.end)},
+            })
+            # tokenize calls every word a NAME; Python's keyword module says which ones Python reserves.
+            if token.type == tokenize.NAME and keyword.iskeyword(token.string):
+                facts[-1]["keyword"] = True
+    except (tokenize.TokenError, SyntaxError):
+        pass
+    return encoding, facts
+
+
+def _byte_positions(raw, encoding):
+    """
+    Turns tokenize's line and column into a position in the Program's bytes. tokenize counts columns in the characters
+    it decoded with `encoding`, which a Program can name in a coding comment, so each character's bytes are counted in
+    that encoding too.
+    """
+    text = raw.decode(encoding)
+    # The utf-8-sig encoding leaves out the 3-byte mark at the start of the file.
+    first = len(codecs.BOM_UTF8) if encoding == "utf-8-sig" else 0
+    line_starts = [0] + [index + 1 for index, char in enumerate(text) if char == "\n"]
+    byte_of_char = [first]
+    for char in text:
+        byte_of_char.append(byte_of_char[-1] + len(char.encode(encoding.removesuffix("-sig"))))
+
+    def byte_at(line, column):
+        return byte_of_char[min(line_starts[line - 1] + column, len(text))] if line <= len(line_starts) else len(raw)
+
+    return byte_at
 
 
 # Running the Program as Python runs a file
@@ -86,7 +143,7 @@ def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stde
     sys.modules["__main__"] = main
     os.chdir(folder)
     try:
-        compiled = compile(source, file_name, "exec")
+        compiled = source if isinstance(source, types.CodeType) else compile(source, file_name, "exec")
         if recorder:
             recorder.start(compiled)
         try:
@@ -118,10 +175,12 @@ def _exit_status(exit, stderr):
 
 
 def _run_command(command, folder):
-    """Does what `python FILE` or `python -c CODE` does, in `folder`, and returns what a terminal shows."""
+    """Does what `python FILE`, `python -c CODE` or `python -m MODULE` does, in `folder`, and returns what a terminal shows."""
     words = shlex.split(command)
     if len(words) >= 3 and words[:2] == ["python", "-c"]:
         source, file_name, argv, path_entry, main = words[2], "<string>", ["-c", *words[3:]], "", _main_module()
+    elif len(words) >= 3 and words[:2] == ["python", "-m"]:
+        source, file_name, argv, path_entry, main = _module_as_main(words[2], words[3:], folder)
     elif len(words) >= 2 and words[0] == "python" and not words[1].startswith("-"):
         file_name = os.path.join(folder, words[1])
         with open(file_name, "rb") as file:
@@ -134,6 +193,24 @@ def _run_command(command, folder):
     terminal = io.StringIO()
     status, _ = _run_as_main(source, file_name, argv, path_entry, main, folder, terminal, terminal)
     return {"command": command, "output": terminal.getvalue(), "exitStatus": status}
+
+
+def _module_as_main(name, args, folder):
+    """
+    What `python -m NAME` runs: the module's code, as __main__, with the module's own file first in sys.argv and the
+    working folder first in sys.path, so a module there is found before Python's own.
+    """
+    sys.path.insert(0, folder)
+    try:
+        spec = importlib.util.find_spec(name)
+    finally:
+        sys.path.remove(folder)
+    # A package, such as json, would run its __main__ module; no command needs one yet.
+    if spec is None or spec.loader is None or spec.submodule_search_locations is not None:
+        raise ValueError(f"The analyzer can’t run the module {name}")
+    main = _main_module(spec.origin)
+    main.__spec__, main.__loader__, main.__cached__ = spec, spec.loader, spec.cached
+    return spec.loader.get_code(spec.name), spec.origin, [spec.origin, *args], folder, main
 
 
 # The recorded run

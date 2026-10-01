@@ -105,7 +105,7 @@ test('a Program that prints nothing says so, and zoom levels that aren’t built
   await expect(tryIt(page).getByRole('tabpanel')).toContainText('Nothing: your program doesn’t print anything');
   await expect(tryIt(page).locator('pre')).toHaveCount(0);
 
-  await gauge(page).getByRole('button', { name: '3 Tokens' }).click();
-  await expect(zoomLevel(page, 3, 'Tokens')).toBeVisible();
+  await gauge(page).getByRole('button', { name: '4 Structure' }).click();
+  await expect(zoomLevel(page, 4, 'Structure')).toBeVisible();
   await expect(tryIt(page)).toHaveCount(0);
 });

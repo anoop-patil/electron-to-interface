@@ -1,11 +1,12 @@
 import { expect, test } from 'vitest';
 import type { CommandRun } from '../generated/analysis';
-import { analysisOf as programAnalysis } from '../testAnalysis';
+import { GREET_OUTPUT, greetAnalysis, helloWorld, analysisOf as programAnalysis } from '../testAnalysis';
 import type { Span } from './explain';
 import { explainTryIt, tryItCommands } from './tryIt';
 
 const RUN = 'python program.py';
 const BYTES = `python -c "print(list(open('program.py', 'rb').read()))"`;
+const TOKENIZE = 'python -m tokenize program.py';
 
 /** An Analysis of the Program, with what each command printed: nothing, unless `printed` says otherwise. */
 const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'command'>> = {}) =>
@@ -13,10 +14,10 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 and 2 have a command for the learner’s file; the others aren’t built yet', () => {
-  expect(tryItCommands('program.py')).toEqual([RUN, BYTES]);
-  expect(tryItCommands('greet.py')).toEqual(['python greet.py', `python -c "print(list(open('greet.py', 'rb').read()))"`]);
-  expect(explainTryIt(3, analysisOf('x = 1\n'))).toBeNull();
+test('levels 1 to 3 have a command for the learner’s file; the others aren’t built yet', () => {
+  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE]);
+  expect(tryItCommands('greet.py')).toEqual(['python greet.py', `python -c "print(list(open('greet.py', 'rb').read()))"`, 'python -m tokenize greet.py']);
+  expect(explainTryIt(4, analysisOf('x = 1\n'))).toBeNull();
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {
@@ -52,7 +53,7 @@ test('level 2 prints the bytes, and lists which line each run of numbers comes f
   expect(tryIt.command).toBe(BYTES);
   expect(tryIt.parts.map((part) => part.code)).toEqual([`python -c "…"`, `open('program.py', 'rb')`, '.read()', 'list(…)', 'print(…)']);
   expect(tryIt.output).toBe('[100, …]\n');
-  expect(tryIt.rows.map((row) => [row.bytes, plain(row.text)])).toEqual([
+  expect(tryIt.rows.map((row) => [row.printed, plain(row.text)])).toEqual([
     ['100, 101, 102, 32, 102, 40, 41, 58, 10', 'line 1: def f():, then the newline, 10'],
     ['32, 32, 32, 32, 112, 97, 115, 115, 10', 'line 2: 4 spaces, then pass, then the newline, 10'],
     ['10', 'line 3: empty, so just the newline, 10'],
@@ -89,4 +90,65 @@ test('level 2 explains numbers above 127 and tabs, but only when the Program has
     'Some Windows editors end each line with two bytes, 13 then 10. If yours does, your list has a 13 before every 10.',
   ]);
   expect(read('x = 1\n')).toHaveLength(2);
+});
+
+test('level 3 lists the tokens, and explains the first line of each kind, in prototype v8’s words', () => {
+  const tryIt = explainTryIt(3, greetAnalysis([{ command: TOKENIZE, output: GREET_OUTPUT.tokenize, exitStatus: 0 }]))!;
+
+  expect(tryIt.command).toBe(TOKENIZE);
+  expect(plain(tryIt.intro)).toBe('Ask Python’s tokenizer to list the tokens it finds in your file:');
+  expect(tryIt.parts.map((part) => [part.code, plain(part.text)])).toEqual([
+    ['python -m tokenize', 'Run tokenize, the tokenizer that comes with Python, as a program.'],
+    ['program.py', 'The file to read.'],
+  ]);
+  expect(tryIt.output).toBe(GREET_OUTPUT.tokenize);
+  expect(tryIt.rows.map((row) => [row.printed, plain(row.text)])).toEqual([
+    ["0,0-0,0:  ENCODING  'utf-8'", 'Not a place in your file: Python’s note of the encoding it read your bytes with.'],
+    [
+      "1,0-1,3:  NAME  'def'",
+      'Line 1, columns 0 to 2. In each pair, the first number is the line and the second is the column. The end is the first column after the token. Columns count from 0.',
+    ],
+    ["1,16-1,17:  NEWLINE  '\\n'", 'The end of a complete line of code.'],
+    ["2,0-2,4:  INDENT  '    '", 'The 4 spaces at the start of line 2: a block starts here.'],
+    ["3,0-3,1:  NL  '\\n'", 'Line 3’s newline is an NL, not a NEWLINE: it ends a line on the screen, but not a line of code.'],
+    ["4,0-4,0:  DEDENT  ''", 'An empty token: a block has ended, because line 4 starts further left.'],
+    ["6,0-6,0:  ENDMARKER  ''", 'The file has ended, so the token is empty.'],
+  ]);
+  expect(tryIt.read.map(plain)).toEqual(['After ENCODING, each line is one of the tokens at this zoom level, in the same order.']);
+});
+
+test('level 3 explains only the kinds of token the Program has', () => {
+  const output = [
+    "0,0-0,0:            ENCODING       'utf-8'        ",
+    "1,0-1,5:            NAME           'print'        ",
+    "1,5-1,6:            OP             '('            ",
+    `1,6-1,20:           STRING         '"Hello World!"'`,
+    "1,20-1,21:          OP             ')'            ",
+    "1,21-1,22:          NEWLINE        '\\n'           ",
+    "2,0-2,0:            ENDMARKER      ''             ",
+  ].map((line) => `${line}\n`).join('');
+  const hello = helloWorld([{ command: TOKENIZE, output, exitStatus: 0 }]);
+
+  expect(explainTryIt(3, hello)!.rows.map((row) => row.printed)).toEqual([
+    "0,0-0,0:  ENCODING  'utf-8'",
+    "1,0-1,5:  NAME  'print'",
+    "1,21-1,22:  NEWLINE  '\\n'",
+    "2,0-2,0:  ENDMARKER  ''",
+  ]);
+});
+
+test('level 3 explains no lines when tokenize’s output doesn’t match the Program’s tokens', () => {
+  const tryIt = explainTryIt(3, helloWorld([{ command: TOKENIZE, output: "0,0-0,0:            ENCODING       'utf-8'        \n", exitStatus: 0 }]))!;
+
+  expect(tryIt.rows).toEqual([]);
+  expect(tryIt.read).toEqual([]);
+});
+
+test('when tokenize stops with an error, level 3 shows what it printed and explains no lines', () => {
+  const error = 'program.py:1:0: error: unexpected EOF in multi-line statement\n';
+  const tryIt = explainTryIt(3, analysisOf('print("Hi"\n', { [TOKENIZE]: { output: error, exitStatus: 1 } }))!;
+
+  expect(tryIt.output).toBe(error);
+  expect(tryIt.rows).toEqual([]);
+  expect(tryIt.read).toEqual([]);
 });

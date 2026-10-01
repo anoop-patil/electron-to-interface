@@ -2,13 +2,14 @@ import { useState, type Ref } from 'react';
 import { buttonClass } from '../button';
 import { levelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
-import { explainByte, explainProgram, type TemplateId } from '../explain/explain';
+import { explainByte, explainProgram, explainToken, type TemplateId } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
 import { explainTryIt } from '../explain/tryIt';
-import type { Analysis, ByteFact } from '../generated/analysis';
+import type { Analysis } from '../generated/analysis';
 import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
+import { TokensZoomLevel } from './TokensZoomLevel';
 import { TryItYourself, type TryItTab } from './TryItYourself';
 
 const ArrowDown = () => (
@@ -24,21 +25,22 @@ const ArrowUp = () => (
 );
 
 /** The Template that introduces each zoom level that has one. */
-const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro' };
+const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro' };
 
 /** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
   level,
   analysis,
-  selectedByte,
-  onSelectByte,
+  selection,
+  onSelect,
   onGo,
   viewRef,
 }: {
   level: number;
   analysis: Analysis | null;
-  selectedByte: ByteFact | null;
-  onSelectByte(byte: ByteFact): void;
+  /** The Fact ID of the Selection, such as byte-3 or tok-0. */
+  selection: string | null;
+  onSelect(factId: string): void;
   onGo(level: number): void;
   viewRef: Ref<HTMLDivElement>;
 }) {
@@ -46,15 +48,20 @@ export function ZoomView({
   // Try it yourself stays open, on the same tab, as the learner moves between zoom levels.
   const [tryItOpen, setTryItOpen] = useState(false);
   const [tryItTab, setTryItTab] = useState<TryItTab>('does');
+  const selectedByte = analysis?.bytes.find((byte) => byte.id === selection) ?? null;
+  const selectedToken = analysis?.tokens.find((token) => token.id === selection) ?? null;
 
   let visual;
-  if (level > 2) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
+  if (level > 3) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
   else if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
   else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChar={selectedByte?.charIndex ?? null} />;
-  else visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={onSelectByte} />;
+  else if (level === 2) visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={(byte) => onSelect(byte.id)} />;
+  else visual = <TokensZoomLevel analysis={analysis} selectedToken={selectedToken} onSelect={(token) => onSelect(token.id)} />;
 
   const intro = analysis && INTROS[level] ? explainProgram(INTROS[level], analysis) : null;
-  const explanation = analysis && level === 2 && selectedByte ? explainByte(analysis, selectedByte) : null;
+  let explanation = null;
+  if (analysis && level === 2 && selectedByte) explanation = explainByte(analysis, selectedByte);
+  if (analysis && level === 3 && selectedToken) explanation = explainToken(analysis, selectedToken);
   // A zoom level carries its Honesty label once it shows something.
   const label = analysis ? levelLabel(level) : null;
   const tryIt = analysis && explainTryIt(level, analysis);
@@ -92,6 +99,11 @@ export function ZoomView({
               <p className="max-w-[65ch] text-[16px] leading-[1.65] text-ink2">
                 <ExplanationText spans={explanation.text} />
               </p>
+              {explanation.more && (
+                <p className="max-w-[65ch] text-[14px] leading-[1.6] text-ink2">
+                  <ExplanationText spans={explanation.more} />
+                </p>
+              )}
             </>
           )}
         </div>

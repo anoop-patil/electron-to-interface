@@ -12,7 +12,7 @@ const LABELS = {
 };
 
 test.describe('Honesty labels', () => {
-  test('zoom levels 1 and 2 each carry exactly one, and levels not built yet carry none', async ({ page }) => {
+  test('zoom levels 1 to 3 each carry exactly one, and levels not built yet carry none', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
 
@@ -25,7 +25,11 @@ test.describe('Honesty labels', () => {
     await expect(zoomLevel(page, 2, 'Bytes').getByRole('button', { name: /^How we know:/ })).toHaveCount(1);
     await expect(zoomLevel(page, 2, 'Bytes').getByRole('button', { name: 'How we know: Observed' })).toBeVisible();
 
-    for (let level = 3; level <= 9; level++) {
+    await page.getByRole('button', { name: 'Zoom in: Tokens' }).click();
+    await expect(zoomLevel(page, 3, 'Tokens').getByRole('button', { name: /^How we know:/ })).toHaveCount(1);
+    await expect(zoomLevel(page, 3, 'Tokens').getByRole('button', { name: 'How we know: Observed' })).toBeVisible();
+
+    for (let level = 4; level <= 9; level++) {
       await gauge(page).getByRole('button').nth(level - 1).click();
       await expect(anyZoomLevel(page, level)).toBeVisible();
       await expect(anyZoomLevel(page, level).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);

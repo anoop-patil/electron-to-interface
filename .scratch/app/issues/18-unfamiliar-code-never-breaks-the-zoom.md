@@ -8,3 +8,7 @@
 
 - [ ] Any token type, syntax-tree node type or opname without a Template falls back to a generic Explanation, plus a link to the official Python docs.
 - [ ] A test program set covering unusual constructs, from decorators and `match` statements to generators and `try`/`except`, zooms through every available level without an error.
+
+## Comments
+
+- Ticket 08 gave level 3 a general Template, `token.other`, for any token type without its own. It has no link to Python's docs yet.

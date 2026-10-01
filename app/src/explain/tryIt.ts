@@ -1,7 +1,7 @@
 import templateFile from '../../templates/py314.json';
-import type { Analysis, CommandRun, LineSlot, Templates } from '../generated/analysis';
+import type { Analysis, CommandRun, LineSlot, Templates, TokenFact } from '../generated/analysis';
 import { linesOf } from '../zoom/characters';
-import { byteFacts, counted, fillString, programFacts, template, type Span, type TemplateId } from './explain';
+import { byteFacts, counted, fillString, isAfterLastLine, programFacts, template, tokenFacts, type Span, type TemplateId } from './explain';
 
 /** Each zoom level's Try it yourself, from the Template file. The build checks it like the Templates (see checkContent.ts). */
 const TRY_IT = (templateFile as Templates).tryIt ?? {};
@@ -21,8 +21,8 @@ export interface TryItExplanation {
   observed: Span[];
   /** Shown in place of the output when the command printed nothing. */
   nothingPrinted: Span[];
-  /** Level 2: which line of the Program each run of numbers in the output comes from. */
-  rows: { bytes: string; text: Span[] }[];
+  /** Levels 2 and 3: lines of the output, or what they are made from, each with what it means. */
+  rows: { printed: string; text: Span[] }[];
   /** How to read the output. */
   read: Span[][];
 }
@@ -44,7 +44,7 @@ function bytesRows(analysis: Analysis) {
     const kind: TemplateId = !text ? 'tryIt.bytesLine.empty' : !content ? 'tryIt.bytesLine.spaces' : indent ? 'tryIt.bytesLine.indented' : 'tryIt.bytesLine.text';
     const facts: Record<LineSlot, string> = { line: String(number), indent: counted(indent, 'space', 'spaces'), text: content };
     return {
-      bytes: analysis.bytes.filter((byte) => byte.line === number).map((byte) => byte.value).join(', '),
+      printed: analysis.bytes.filter((byte) => byte.line === number).map((byte) => byte.value).join(', '),
       text: fillString(template(kind, 'line').text, facts),
     };
   });
@@ -68,8 +68,61 @@ function level2Notes(analysis: Analysis): Span[][] {
   return notes;
 }
 
+/** One line of `python -m tokenize`'s output: where the token starts and ends, its type, and its text as repr shows it. */
+const TOKENIZE_LINE = /^(\d+),(\d+)-(\d+),(\d+):\s+([A-Z_]+)\s+(.*?)\s*$/;
+
+/** The Template that explains a token's line of tokenize's output: the tokens that mark line ends and indentation, or the position of the first other token. */
+function tokenRowTemplate(analysis: Analysis, token: TokenFact): TemplateId {
+  switch (token.type) {
+    case 'NEWLINE': return 'tryIt.tokenRow.newline';
+    case 'INDENT': return 'tryIt.tokenRow.indent';
+    case 'NL': return 'tryIt.tokenRow.nl';
+    case 'DEDENT': return isAfterLastLine(analysis, token) ? 'tryIt.tokenRow.dedentAtEnd' : 'tryIt.tokenRow.dedent';
+    case 'ENDMARKER': return 'tryIt.tokenRow.endmarker';
+    default: return 'tryIt.tokenRow.position';
+  }
+}
+
+/**
+ * tokenize's output, line by line: its ENCODING line, then one line for each of the Program's tokens. Null if tokenize
+ * stopped with an error, or its lines don't match the tokens, in order.
+ */
+function tokenizeLines(analysis: Analysis, { output, exitStatus }: CommandRun) {
+  const lines = output.split('\n').filter(Boolean).map((line) => TOKENIZE_LINE.exec(line));
+  const matches = lines.length === analysis.tokens.length + 1 && analysis.tokens.every(({ type, start, end }, index) => {
+    const line = lines[index + 1];
+    return line?.slice(1, 6).join(' ') === `${start.line} ${start.column} ${end.line} ${end.column} ${type}`;
+  });
+  return exitStatus === 0 && matches && lines[0] ? (lines as RegExpExecArray[]) : null;
+}
+
+/** Level 3's rows: the ENCODING line, then the first line of each kind the reading notes explain, as tokenize printed it with its runs of spaces shortened. */
+function tokenRows(analysis: Analysis, result: CommandRun) {
+  const lines = tokenizeLines(analysis, result);
+  if (!lines) return [];
+  const printed = ([, line, column, endLine, endColumn, type, text]: RegExpExecArray) => `${line},${column}-${endLine},${endColumn}:  ${type}  ${text}`;
+  const rows = [{ printed: printed(lines[0]), text: fillString(template('tryIt.tokenRow.encoding', 'program').text, programFacts(analysis)) }];
+  const explained = new Set<string>();
+  analysis.tokens.forEach((token, index) => {
+    const id = tokenRowTemplate(analysis, token);
+    // One row for each kind: every token type that marks line ends or indentation, with both kinds of DEDENT as one, and one position.
+    const rowKind = id === 'tryIt.tokenRow.position' ? id : token.type;
+    if (explained.has(rowKind)) return;
+    explained.add(rowKind);
+    rows.push({ printed: printed(lines[index + 1]), text: fillString(template(id, 'token').text, tokenFacts(analysis, token)) });
+  });
+  return rows;
+}
+
+/** Level 3's note: the output lists the same tokens as the chips, when it does. */
+const level3Notes = (analysis: Analysis, result: CommandRun) =>
+  tokenizeLines(analysis, result) ? [fillString(template('tryIt.level3.tokens', 'program').text, programFacts(analysis))] : [];
+
 /** The notes on reading a level's output that the page works out from the Program and what its command printed. */
-const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes };
+const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes };
+
+/** The rows of a level's reading tab, worked out from the Program and what its command printed. */
+const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows };
 
 /** The Try it yourself of a zoom level, or null if the level has none yet. */
 export function explainTryIt(level: number, analysis: Analysis): TryItExplanation | null {
@@ -88,7 +141,7 @@ export function explainTryIt(level: number, analysis: Analysis): TryItExplanatio
     output: result.output,
     observed: fill(template('tryIt.observed', 'program').text),
     nothingPrinted: fill(template('tryIt.nothingPrinted', 'program').text),
-    rows: level === 2 ? bytesRows(analysis) : [],
+    rows: ROWS[level]?.(analysis, result) ?? [],
     read: [...notes, ...tryIt.read.map(fill)],
   };
 }

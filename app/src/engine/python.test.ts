@@ -37,7 +37,38 @@ test('the Try it yourself commands run on the Program, saved as program.py', () 
   expect(commands).toEqual([
     { command: 'python program.py', output: 'Hi\n', exitStatus: 0 },
     { command: `python -c "print(list(open('program.py', 'rb').read()))"`, output: '[112, 114, 105, 110, 116, 40, 34, 72, 105, 34, 41, 10]\n', exitStatus: 0 },
+    {
+      command: 'python -m tokenize program.py',
+      output: [
+        "0,0-0,0:            ENCODING       'utf-8'        ",
+        "1,0-1,5:            NAME           'print'        ",
+        "1,5-1,6:            OP             '('            ",
+        `1,6-1,10:           STRING         '"Hi"'         `,
+        "1,10-1,11:          OP             ')'            ",
+        "1,11-1,12:          NEWLINE        '\\n'           ",
+        "2,0-2,0:            ENDMARKER      ''             ",
+      ].map((line) => `${line}\n`).join(''),
+      exitStatus: 0,
+    },
   ]);
+});
+
+test('hello world is six tokens, each a Fact with its place and its bytes', () => {
+  const { tokens, encoding } = python.analyze('print("Hello World!")');
+
+  expect(encoding).toBe('utf-8');
+  expect(tokens.map(({ type, text }) => `${type} ${text}`)).toEqual(['NAME print', 'OP (', 'STRING "Hello World!"', 'OP )', 'NEWLINE \n', 'ENDMARKER ']);
+  expect(tokens[0]).toEqual({ id: 'tok-0', type: 'NAME', exactType: 'NAME', text: 'print', start: { line: 1, column: 0 }, end: { line: 1, column: 5 }, span: { start: 0, end: 5 } });
+});
+
+test('for greet.py, the tokens match the capture of prototype v8, with INDENT, DEDENT and NL where blocks and lines end', async () => {
+  const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
+  const { tokens } = python.analyze(captured.source, captured.file);
+
+  // The capture also lists tokenize's ENCODING token, which the Analysis records as `encoding`.
+  expect(tokens.map(({ type, exactType, text, start, end, span }) => ({ type, exact: exactType, text, start: [start.line, start.column], end: [end.line, end.column], span: [span.start, span.end] }))).toEqual(
+    captured.tokens.slice(1),
+  );
 });
 
 test('an error in the Program shows Python’s traceback, with the path where the browser’s Python saved the file', () => {
@@ -101,5 +132,6 @@ test('for greet.py, the output of every command matches the output captured with
   expect(outputs).toEqual({
     'python greet.py': captured.commands.run,
     [`python -c "print(list(open('greet.py', 'rb').read()))"`]: captured.commands.bytes,
+    'python -m tokenize greet.py': captured.commands.tokenize,
   });
 });

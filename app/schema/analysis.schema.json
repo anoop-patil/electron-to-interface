@@ -4,7 +4,7 @@
   "description": "The complete set of Facts produced from one Program on one Python version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["pythonVersion", "program", "fileName", "bytes", "stdout", "stderr", "error", "events", "runs", "eventsCutShort", "runsCutShort", "commands"],
+  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "stdout", "stderr", "error", "events", "runs", "eventsCutShort", "runsCutShort", "commands"],
   "properties": {
     "pythonVersion": {
       "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
@@ -24,6 +24,15 @@
       "description": "The Program's bytes in UTF-8, in order: zoom level 2.",
       "type": "array",
       "items": { "$ref": "#/$defs/ByteFact" }
+    },
+    "encoding": {
+      "description": "The encoding tokenize read the bytes with, from its ENCODING token, such as utf-8. Null if it couldn't tell, because the Program names an encoding Python doesn't know.",
+      "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+    },
+    "tokens": {
+      "description": "The Program's tokens, in order, as tokenize finds them, leaving out its ENCODING token: zoom level 3. A Program that breaks the tokenizer has the tokens found before the break.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/TokenFact" }
     },
     "stdout": {
       "description": "Everything the Program wrote to standard output when it ran.",
@@ -166,6 +175,48 @@
         }
       }
     },
+    "TokenFact": {
+      "title": "TokenFact",
+      "description": "One token of the Program, as tokenize reports it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "exactType", "text", "start", "end", "span"],
+      "properties": {
+        "id": {
+          "description": "Fact ID: tok-0 for the first token, tok-1 for the next, and so on.",
+          "type": "string",
+          "pattern": "^tok-(0|[1-9][0-9]*)$"
+        },
+        "type": { "description": "The kind of token, as tokenize names it: NAME, OP, STRING, NEWLINE, INDENT and so on.", "type": "string", "pattern": "^[A-Z_]+$" },
+        "exactType": { "description": "For an OP, the exact kind of punctuation, such as LPAR; for any other token, the same as type.", "type": "string", "pattern": "^[A-Z_]+$" },
+        "text": { "description": "The token's text. Empty for DEDENT and ENDMARKER.", "type": "string" },
+        "keyword": { "description": "True for a NAME that Python reserves, such as for or def, as its keyword module lists them. Left out for any other token.", "const": true },
+        "start": { "$ref": "#/$defs/Position" },
+        "end": { "$ref": "#/$defs/Position" },
+        "span": {
+          "title": "ByteSpan",
+          "description": "The token's bytes, as positions in bytes: from start up to, but not including, end. Equal for a token that takes up no bytes.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "integer", "minimum": 0 },
+            "end": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "Position": {
+      "title": "Position",
+      "description": "A place in the Program, as tokenize gives it: the line, counted from 1, and the column, counted in characters from 0. A token's end is the first column after it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "column"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 0 }
+      }
+    },
     "Templates": {
       "title": "Templates",
       "description": "The Templates for one Python version, in one file, such as templates/py314.json.",
@@ -251,9 +302,9 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); or line, one line of the Program (LineSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); or token, one TokenFact (TokenSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line"]
+      "enum": ["program", "byte", "line", "token"]
     },
     "LineSlot": {
       "title": "LineSlot",
@@ -271,7 +322,25 @@
         { "const": "lines", "description": "How many lines, with the word: 1 line, 5 lines." },
         { "const": "characters", "description": "How many characters, counting spaces and newlines, with the word: 63 characters." },
         { "const": "bytes", "description": "How many bytes, with the word: 22 bytes." },
-        { "const": "file", "description": "The name to save the Program under, for the Try it yourself commands: program.py." }
+        { "const": "file", "description": "The name to save the Program under, for the Try it yourself commands: program.py." },
+        { "const": "tokens", "description": "How many tokens, with the word: 6 tokens." },
+        { "const": "encoding", "description": "The encoding tokenize read the bytes with: utf-8." }
+      ]
+    },
+    "TokenSlot": {
+      "title": "TokenSlot",
+      "description": "A Fact about one token that a Template can name.",
+      "oneOf": [
+        { "const": "text", "description": "The token's text, as it is in the Program: print." },
+        { "const": "type", "description": "The kind of token, as tokenize names it: NAME." },
+        { "const": "exactType", "description": "The exact kind of punctuation, as tokenize names it: LPAR." },
+        { "const": "line", "description": "The line it starts on, counted from 1." },
+        { "const": "endLine", "description": "The line it ends on, counted from 1." },
+        { "const": "column", "description": "The column it starts at, counted from 0." },
+        { "const": "columns", "description": "The columns it takes up on its line, in words: columns 0 to 4, column 5, or column 0, taking up no space." },
+        { "const": "position", "description": "Its place in tokenize's own notation, start line and column, then end line and column: 1,0-1,5." },
+        { "const": "bytes", "description": "Its bytes, in order: 112 114 105 110 116." },
+        { "const": "indent", "description": "For an INDENT, what it is made of, with the word: 4 spaces, 1 tab." }
       ]
     },
     "ByteSlot": {
