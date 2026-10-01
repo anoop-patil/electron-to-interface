@@ -6,6 +6,29 @@
  */
 
 /**
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot), or byte, one ByteFact (ByteSlot).
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Subject".
+ */
+export type Subject = "program" | "byte";
+/**
+ * A Fact about the whole Program that a Template can name.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ProgramSlot".
+ */
+export type ProgramSlot = "lines" | "characters" | "bytes";
+/**
+ * A Fact about one byte, and the character it encodes, that a Template can name.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ByteSlot".
+ */
+export type ByteSlot =
+  "number" | "count" | "value" | "char" | "line" | "indent" | "codePoint" | "charSize" | "charBytes" | "placeInChar";
+
+/**
  * The complete set of Facts produced from one Program on one Python version.
  */
 export interface Analysis {
@@ -24,6 +47,9 @@ export interface Analysis {
 }
 /**
  * One byte of the Program.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ByteFact".
  */
 export interface ByteFact {
   /**
@@ -42,4 +68,43 @@ export interface ByteFact {
    * The line the character is on, counted from 1. A line's newline belongs to that line.
    */
   line: number;
+}
+/**
+ * The Templates for one Python version, in one file, such as templates/py314.json.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Templates".
+ */
+export interface Templates {
+  /**
+   * The Python version the Templates explain, such as 3.14.
+   */
+  pythonVersion: string;
+  /**
+   * Each Template, by its ID, such as byte.newline.
+   */
+  templates: {
+    [k: string]: Template;
+  };
+}
+/**
+ * Stored explanation text for one kind of element, in one plain-English voice. Filling it in with Facts makes an Explanation. In its strings, {slot} is a Fact value of its subject, **words** are bold, and [[concept|words]] are words with a Concept card.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Template".
+ */
+export interface Template {
+  subject: Subject;
+  /**
+   * The Explanation's heading, if it has one.
+   */
+  title?: string;
+  /**
+   * The Explanation, in plain English.
+   */
+  text: string;
+  /**
+   * The technical term, shown once in small print, such as code point U+0070.
+   */
+  term?: string;
 }

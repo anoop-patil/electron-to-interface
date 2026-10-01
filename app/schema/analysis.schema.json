@@ -51,6 +51,82 @@
           "minimum": 1
         }
       }
+    },
+    "Templates": {
+      "title": "Templates",
+      "description": "The Templates for one Python version, in one file, such as templates/py314.json.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pythonVersion", "templates"],
+      "properties": {
+        "pythonVersion": {
+          "description": "The Python version the Templates explain, such as 3.14.",
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        },
+        "templates": {
+          "description": "Each Template, by its ID, such as byte.newline.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*(\\.[a-z][A-Za-z0-9]*)*$" },
+          "additionalProperties": { "$ref": "#/$defs/Template" }
+        }
+      }
+    },
+    "Template": {
+      "title": "Template",
+      "description": "Stored explanation text for one kind of element, in one plain-English voice. Filling it in with Facts makes an Explanation. In its strings, {slot} is a Fact value of its subject, **words** are bold, and [[concept|words]] are words with a Concept card.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "text"],
+      "properties": {
+        "subject": { "$ref": "#/$defs/Subject" },
+        "title": {
+          "description": "The Explanation's heading, if it has one.",
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "description": "The Explanation, in plain English.",
+          "type": "string",
+          "minLength": 1
+        },
+        "term": {
+          "description": "The technical term, shown once in small print, such as code point U+0070.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot), or byte, one ByteFact (ByteSlot).",
+      "type": "string",
+      "enum": ["program", "byte"]
+    },
+    "ProgramSlot": {
+      "title": "ProgramSlot",
+      "description": "A Fact about the whole Program that a Template can name.",
+      "oneOf": [
+        { "const": "lines", "description": "How many lines, with the word: 1 line, 5 lines." },
+        { "const": "characters", "description": "How many characters, counting spaces and newlines, with the word: 63 characters." },
+        { "const": "bytes", "description": "How many bytes, with the word: 22 bytes." }
+      ]
+    },
+    "ByteSlot": {
+      "title": "ByteSlot",
+      "description": "A Fact about one byte, and the character it encodes, that a Template can name.",
+      "oneOf": [
+        { "const": "number", "description": "Which byte of the Program it is, counted from 1." },
+        { "const": "count", "description": "How many bytes the Program has, as a number." },
+        { "const": "value", "description": "The byte, from 0 to 255." },
+        { "const": "char", "description": "The character it encodes, with a newline drawn as ↵, a space as ␠ and a tab as ⇥." },
+        { "const": "line", "description": "The line the character is on, counted from 1." },
+        { "const": "indent", "description": "How many spaces indent that line, with the word: 4 spaces." },
+        { "const": "codePoint", "description": "The character's Unicode number: U+0070." },
+        { "const": "charSize", "description": "How many bytes the character takes, with the word: 2 bytes." },
+        { "const": "charBytes", "description": "All the character's bytes, in order: 195 169." },
+        { "const": "placeInChar", "description": "Which of the character's bytes this is, as a word: first, second, third or fourth." }
+      ]
     }
   }
 }

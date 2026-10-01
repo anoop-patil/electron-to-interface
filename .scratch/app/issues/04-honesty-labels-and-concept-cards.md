@@ -12,4 +12,6 @@
 - [ ] Words with a Concept card are highlighted in the text. Opening one shows its name, a one-line analogy, the explanation and related cards, all inside the app. Nothing links out for explanations.
 - [ ] A Concepts index, grouped as in prototype v8, is reachable from the header.
 - [ ] The cards used by levels 1 and 2 (bit, byte, binary, UTF-8, encoding and decoding, newline) are ported from prototype v8.
+- [ ] Level 1's introduction ends with prototype v8's sentence "Highlighted words, like that one, open a short explanation.", added to its Template once the words open cards.
+- [ ] Level 2 shows prototype v8's panel "How the number N is stored" for the selected byte: its 8 bits, each with its value, labeled Derived, with its text from Templates.
 - [ ] Cards open and close from the keyboard, and Escape closes them.

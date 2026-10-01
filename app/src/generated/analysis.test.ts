@@ -4,7 +4,8 @@ import { compileFromFile } from 'json-schema-to-typescript';
 import { expect, test } from 'vitest';
 
 test('the TypeScript types are generated from the current schema (npm run gen:types)', async () => {
-  const fromSchema = await compileFromFile('schema/analysis.schema.json');
+  // The Template definitions aren't reached from the Analysis, so they need unreachableDefinitions, as in gen:types.
+  const fromSchema = await compileFromFile('schema/analysis.schema.json', { unreachableDefinitions: true });
   const committed = await readFile('src/generated/analysis.ts', 'utf-8');
 
   expect(committed).toBe(fromSchema);

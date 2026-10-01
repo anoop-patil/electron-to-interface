@@ -1,5 +1,7 @@
 import type { Ref } from 'react';
 import { buttonClass } from '../button';
+import { explainByte, explainProgram, type TemplateId } from '../explain/explain';
+import { ExplanationText } from '../explain/ExplanationText';
 import type { Analysis, ByteFact } from '../generated/analysis';
 import { BytesZoomLevel } from './BytesZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
@@ -17,7 +19,10 @@ const ArrowUp = () => (
   </svg>
 );
 
-/** One zoom level at a time: its heading, its visual, and the Zoom in and Back buttons. */
+/** The Template that introduces each zoom level that has one. */
+const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro' };
+
+/** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, and the Zoom in and Back buttons. */
 export function ZoomView({
   level,
   analysis,
@@ -38,15 +43,42 @@ export function ZoomView({
   let visual;
   if (level > 2) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
   else if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
-  else if (level === 1) visual = <CodeZoomLevel program={analysis.program} selectedChar={selectedByte?.charIndex ?? null} />;
+  else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChar={selectedByte?.charIndex ?? null} />;
   else visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={onSelectByte} />;
+
+  const intro = analysis && INTROS[level] ? explainProgram(INTROS[level], analysis) : null;
+  const explanation = analysis && level === 2 && selectedByte ? explainByte(analysis, selectedByte) : null;
 
   return (
     <div className="origin-top" ref={viewRef}>
       <section className="grid min-w-0 gap-4" aria-label={`Zoom level ${level}: ${title}`}>
         <p className="font-mono text-[13px] leading-[normal] text-ink3">Zoom level {level} of {LAST_LEVEL}</p>
         <h1 className="-mt-3 text-[clamp(26px,3.2vw,34px)] font-semibold leading-[1.15] tracking-[-0.015em]" tabIndex={-1}>{title}</h1>
+        {intro && (
+          <p className="max-w-[64ch] text-[18px] leading-[1.6] text-ink2 [text-wrap:pretty]">
+            <ExplanationText spans={intro.text} />
+          </p>
+        )}
         <div className="min-w-0 rounded-[14px] border-[1.5px] border-rule2 bg-surface px-[22px] pb-[22px] pt-5 narrow:p-4">{visual}</div>
+        <div className="grid max-w-[780px] gap-2.5 empty:hidden" aria-live="polite">
+          {explanation && (
+            <>
+              {explanation.title && (
+                <h2 className="text-[20px] font-semibold leading-[1.3] [text-wrap:balance]">
+                  <ExplanationText spans={explanation.title} />
+                </h2>
+              )}
+              {explanation.term && (
+                <p className="-mt-1.5 font-mono text-[13px] leading-[normal] text-ink3">
+                  <ExplanationText spans={explanation.term} />
+                </p>
+              )}
+              <p className="max-w-[65ch] text-[16px] leading-[1.65] text-ink2">
+                <ExplanationText spans={explanation.text} />
+              </p>
+            </>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           {level < LAST_LEVEL && (
             <button type="button" className={buttonClass({ primary: true })} data-zoom="in" onClick={() => onGo(level + 1)}>

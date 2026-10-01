@@ -1,0 +1,67 @@
+{
+  "pythonVersion": "3.14",
+  "templates": {
+    "level1.intro": {
+      "subject": "program",
+      "text": "You typed {lines} and clicked Run. At this level your program is still just text, as you wrote it."
+    },
+    "level1.caption": {
+      "subject": "program",
+      "text": "Your whole program: {lines}."
+    },
+    "level1.size": {
+      "subject": "program",
+      "text": "Your program has {lines} and {characters}, counting the spaces and the invisible [[newline|newline]] at the end of each line."
+    },
+    "level2.intro": {
+      "subject": "program",
+      "text": "A computer can’t store letters as such: it stores [[byte|bytes]], numbers from 0 to 255. So each character of your program becomes a number, or a few numbers, using an agreement called [[utf8|UTF-8]]. Even the spaces at the start of a line, and the ends of lines, are stored."
+    },
+    "level2.caption": {
+      "subject": "program",
+      "text": "Your program in bytes: {bytes}, shown line by line, the same bytes a file of it would hold. Each box shows the byte in hexadecimal, then as an ordinary number. Select one to see its character."
+    },
+    "byte.character": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {value}",
+      "text": "Every character has an agreed number. **{char}** is {value}. This agreement is called [[utf8|UTF-8]], and for English letters and common symbols, each character takes exactly one [[byte|byte]].",
+      "term": "code point {codePoint}"
+    },
+    "byte.multiByte": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {charBytes}",
+      "text": "Every character has an agreed number, but only English letters and common symbols fit in one [[byte|byte]]. [[utf8|UTF-8]] stores **{char}** as {charSize}: **{charBytes}**. This byte is the {placeInChar} of them.",
+      "term": "code point {codePoint}"
+    },
+    "byte.newline": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {value}",
+      "text": "The [[newline|newline]] at the end of line {line}. You can’t see it, but it is stored as number **{value}**, and it tells Python the line is over.",
+      "term": "line feed (LF), code point {codePoint}"
+    },
+    "byte.indent": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {value}",
+      "text": "One of the {indent} that indent line {line}. Indentation is stored like any other character, as number **{value}**, and for Python it matters: it says which lines belong together.",
+      "term": "code point {codePoint}"
+    },
+    "byte.indentOneSpace": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {value}",
+      "text": "The space that indents line {line}. Indentation is stored like any other character, as number **{value}**, and for Python it matters: it says which lines belong together.",
+      "term": "code point {codePoint}"
+    },
+    "byte.space": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {value}",
+      "text": "A space, stored as number **{value}**.",
+      "term": "code point {codePoint}"
+    },
+    "byte.quote": {
+      "subject": "byte",
+      "title": "Byte {number} of {count}: **{char}** is stored as {value}",
+      "text": "A quote mark is stored like any other character. Python uses the pair of them to find where a piece of text starts and ends.",
+      "term": "code point {codePoint}"
+    }
+  }
+}

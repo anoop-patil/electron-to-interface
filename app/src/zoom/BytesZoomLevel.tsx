@@ -1,3 +1,5 @@
+import { explainProgram } from '../explain/explain';
+import { ExplanationText } from '../explain/ExplanationText';
 import type { Analysis, ByteFact } from '../generated/analysis';
 import { charLabel, describeChar } from './characters';
 
@@ -32,8 +34,7 @@ export function BytesZoomLevel({
   return (
     <>
       <p className="mb-3.5 text-[14px] text-ink2">
-        Your program as a file: {analysis.bytes.length} bytes, numbers from 0 to 255, shown line by line. Each
-        box shows the byte in hexadecimal, then as an ordinary number. Select one to see its character.
+        <ExplanationText spans={explainProgram('level2.caption', analysis).text} />
       </p>
       <div className="grid gap-2.5">
         {[...lines].map(([line, bytes]) => (
