@@ -26,7 +26,24 @@ export type ProgramSlot = "lines" | "characters" | "bytes";
  * via the `definition` "ByteSlot".
  */
 export type ByteSlot =
-  "number" | "count" | "value" | "char" | "line" | "indent" | "codePoint" | "charSize" | "charBytes" | "placeInChar";
+  | "number"
+  | "count"
+  | "value"
+  | "char"
+  | "line"
+  | "indent"
+  | "codePoint"
+  | "charSize"
+  | "charBytes"
+  | "placeInChar"
+  | "bits";
+/**
+ * A picture under a card's text.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ConceptVisual".
+ */
+export type ConceptVisual = BitsVisual | Utf8Visual | HonestyLabelsVisual;
 
 /**
  * The complete set of Facts produced from one Program on one Python version.
@@ -107,4 +124,150 @@ export interface Template {
    * The technical term, shown once in small print, such as code point U+0070.
    */
   term?: string;
+}
+/**
+ * Every Concept card, and the Concepts index that groups them: concepts/cards.json.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ConceptCards".
+ */
+export interface ConceptCards {
+  /**
+   * Each Concept card, by its ID, such as utf8. Text refers to a card as [[utf8|words]].
+   */
+  cards: {
+    [k: string]: ConceptCard;
+  };
+  /**
+   * The Concepts index: groups of cards, in order. Every card is in exactly one group.
+   */
+  index: ConceptGroup[];
+}
+/**
+ * A short, self-contained explanation of a general computing idea. Its strings can hold **words** in bold and [[card|words]] that open another card.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ConceptCard".
+ */
+export interface ConceptCard {
+  /**
+   * The card's heading, such as UTF-8.
+   */
+  name: string;
+  /**
+   * A one-line analogy.
+   */
+  like: string;
+  /**
+   * The explanation.
+   */
+  text: string;
+  visual?: ConceptVisual;
+  /**
+   * The IDs of related cards, shown as buttons that open them.
+   */
+  related: string[];
+}
+/**
+ * The 8 bits of one byte, with each bit's value and their sum.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "BitsVisual".
+ */
+export interface BitsVisual {
+  kind: "bits";
+  value: number;
+  /**
+   * A sentence under the bits.
+   */
+  note?: string;
+}
+/**
+ * A table of characters and the UTF-8 bytes that store them. The page works the bytes out; the file only lists the characters.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Utf8Visual".
+ */
+export interface Utf8Visual {
+  kind: "utf8";
+  /**
+   * @minItems 1
+   */
+  chars: [string, ...string[]];
+}
+/**
+ * Every Honesty label, with what it means. The card that shows it is the one every label chip opens.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "HonestyLabelsVisual".
+ */
+export interface HonestyLabelsVisual {
+  kind: "honestyLabels";
+}
+/**
+ * One group in the Concepts index.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ConceptGroup".
+ */
+export interface ConceptGroup {
+  /**
+   * The group's heading, such as Storing text.
+   */
+  name: string;
+  /**
+   * Card IDs, in order.
+   *
+   * @minItems 1
+   */
+  cards: [string, ...string[]];
+}
+/**
+ * The set of Honesty labels, and which one each zoom level and panel carries: concepts/honesty-labels.json. Changing the set is an edit to this file alone.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "HonestyLabels".
+ */
+export interface HonestyLabels {
+  /**
+   * Each label, by its ID, in the order the How we know card lists them.
+   */
+  labels: {
+    [k: string]: HonestyLabel;
+  };
+  /**
+   * The label each built zoom level carries, by level number. A level that isn't built yet has none.
+   */
+  levels: {
+    [k: string]: string;
+  };
+  /**
+   * The label of each panel whose provenance differs from its level.
+   */
+  panels: {
+    /**
+     * Zoom level 2's panel How the number N is stored.
+     */
+    byteBits: string;
+  };
+}
+/**
+ * One Honesty label: how the content it is on knows what it shows.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "HonestyLabel".
+ */
+export interface HonestyLabel {
+  /**
+   * The word on the chip, such as Observed.
+   */
+  name: string;
+  /**
+   * What the label means, on the How we know card.
+   */
+  means: string;
+  /**
+   * Shown in the warning color. Only Illustrative is, and the build allows one label at most.
+   */
+  warning?: boolean;
 }

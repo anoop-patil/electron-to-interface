@@ -1,0 +1,54 @@
+{
+  "cards": {
+    "honesty": {
+      "name": "How we know",
+      "like": "Every part of this page says where its information comes from.",
+      "text": "Not everything on this page was recorded from your code. So each zoom level, and each panel that differs from its zoom level, carries one of these labels, which says how we know what it shows. Every label opens this card.",
+      "visual": { "kind": "honestyLabels" },
+      "related": []
+    },
+    "bit": {
+      "name": "Bit",
+      "like": "A single light switch: on or off.",
+      "text": "The smallest piece of information a computer can store. A bit is either on or off, written as 1 or 0. In RAM, or on an SSD, a bit is a tiny electric charge that is either there or not there.",
+      "related": ["byte", "binary"]
+    },
+    "byte": {
+      "name": "Byte",
+      "like": "A row of 8 light switches.",
+      "text": "A group of 8 [[bit|bits]]. Eight switches can be set in 256 different on/off patterns, so one byte can hold any whole number from 0 to 255. Almost everything in a computer is counted in bytes: file sizes, memory, text.",
+      "visual": { "kind": "bits", "value": 41, "note": "The byte for **)**: switches 32, 8 and 1 are on." },
+      "related": ["bit", "binary", "utf8"]
+    },
+    "binary": {
+      "name": "Binary",
+      "like": "Counting with only two digits, 0 and 1.",
+      "text": "Each of the 8 switches in a byte has a value: 128, 64, 32, 16, 8, 4, 2 and 1, from left to right. To read a byte, add up the values of the switches that are on. For the letter **p**: 64 + 32 + 16 = **112**.",
+      "visual": { "kind": "bits", "value": 112 },
+      "related": ["bit", "byte"]
+    },
+    "utf8": {
+      "name": "UTF-8",
+      "like": "A shared dictionary that says which number stands for which character.",
+      "text": "A computer can only store numbers, so every character needs an agreed number. UTF-8 is the agreement almost every computer uses today. English letters, digits and common symbols take one [[byte|byte]] each. Other characters take two, three or four bytes. The first 128 numbers match ASCII, an older agreement from the 1960s.",
+      "visual": { "kind": "utf8", "chars": ["A", "a", "H", " ", "!", "\n", "é", "ह", "😀"] },
+      "related": ["byte", "encoding", "newline"]
+    },
+    "encoding": {
+      "name": "Encoding and decoding",
+      "like": "Writing a message in a code, and reading it back.",
+      "text": "**Encoding** turns characters into bytes, for example when your editor saves a file. **Decoding** turns bytes back into characters, for example when Python reads your file. Files store text as bytes; Python decodes those bytes into text using [[utf8|UTF-8]]. Once decoded, Python keeps the text as a sequence of characters (a **str**), not as the raw bytes from the file.",
+      "related": ["utf8", "byte"]
+    },
+    "newline": {
+      "name": "Newline",
+      "like": "The Enter key, stored as a character.",
+      "text": "An invisible character that means “start a new line”. In [[utf8|UTF-8]] it is number 10. Editors don’t show it; they just move down a line. Some Windows editors store it as two bytes, 13 then 10. Some editors don’t add one after the last line. This app always does, so every line of your program ends with one.",
+      "related": ["utf8", "byte"]
+    }
+  },
+  "index": [
+    { "name": "This page", "cards": ["honesty"] },
+    { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] }
+  ]
+}

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Analysis } from '../generated/analysis';
-import { explainByte, explainProgram, type Span } from './explain';
+import { explainBits, explainByte, explainProgram, type Span } from './explain';
 
 /** An Analysis as the analyzer makes one: the Program ends with a newline, and every byte knows its character and line. */
 function analysisOf(program: string): Analysis {
@@ -20,7 +20,7 @@ test('the level 1 and 2 text counts the lines, characters and bytes of the Progr
   const zoe = analysisOf('name = "Zoë"\nprint(name)\n');
 
   expect(plain(explainProgram('level1.intro', ada).text)).toBe(
-    'You typed 3 lines and clicked Run. At this level your program is still just text, as you wrote it.',
+    'You typed 3 lines and clicked Run. At this level your program is still just text, as you wrote it. Your computer stores it as bytes, which the next zoom level shows. Highlighted words, like that one, open a short explanation.',
   );
   expect(plain(explainProgram('level1.size', ada).text)).toBe(
     'Your program has 3 lines and 51 characters, counting the spaces and the invisible newline at the end of each line.',
@@ -91,4 +91,23 @@ test('a character that takes several bytes says which of its bytes this is', () 
 
 test('a one-line Program is 1 line, not 1 lines', () => {
   expect(plain(explainProgram('level1.caption', analysisOf('print("Hello World!")\n')).text)).toBe('Your whole program: 1 line.');
+});
+
+test('level 2’s panel works out how the selected byte is stored as 8 bits', () => {
+  const hello = analysisOf('print("Hello World!")\n');
+  const p = explainBits(hello, hello.bytes[0]);
+
+  expect(plain(p.title)).toBe('How the number 112 is stored');
+  expect(plain(p.text)).toBe(
+    'A byte is 8 bits: 8 tiny on/off switches. Each switch has a value, shown under it. Add up the values of the switches that are on, and you get the number. This way of counting is called binary.',
+  );
+  expect(p.text).toContainEqual({ text: 'bits', concept: 'bit' });
+  expect(plain(p.pattern)).toBe('So p is stored as the pattern 01110000.');
+  expect(plain(explainBits(hello, hello.bytes[21]).pattern)).toBe('So ↵ is stored as the pattern 00001010.');
+});
+
+test('the bits of one byte of a longer character say which character they belong to', () => {
+  const zoe = analysisOf('s = "ë"\n');
+
+  expect(plain(explainBits(zoe, zoe.bytes[6]).pattern)).toBe('So the second byte of ë is stored as the pattern 10101011.');
 });

@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
-import { checkedTemplates } from './src/explain/checkTemplates';
+import { checkedContent } from './src/explain/checkContent';
 
 const PYODIDE_FILES = ['pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json'];
 
@@ -25,7 +25,7 @@ function selfHostedPyodide(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), selfHostedPyodide(), checkedTemplates()],
+  plugins: [react(), tailwindcss(), selfHostedPyodide(), checkedContent()],
   optimizeDeps: { exclude: ['pyodide'] },
   worker: { format: 'es' },
   test: { include: ['src/**/*.test.ts'] },

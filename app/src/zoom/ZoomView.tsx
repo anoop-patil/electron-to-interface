@@ -1,9 +1,11 @@
 import type { Ref } from 'react';
 import { buttonClass } from '../button';
+import { levelLabel } from '../concepts/concepts';
+import { HonestyChip } from '../concepts/HonestyChip';
 import { explainByte, explainProgram, type TemplateId } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
 import type { Analysis, ByteFact } from '../generated/analysis';
-import { BytesZoomLevel } from './BytesZoomLevel';
+import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
 
@@ -48,13 +50,20 @@ export function ZoomView({
 
   const intro = analysis && INTROS[level] ? explainProgram(INTROS[level], analysis) : null;
   const explanation = analysis && level === 2 && selectedByte ? explainByte(analysis, selectedByte) : null;
+  // A zoom level carries its Honesty label once it shows something.
+  const label = analysis ? levelLabel(level) : null;
 
   return (
     <div className="origin-top" ref={viewRef}>
       <section className="grid min-w-0 gap-4" aria-label={`Zoom level ${level}: ${title}`}>
-        <p className="font-mono text-[13px] leading-[normal] text-ink3">Zoom level {level} of {LAST_LEVEL}</p>
-        {/* The heading takes focus only so screen readers announce a new level; it isn't a control, so it has no focus ring. */}
-        <h1 className="-mt-3 text-[clamp(26px,3.2vw,34px)] font-semibold leading-[1.15] tracking-[-0.015em] outline-none" tabIndex={-1}>{title}</h1>
+        <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3">
+          <div>
+            <p className="font-mono text-[13px] leading-[normal] text-ink3">Zoom level {level} of {LAST_LEVEL}</p>
+            {/* The heading takes focus only so screen readers announce a new level; it isn't a control, so it has no focus ring. */}
+            <h1 className="mt-1 text-[clamp(26px,3.2vw,34px)] font-semibold leading-[1.15] tracking-[-0.015em] outline-none" tabIndex={-1}>{title}</h1>
+          </div>
+          {label && <HonestyChip label={label} />}
+        </div>
         {intro && (
           <p className="max-w-[64ch] text-[18px] leading-[1.6] text-ink2 [text-wrap:pretty]">
             <ExplanationText spans={intro.text} />
@@ -80,6 +89,7 @@ export function ZoomView({
             </>
           )}
         </div>
+        {analysis && level === 2 && selectedByte && <BitsPanel analysis={analysis} byte={selectedByte} />}
         <div className="flex flex-wrap gap-2">
           {level < LAST_LEVEL && (
             <button type="button" className={buttonClass({ primary: true })} data-zoom="in" onClick={() => onGo(level + 1)}>

@@ -17,7 +17,7 @@
 Built in `app/`. Decisions made along the way:
 
 - The Templates are in `app/templates/py314.json`. Each has a subject (`program` or `byte`), a `text`, and optionally a `title` and a `term`. The schema lists the slots each subject offers (`ProgramSlot`, `ByteSlot`), so the generated types and the build check share one list.
-- In a Template's strings, `{slot}` is a Fact value, `**words**` are bold, and `[[concept|words]]` are words with a Concept card. Those words show as plain text until ticket 04.
+- In a Template's strings, `{slot}` is a Fact value, `**words**` are bold, and `[[concept|words]]` are words with a Concept card. Since ticket 04 they open their Concept card.
 - A Vite plugin checks every Template file when a build starts. It fails on a schema error, a slot its subject doesn't have, a malformed slot such as `{ value }`, or a `**` with no closing `**`. Playwright builds the site, so CI fails too.
 - The term in small print is the character's code point, such as `code point U+0070`. On a newline it is `line feed (LF), code point U+000A`.
 - Changes from prototype v8's wording: the text doesn't say the program was saved on a disk, because in the browser it never is; it has no file name, because the app has none; counts say "1 line" or "5 lines"; and each character becomes "a number, or a few numbers". "Click any line" and v8's line-by-line text for greet.py aren't ported, because level 1 has no line selection yet. Ticket 04 adds the sentence "Highlighted words, like that one, open a short explanation." once the Concept cards exist.

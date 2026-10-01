@@ -1,7 +1,13 @@
-import { explainProgram } from '../explain/explain';
+import { panelLabel } from '../concepts/concepts';
+import { HonestyChip } from '../concepts/HonestyChip';
+import { Bits } from '../concepts/visuals';
+import { explainBits, explainProgram } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
 import type { Analysis, ByteFact } from '../generated/analysis';
 import { charLabel, describeChar } from './characters';
+
+// The panel's sentences, either side of the bits.
+const PANEL_TEXT_CLASSES = 'max-w-[70ch] text-[14px] leading-[1.6] text-ink2';
 
 const hex = (value: number) => value.toString(16).toUpperCase().padStart(2, '0');
 
@@ -68,5 +74,27 @@ export function BytesZoomLevel({
         ))}
       </div>
     </>
+  );
+}
+
+/** How the selected byte's number is stored as 8 bits. It is worked out from the byte, not recorded, so it carries its own label. */
+export function BitsPanel({ analysis, byte }: { analysis: Analysis; byte: ByteFact }) {
+  const { title, text, pattern } = explainBits(analysis, byte);
+  return (
+    <section className="grid min-w-0 max-w-[780px] gap-2.5 rounded-xl border border-rule bg-sunk px-4 py-3.5" aria-labelledby="bits-title">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 id="bits-title" className="text-[13px] font-semibold text-ink2">
+          <ExplanationText spans={title} />
+        </h3>
+        <HonestyChip label={panelLabel('byteBits')} size="panel" />
+      </div>
+      <p className={PANEL_TEXT_CLASSES}>
+        <ExplanationText spans={text} />
+      </p>
+      <Bits value={byte.value} />
+      <p className={PANEL_TEXT_CLASSES}>
+        <ExplanationText spans={pattern} />
+      </p>
+    </section>
   );
 }

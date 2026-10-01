@@ -58,6 +58,27 @@ test.describe('phone, 390px wide', () => {
     }
   });
 
+  test('the bits panel and the Concept cards fit without scrolling sideways', async ({ page }) => {
+    const frame = await phone(page, '/zoom/2');
+    await run(frame, 'print("Hi")');
+    await zoomLevel(frame, 2, 'Bytes').getByRole('button', { name: /^Byte 1: / }).click();
+    const overflow = (selector: string) =>
+      page.frames()[1].evaluate((s) => [...document.querySelectorAll(s)].map((el) => el.scrollWidth - el.clientWidth), selector);
+    expect(await overflow('html')).toEqual([0]);
+
+    for (const opener of ['How we know: Derived', 'UTF-8']) {
+      await zoomLevel(frame, 2, 'Bytes').getByRole('button', { name: opener }).first().click();
+      await expect(frame.getByRole('dialog')).toBeVisible();
+      const gutters = await page.frames()[1].evaluate(() => {
+        const card = document.querySelector('dialog')!.getBoundingClientRect();
+        return [card.left, innerWidth - card.right];
+      });
+      expect(gutters, opener).toEqual([16, 16]);
+      expect(await overflow('dialog > div'), opener).toEqual([0]);
+      await frame.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+    }
+  });
+
   test('the gauge strip keeps the current zoom level in view', async ({ page }) => {
     const frame = await phone(page, '/zoom/1');
     for (const [path, name] of [['/zoom/9', '9 Pixels'], ['/zoom/1', '1 Code']]) {

@@ -1,0 +1,32 @@
+{
+  "labels": {
+    "observed": {
+      "name": "Observed",
+      "means": "Python itself recorded this from your code, running in your browser. The header says which version of Python."
+    },
+    "derived": {
+      "name": "Derived",
+      "means": "Worked out from observed facts using Python’s rules. True for your code, but not recorded directly."
+    },
+    "reference": {
+      "name": "Reference",
+      "means": "Real, but prepared in advance rather than taken from your run: CPython’s own source code, or recordings on our test machine."
+    },
+    "illustrative": {
+      "name": "Illustrative",
+      "means": "A made-up example that shows the kind of thing that happens. Not real data from your program.",
+      "warning": true
+    },
+    "typical": {
+      "name": "Typical",
+      "means": "How it usually works, for example on a Linux terminal. Your computer may do it differently."
+    }
+  },
+  "levels": {
+    "1": "observed",
+    "2": "observed"
+  },
+  "panels": {
+    "byteBits": "derived"
+  }
+}

@@ -11,6 +11,8 @@ async function expectNoViolations(page: Page) {
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`every zoom level passes an automated accessibility check in the ${scheme} theme`, async ({ page }) => {
+    // It waits for Python to start, then runs 13 checks: alongside the other tests, that can take more than 30 seconds.
+    test.slow();
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/zoom/1');
     await expectNoViolations(page);
@@ -22,6 +24,14 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Zoom in: Bytes' }).click();
     await zoomLevel(page, 2, 'Bytes').getByRole('button', { name: /^Byte 7:/ }).click();
     await expectNoViolations(page);
+
+    // A Concept card with a table, and the How we know card with every Honesty label chip.
+    await zoomLevel(page, 2, 'Bytes').getByRole('button', { name: 'UTF-8' }).first().click();
+    await expectNoViolations(page);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'How we know: Derived' }).click();
+    await expectNoViolations(page);
+    await page.keyboard.press('Escape');
 
     for (let level = 3; level <= 9; level++) {
       await gauge(page).getByRole('button').nth(level - 1).click();

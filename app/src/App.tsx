@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Engine } from './engine/engine';
 import type { Analysis } from './generated/analysis';
 import { buttonClass } from './button';
+import { ConceptsButton } from './concepts/ConceptsButton';
 import { ThemeToggle } from './ThemeToggle';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
@@ -65,6 +66,7 @@ export function App({ engine }: { engine: Engine }) {
             <span>ElectronToInterface</span>
           </div>
           {analysis && <span className="whitespace-nowrap rounded-[999px] border border-rule2 px-2.5 py-1 font-mono text-[12px] leading-[normal] text-ink2">Python {analysis.pythonVersion}</span>}
+          <ConceptsButton />
           <ThemeToggle />
         </header>
 

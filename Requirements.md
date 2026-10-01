@@ -76,7 +76,7 @@ Example Analyses (analyzer run ahead of time)  ─┘                           
 | --- | --- | --- |
 | Frontend | React + TypeScript + Vite, as a single-page app | Best-known stack. The zoom view is a self-contained component, so indexable Astro pages per opcode can be added later. |
 | Styling | Tailwind, reading design tokens from CSS variables | One swap of variables switches between light and dark |
-| Components | shadcn/ui (on Radix), only the pieces needed: tooltip, popover, dialog, tabs, toggle | Accessible, and the code lives in our repo, styled with our design tokens |
+| Components | The browser's own `<dialog>` for Concept cards. shadcn/ui (on Radix) for other pieces when they are needed: tooltip, popover, tabs, toggle | `<dialog>` handles Escape, focus and the backdrop with no dependency. shadcn/ui is accessible, and its code lives in our repo, styled with our design tokens |
 | Fonts | IBM Plex Sans + IBM Plex Mono, self-hosted WOFF2, trimmed to needed characters, two weights each | Sans and mono designed as one family; no third-party font requests (ADR 0004) |
 | Editor | CodeMirror 6 | Lighter than Monaco and works on mobile |
 | State | Zustand | — |

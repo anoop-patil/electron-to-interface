@@ -118,6 +118,8 @@ export function useZoomNavigation(view: RefObject<HTMLElement | null>) {
     const onPopState = () => zoomTo(levelInAddressBar() ?? FIRST_LEVEL);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || isTyping(event.target)) return;
+      // A Concept card is open over the zoom view.
+      if (document.querySelector('dialog[open]')) return;
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         // The control that had focus, such as a clicked gauge tick, belongs to the level being left, and the

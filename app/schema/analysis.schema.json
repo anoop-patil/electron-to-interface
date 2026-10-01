@@ -125,8 +125,143 @@
         { "const": "codePoint", "description": "The character's Unicode number: U+0070." },
         { "const": "charSize", "description": "How many bytes the character takes, with the word: 2 bytes." },
         { "const": "charBytes", "description": "All the character's bytes, in order: 195 169." },
-        { "const": "placeInChar", "description": "Which of the character's bytes this is, as a word: first, second, third or fourth." }
+        { "const": "placeInChar", "description": "Which of the character's bytes this is, as a word: first, second, third or fourth." },
+        { "const": "bits", "description": "The byte as 8 bits: 01110000." }
       ]
+    },
+    "ConceptCards": {
+      "title": "ConceptCards",
+      "description": "Every Concept card, and the Concepts index that groups them: concepts/cards.json.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cards", "index"],
+      "properties": {
+        "cards": {
+          "description": "Each Concept card, by its ID, such as utf8. Text refers to a card as [[utf8|words]].",
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z0-9]+$" },
+          "additionalProperties": { "$ref": "#/$defs/ConceptCard" }
+        },
+        "index": {
+          "description": "The Concepts index: groups of cards, in order. Every card is in exactly one group.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ConceptGroup" }
+        }
+      }
+    },
+    "ConceptCard": {
+      "title": "ConceptCard",
+      "description": "A short, self-contained explanation of a general computing idea. Its strings can hold **words** in bold and [[card|words]] that open another card.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "like", "text", "related"],
+      "properties": {
+        "name": { "description": "The card's heading, such as UTF-8.", "type": "string", "minLength": 1 },
+        "like": { "description": "A one-line analogy.", "type": "string", "minLength": 1 },
+        "text": { "description": "The explanation.", "type": "string", "minLength": 1 },
+        "visual": { "$ref": "#/$defs/ConceptVisual" },
+        "related": {
+          "description": "The IDs of related cards, shown as buttons that open them.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ConceptVisual": {
+      "title": "ConceptVisual",
+      "description": "A picture under a card's text.",
+      "oneOf": [
+        { "$ref": "#/$defs/BitsVisual" },
+        { "$ref": "#/$defs/Utf8Visual" },
+        { "$ref": "#/$defs/HonestyLabelsVisual" }
+      ]
+    },
+    "BitsVisual": {
+      "title": "BitsVisual",
+      "description": "The 8 bits of one byte, with each bit's value and their sum.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "bits" },
+        "value": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "note": { "description": "A sentence under the bits.", "type": "string", "minLength": 1 }
+      }
+    },
+    "Utf8Visual": {
+      "title": "Utf8Visual",
+      "description": "A table of characters and the UTF-8 bytes that store them. The page works the bytes out; the file only lists the characters.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "chars"],
+      "properties": {
+        "kind": { "const": "utf8" },
+        "chars": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }
+      }
+    },
+    "HonestyLabelsVisual": {
+      "title": "HonestyLabelsVisual",
+      "description": "Every Honesty label, with what it means. The card that shows it is the one every label chip opens.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "honestyLabels" }
+      }
+    },
+    "ConceptGroup": {
+      "title": "ConceptGroup",
+      "description": "One group in the Concepts index.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "cards"],
+      "properties": {
+        "name": { "description": "The group's heading, such as Storing text.", "type": "string", "minLength": 1 },
+        "cards": { "description": "Card IDs, in order.", "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "HonestyLabels": {
+      "title": "HonestyLabels",
+      "description": "The set of Honesty labels, and which one each zoom level and panel carries: concepts/honesty-labels.json. Changing the set is an edit to this file alone.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["labels", "levels", "panels"],
+      "properties": {
+        "labels": {
+          "description": "Each label, by its ID, in the order the How we know card lists them.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z]+$" },
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/HonestyLabel" }
+        },
+        "levels": {
+          "description": "The label each built zoom level carries, by level number. A level that isn't built yet has none.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[1-9]$" },
+          "additionalProperties": { "type": "string" }
+        },
+        "panels": {
+          "description": "The label of each panel whose provenance differs from its level.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["byteBits"],
+          "properties": {
+            "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" }
+          }
+        }
+      }
+    },
+    "HonestyLabel": {
+      "title": "HonestyLabel",
+      "description": "One Honesty label: how the content it is on knows what it shows.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "means"],
+      "properties": {
+        "name": { "description": "The word on the chip, such as Observed.", "type": "string", "minLength": 1 },
+        "means": { "description": "What the label means, on the How we know card.", "type": "string", "minLength": 1 },
+        "warning": { "description": "Shown in the warning color. Only Illustrative is, and the build allows one label at most.", "type": "boolean" }
+      }
     }
   }
 }

@@ -3,7 +3,7 @@
   "templates": {
     "level1.intro": {
       "subject": "program",
-      "text": "You typed {lines} and clicked Run. At this level your program is still just text, as you wrote it."
+      "text": "You typed {lines} and clicked Run. At this level your program is still just text, as you wrote it. Your computer stores it as [[byte|bytes]], which the next zoom level shows. Highlighted words, like that one, open a short explanation."
     },
     "level1.caption": {
       "subject": "program",
@@ -62,6 +62,19 @@
       "title": "Byte {number} of {count}: **{char}** is stored as {value}",
       "text": "A quote mark is stored like any other character. Python uses the pair of them to find where a piece of text starts and ends.",
       "term": "code point {codePoint}"
+    },
+    "byte.bits": {
+      "subject": "byte",
+      "title": "How the number {value} is stored",
+      "text": "A byte is 8 [[bit|bits]]: 8 tiny on/off switches. Each switch has a value, shown under it. Add up the values of the switches that are on, and you get the number. This way of counting is called [[binary|binary]]."
+    },
+    "byte.bitsPattern": {
+      "subject": "byte",
+      "text": "So **{char}** is stored as the pattern **{bits}**."
+    },
+    "byte.bitsPatternMultiByte": {
+      "subject": "byte",
+      "text": "So the {placeInChar} byte of **{char}** is stored as the pattern **{bits}**."
     }
   }
 }

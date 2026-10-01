@@ -1,8 +1,9 @@
 import templateFile from '../../templates/py314.json';
 import type { Analysis, ByteFact, ByteSlot, ProgramSlot, Template, Templates } from '../generated/analysis';
+import { bitsOf } from '../concepts/bits';
 import { charLabel, linesOf } from '../zoom/characters';
 
-/** The Templates for Python 3.14. The build checks them against the schema and the slots (see checkTemplates.ts). */
+/** The Templates for Python 3.14. The build checks them against the schema, the slots and the Concept cards (see checkContent.ts). */
 const TEMPLATES = (templateFile as Templates).templates;
 
 export type TemplateId = keyof typeof templateFile.templates;
@@ -26,7 +27,7 @@ export interface Explanation {
 const MARKUP = /(\*\*|\[\[[a-z0-9]+\|[^\]]+\]\]|\{[A-Za-z]+\})/;
 
 /** Fills in one Template string. Markup is read before the values go in, so a `*` in the Program stays a `*`. */
-function fillString(string: string, facts: Record<string, string>): Span[] {
+function fillString(string: string, facts: Record<string, string> = {}): Span[] {
   const spans: Span[] = [];
   let strong = false;
   for (const part of string.split(MARKUP)) {
@@ -42,6 +43,9 @@ function fillString(string: string, facts: Record<string, string>): Span[] {
   }
   return spans;
 }
+
+/** Text with bold words and words with a Concept card, but no slots, such as a Concept card's own text. */
+export const textSpans = (string: string) => fillString(string);
 
 function fill(template: Template, facts: Record<string, string>): Explanation {
   return {
@@ -100,6 +104,7 @@ function byteFacts(analysis: Analysis, byte: ByteFact): Record<ByteSlot, string>
     charSize: counted(charBytes.length, 'byte', 'bytes'),
     charBytes: charBytes.map((other) => other.value).join(' '),
     placeInChar: PLACES[charBytes.findIndex((other) => other.id === byte.id)],
+    bits: bitsOf(byte.value).pattern,
   };
 }
 
@@ -116,3 +121,12 @@ function byteKind(analysis: Analysis, byte: ByteFact): TemplateId {
 
 /** The Explanation of one byte, from the Template for its kind: a newline, an indent, a quote mark, and so on. */
 export const explainByte = (analysis: Analysis, byte: ByteFact) => fill(template(byteKind(analysis, byte), 'byte'), byteFacts(analysis, byte));
+
+/** Zoom level 2's panel How the number N is stored: what a byte's 8 bits are, and the selected byte's pattern. */
+export function explainBits(analysis: Analysis, byte: ByteFact) {
+  const facts = byteFacts(analysis, byte);
+  const { title, text } = fill(template('byte.bits', 'byte'), facts);
+  const multiByte = aboutByte(analysis, byte).charBytes.length > 1;
+  const pattern = fill(template(multiByte ? 'byte.bitsPatternMultiByte' : 'byte.bitsPattern', 'byte'), facts).text;
+  return { title: title!, text, pattern };
+}
