@@ -57,6 +57,29 @@ test.describe('moving between zoom levels', () => {
     await expect(zoomLevel(page, 3, 'Tokens')).toBeVisible();
   });
 
+  test('after a click, the arrow keys move focus to the new zoom level and leave no focus ring behind', async ({ page }) => {
+    const ringed = () => page.evaluate(() => [...document.querySelectorAll(':focus-visible')].filter((el) => getComputedStyle(el).outlineStyle !== 'none').length);
+    await page.goto('/zoom/1');
+    await run(page, 'print("Hi")');
+
+    // A clicked gauge tick, Zoom in button or byte would otherwise keep focus, and get a ring once a key is pressed.
+    await gauge(page).getByRole('button', { name: '2 Bytes' }).click();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator(':focus')).toHaveText('Tokens');
+    expect(await ringed()).toBe(0);
+
+    await page.getByRole('button', { name: 'Back: Bytes' }).click();
+    await zoomLevel(page, 2, 'Bytes').getByRole('button', { name: /^Byte 1: / }).click();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.locator(':focus')).toHaveText('Your code');
+    expect(await ringed()).toBe(0);
+
+    await page.getByRole('button', { name: 'Zoom in: Bytes' }).click();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.locator(':focus')).toHaveText('Your code');
+    expect(await ringed()).toBe(0);
+  });
+
   test('there is no zooming past zoom level 1 or 9', async ({ page }) => {
     await page.goto('/zoom/9');
     await expect(page.getByRole('button', { name: /^Zoom in/ })).toHaveCount(0);

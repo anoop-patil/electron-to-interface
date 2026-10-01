@@ -120,6 +120,9 @@ export function useZoomNavigation(view: RefObject<HTMLElement | null>) {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || isTyping(event.target)) return;
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
+        // The control that had focus, such as a clicked gauge tick, belongs to the level being left, and the
+        // key press would give it a focus ring. The heading takes focus instead, and keeps it through the zoom.
+        view.current?.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
         go(target.current + (event.key === 'ArrowDown' ? 1 : -1));
       }
     };
@@ -129,7 +132,7 @@ export function useZoomNavigation(view: RefObject<HTMLElement | null>) {
       removeEventListener('popstate', onPopState);
       removeEventListener('keydown', onKeyDown);
     };
-  }, [go, zoomTo]);
+  }, [go, zoomTo, view]);
 
   return { level, go };
 }

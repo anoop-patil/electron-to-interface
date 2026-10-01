@@ -53,7 +53,8 @@ export function ZoomView({
     <div className="origin-top" ref={viewRef}>
       <section className="grid min-w-0 gap-4" aria-label={`Zoom level ${level}: ${title}`}>
         <p className="font-mono text-[13px] leading-[normal] text-ink3">Zoom level {level} of {LAST_LEVEL}</p>
-        <h1 className="-mt-3 text-[clamp(26px,3.2vw,34px)] font-semibold leading-[1.15] tracking-[-0.015em]" tabIndex={-1}>{title}</h1>
+        {/* The heading takes focus only so screen readers announce a new level; it isn't a control, so it has no focus ring. */}
+        <h1 className="-mt-3 text-[clamp(26px,3.2vw,34px)] font-semibold leading-[1.15] tracking-[-0.015em] outline-none" tabIndex={-1}>{title}</h1>
         {intro && (
           <p className="max-w-[64ch] text-[18px] leading-[1.6] text-ink2 [text-wrap:pretty]">
             <ExplanationText spans={intro.text} />

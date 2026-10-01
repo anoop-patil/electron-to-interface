@@ -28,6 +28,7 @@ Built in `app/`. Decisions made along the way:
 - A second zoom before the first has finished replaces its history entry, so Back never lands on a level the learner didn't see.
 - The zoom is 100 ms out and 150 ms in, growing from the selected element if there is one.
 - The ↓ and ↑ keys zoom whenever focus isn't in a text field, so they don't scroll the page, as in prototype v8.
+- The ↓ and ↑ keys move focus to the zoom level's heading. Otherwise a control clicked on the old level, such as a gauge tick, keeps focus and gets a focus ring from the key press.
 - The theme toggle's choice is saved in the browser and overrides the system setting from then on.
 - Run keeps the learner on the zoom level they're on. The selected byte stays selected across levels, so zooming back to level 1 shows its character highlighted.
 - Below 920px wide, the gauge strip scrolls sideways inside itself and keeps the current tick in view.
