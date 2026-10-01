@@ -6,6 +6,13 @@
  */
 
 /**
+ * Which of the Program's code objects: 0 is the file's own, then each one inside it, depth first, in the order Python stores them.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "CodeIndex".
+ */
+export type CodeIndex = number;
+/**
  * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); or line, one line of the Program (LineSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -73,6 +80,34 @@ export interface Analysis {
    */
   bytes: ByteFact[];
   /**
+   * Everything the Program wrote to standard output when it ran.
+   */
+  stdout: string;
+  /**
+   * Everything the Program wrote to standard error when it ran, including the traceback of an error that stopped it.
+   */
+  stderr: string;
+  /**
+   * The error that stopped the Program, or null if it ran to the end or called sys.exit.
+   */
+  error: ProgramError | null;
+  /**
+   * Each Event of the run, in order: at most 2,000.
+   */
+  events: Event[];
+  /**
+   * Each step run, in the order the steps ran: at most 2,000.
+   */
+  runs: StepRun[];
+  /**
+   * True if the run had more than 2,000 Events, so events holds only the first 2,000.
+   */
+  eventsCutShort: boolean;
+  /**
+   * True if more than 2,000 steps ran, so runs holds only the first 2,000.
+   */
+  runsCutShort: boolean;
+  /**
    * Each Try it yourself command the browser's Python ran on the Program, and what it printed.
    */
   commands: CommandRun[];
@@ -100,6 +135,78 @@ export interface ByteFact {
    * The line the character is on, counted from 1. A line's newline belongs to that line.
    */
   line: number;
+}
+/**
+ * The error that stopped the Program, as the last line of its traceback names it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ProgramError".
+ */
+export interface ProgramError {
+  /**
+   * The kind of error, such as ZeroDivisionError or SyntaxError.
+   */
+  type: string;
+  /**
+   * Python's message, such as division by zero. Empty for an error class the Program defines, whose message could only be had by running its code.
+   */
+  message: string;
+  /**
+   * The line of the Program where it happened, counted from 1, if Python names one.
+   */
+  line?: number;
+}
+/**
+ * One step recorded while the Program ran, in the Program's own code: a call, a line, a return or an exception.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Event".
+ */
+export interface Event {
+  /**
+   * Fact ID: ev-0 for the first Event, ev-1 for the next, and so on.
+   */
+  id: string;
+  /**
+   * Recorded as sys.settrace reports them. call: a code object starts, or carries on after a yield. line: a new line is about to run, or a loop goes back to the start of the same line. return: a code object returns, yields, or ends with an error. exception: an error happens, or passes through.
+   */
+  kind: "call" | "line" | "return" | "exception";
+  code: CodeIndex;
+  /**
+   * The line, counted from 1. For a call, the line the code object starts on, or the line it carries on from after a yield.
+   */
+  line: number;
+  /**
+   * Each variable of that code object at that moment, by name, as Python's repr shows it, cut to 80 characters. Names that start and end with __ are left out. Only Python's own types are shown that way; any other object is named by its class, such as <Point object>, because showing it would run its code.
+   */
+  locals: {
+    [k: string]: string;
+  };
+  /**
+   * For a return, the value returned or yielded, shown like a variable; none when an error ends the code object. For an exception, the error, such as ZeroDivisionError: division by zero.
+   */
+  value?: string;
+}
+/**
+ * One time a step ran, recorded with sys.monitoring INSTRUCTION events. RESUME, which those don't report, is added where each code object starts or carries on after a yield.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "StepRun".
+ */
+export interface StepRun {
+  /**
+   * Fact ID: run-0 for the first step run, run-1 for the next, and so on.
+   */
+  id: string;
+  code: CodeIndex;
+  /**
+   * Which step of that code object ran: its offset in bytes, as dis shows it.
+   */
+  offset: number;
+  /**
+   * What the Program wrote to standard output while this step ran, if anything.
+   */
+  printed?: string;
 }
 /**
  * One Try it yourself command, run by the browser's Python on the Program saved as fileName.
@@ -334,6 +441,10 @@ export interface HonestyLabels {
      * The Machine map, beside every zoom level.
      */
     machineMap: string;
+    /**
+     * The Terminal, beside every zoom level: what the Program printed when it ran.
+     */
+    terminal: string;
     /**
      * Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.
      */

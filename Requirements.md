@@ -141,7 +141,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 - Pin Pyodide 314.0.7, self-hosted; show its Python version in the UI.
 - Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `fileName` (the name the Try it yourself commands use), `commands` (what each Try it yourself command printed when run on the Program), `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
 - Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, numbered from 0) that Explanations and highlights point at.
-- Events are recorded with `sys.settrace` (line, call, return, exception), with a safe, truncated repr of locals.
+- Events (line, call, return, exception) are recorded with the `sys.monitoring` events that `sys.settrace` is built on, in the same run as the step runs, with a safe, truncated repr of locals. With `sys.settrace` on, Python reports no INSTRUCTION events.
 - Step runs, the order the bytecode steps ran in, are recorded with `sys.monitoring` INSTRUCTION events. It doesn't report RESUME, so RESUME's runs are added where each code object starts. Each line of output is tied to the step run that printed it.
 - Record, after the run, which **specialized** form each step had become (`dis` with `adaptive=True`; e.g. `BINARY_OP_ADD_INT`), so Phase 3 can match it in the Reference Library.
 - Cap Events and step runs at 2,000 each, and tell the learner when a record is cut short.

@@ -14,3 +14,7 @@
 - [ ] Where Python records it, the specialized form a step had become after the run is shown, labeled Observed.
 - [ ] The machine map lights your steps, objects and plates, with counts across frames.
 - [ ] Try it yourself: `python -m dis` on the learner's file: captured output for the Examples, live output for the learner's own program (ticket 06).
+
+## Comments
+
+- Since ticket 07, the Analysis's step runs (`run-N`) and Events (`ev-N`) name a code object by its index: the file's own first, then each one inside it, depth first, in the order Python stores them (`_code_objects` in `analyze.py`). List the bytecode in that order, so `code` and `offset` find a step's `bc-N`.

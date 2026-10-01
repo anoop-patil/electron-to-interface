@@ -4,14 +4,14 @@
  * Design tokens from prototype v8. Light and dark are each designed, not inverted.
  * The page follows the system setting unless the theme toggle has set data-theme on <html>.
  * The --tint-N colours shift the zoom view from warm (your code) to cool (the machine).
- * The --term colours are a terminal's, dark in both themes.
+ * The --term colours are a terminal's, dark in both themes; --term-err is for what a program writes to stderr.
  */
 :root {
   --page: #ece9e2; --surface: #ffffff; --sunk: #f6f4ef;
   --ink: #1d1c1a; --ink2: #4f4b45; --ink3: #6a655c; --rule: #e2ded5; --rule2: #cfcabf;
   --accent: #2f55c9; --accent-soft: rgba(47, 85, 201, 0.1); --on-accent: #ffffff;
   --warn: #8a5a12;
-  --term-bg: #1d1c1a; --term-fg: #edebe6;
+  --term-bg: #1d1c1a; --term-fg: #edebe6; --term-err: #e2b465;
   --tint-1: #f9f4ea; --tint-2: #f8f4ec; --tint-3: #f7f4ee; --tint-4: #f6f4f0; --tint-5: #f5f4f2;
   --tint-6: #f3f4f4; --tint-7: #f1f3f5; --tint-8: #eff2f6; --tint-9: #eef2f7;
   --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -24,7 +24,7 @@
     --ink: #edebe6; --ink2: #bdb8ae; --ink3: #9c978d; --rule: #2d2c28; --rule2: #4a4843;
     --accent: #93aeff; --accent-soft: rgba(147, 174, 255, 0.16); --on-accent: #141412;
     --warn: #e2b465;
-    --term-bg: #0b0b0a; --term-fg: #edebe6;
+    --term-bg: #0b0b0a; --term-fg: #edebe6; --term-err: #e2b465;
     --tint-1: #1b1814; --tint-2: #1a1815; --tint-3: #1a1816; --tint-4: #191817; --tint-5: #181818;
     --tint-6: #171819; --tint-7: #16181a; --tint-8: #16181b; --tint-9: #15181c;
     color-scheme: dark;
@@ -35,7 +35,7 @@
   --ink: #edebe6; --ink2: #bdb8ae; --ink3: #9c978d; --rule: #2d2c28; --rule2: #4a4843;
   --accent: #93aeff; --accent-soft: rgba(147, 174, 255, 0.16); --on-accent: #141412;
   --warn: #e2b465;
-  --term-bg: #0b0b0a; --term-fg: #edebe6;
+  --term-bg: #0b0b0a; --term-fg: #edebe6; --term-err: #e2b465;
   --tint-1: #1b1814; --tint-2: #1a1815; --tint-3: #1a1816; --tint-4: #191817; --tint-5: #181818;
   --tint-6: #171819; --tint-7: #16181a; --tint-8: #16181b; --tint-9: #15181c;
   color-scheme: dark;
@@ -61,6 +61,7 @@
   --color-warn: var(--warn);
   --color-term-bg: var(--term-bg);
   --color-term-fg: var(--term-fg);
+  --color-term-err: var(--term-err);
   --color-tint-1: var(--tint-1);
   --color-tint-2: var(--tint-2);
   --color-tint-3: var(--tint-3);

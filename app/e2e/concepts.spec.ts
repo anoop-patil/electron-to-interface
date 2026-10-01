@@ -35,7 +35,7 @@ test.describe('Honesty labels', () => {
   test('every chip opens the How we know card, which defines every label', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
-    await page.getByRole('button', { name: 'How we know: Observed' }).click();
+    await zoomLevel(page, 1, 'Your code').getByRole('button', { name: 'How we know: Observed' }).click();
 
     await expect(card(page)).toHaveAccessibleName('How we know');
     for (const [name, means] of Object.entries(LABELS)) {
@@ -47,7 +47,7 @@ test.describe('Honesty labels', () => {
   test('are text chips: only Illustrative gets a warning color, and none is told apart by its border style', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
-    await page.getByRole('button', { name: 'How we know: Observed' }).click();
+    await zoomLevel(page, 1, 'Your code').getByRole('button', { name: 'How we know: Observed' }).click();
 
     const styles = Object.fromEntries(
       await Promise.all(

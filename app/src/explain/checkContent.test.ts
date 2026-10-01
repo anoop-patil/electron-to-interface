@@ -111,7 +111,7 @@ test('the build fails if more than one label has the warning color', async () =>
 
 test('a different label set is an edit to the labels file alone: three labels instead of five pass the check', async () => {
   const { observed, reference, typical } = SHIPPED.labels.labels;
-  const run = build(withLabels({ labels: { observed, reference, typical }, panels: { byteBits: 'observed', machineMap: 'typical', tryItOutput: 'observed' } }));
+  const run = build(withLabels({ labels: { observed, reference, typical }, panels: { byteBits: 'observed', machineMap: 'typical', terminal: 'observed', tryItOutput: 'observed' } }));
 
   await expect(run()).resolves.toBeUndefined();
 });

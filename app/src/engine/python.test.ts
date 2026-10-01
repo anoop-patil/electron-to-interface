@@ -49,6 +49,50 @@ test('an error in the Program shows Python’s traceback, with the path where th
   expect(result.exitStatus).toBe(1);
 });
 
+test('the Program runs: hello world prints Hello World!', () => {
+  const analysis = python.analyze('print("Hello World!")');
+
+  expect(analysis).toMatchObject({ stdout: 'Hello World!\n', stderr: '', error: null, eventsCutShort: false, runsCutShort: false });
+});
+
+test('an error stops the Program, with Python’s traceback on stderr', () => {
+  const analysis = python.analyze('print("before")\n1 / 0');
+
+  expect(analysis.stdout).toBe('before\n');
+  expect(analysis.stderr).toBe(
+    'Traceback (most recent call last):\n  File "/home/pyodide/program.py", line 2, in <module>\n    1 / 0\n    ~~^~~\nZeroDivisionError: division by zero\n',
+  );
+  expect(analysis.error).toEqual({ type: 'ZeroDivisionError', message: 'division by zero', line: 2 });
+});
+
+test('Events record each call, line and return, with the variables at that moment', () => {
+  const { events } = python.analyze('def double(n):\n    return n * 2\n\nx = double(3)');
+
+  expect(events.map(({ kind, line }) => `${kind} ${line}`)).toEqual(['call 1', 'line 1', 'line 4', 'call 1', 'line 2', 'return 2', 'return 4']);
+  expect(events[5]).toEqual({ id: 'ev-5', kind: 'return', code: 1, line: 2, locals: { n: '3' }, value: '6' });
+});
+
+test('a long run keeps the first 2,000 Events and step runs, and says so', () => {
+  const analysis = python.analyze('for i in range(5000):\n    pass\nprint("done")');
+
+  expect(analysis.runs).toHaveLength(2000);
+  expect(analysis.events).toHaveLength(2000);
+  expect(analysis).toMatchObject({ runsCutShort: true, eventsCutShort: true, stdout: 'done\n' });
+});
+
+test('for greet.py, the step runs match the capture of prototype v8, with RESUME added where each code object starts', async () => {
+  const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
+  const { runs, stdout } = python.analyze(captured.source, captured.file);
+
+  // The code objects in the order a step run counts them: the file's own, then greet.
+  const names = ['<module>', 'greet'];
+  const ran = runs.map(({ code, offset, printed }) => ({ code: names[code], off: offset, ...(printed && { printed }) }));
+  expect(ran.filter(({ off }) => off !== 0)).toEqual(captured.ran);
+  expect(ran.filter(({ off }) => off === 0)).toEqual([{ code: '<module>', off: 0 }, { code: 'greet', off: 0 }, { code: 'greet', off: 0 }]);
+  expect(runs).toHaveLength(42);
+  expect(stdout).toBe(captured.stdout);
+});
+
 test('for greet.py, the output of every command matches the output captured with CPython 3.14.2 on Linux, character for character', async () => {
   const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
   const { commands } = python.analyze(captured.source, captured.file);

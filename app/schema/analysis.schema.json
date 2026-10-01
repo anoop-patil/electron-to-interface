@@ -4,7 +4,7 @@
   "description": "The complete set of Facts produced from one Program on one Python version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["pythonVersion", "program", "fileName", "bytes", "commands"],
+  "required": ["pythonVersion", "program", "fileName", "bytes", "stdout", "stderr", "error", "events", "runs", "eventsCutShort", "runsCutShort", "commands"],
   "properties": {
     "pythonVersion": {
       "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
@@ -25,6 +25,36 @@
       "type": "array",
       "items": { "$ref": "#/$defs/ByteFact" }
     },
+    "stdout": {
+      "description": "Everything the Program wrote to standard output when it ran.",
+      "type": "string"
+    },
+    "stderr": {
+      "description": "Everything the Program wrote to standard error when it ran, including the traceback of an error that stopped it.",
+      "type": "string"
+    },
+    "error": {
+      "description": "The error that stopped the Program, or null if it ran to the end or called sys.exit.",
+      "anyOf": [{ "$ref": "#/$defs/ProgramError" }, { "type": "null" }]
+    },
+    "events": {
+      "description": "Each Event of the run, in order: at most 2,000.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Event" }
+    },
+    "runs": {
+      "description": "Each step run, in the order the steps ran: at most 2,000.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/StepRun" }
+    },
+    "eventsCutShort": {
+      "description": "True if the run had more than 2,000 Events, so events holds only the first 2,000.",
+      "type": "boolean"
+    },
+    "runsCutShort": {
+      "description": "True if more than 2,000 steps ran, so runs holds only the first 2,000.",
+      "type": "boolean"
+    },
     "commands": {
       "description": "Each Try it yourself command the browser's Python ran on the Program, and what it printed.",
       "type": "array",
@@ -32,6 +62,68 @@
     }
   },
   "$defs": {
+    "ProgramError": {
+      "title": "ProgramError",
+      "description": "The error that stopped the Program, as the last line of its traceback names it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "message"],
+      "properties": {
+        "type": { "description": "The kind of error, such as ZeroDivisionError or SyntaxError.", "type": "string", "minLength": 1 },
+        "message": { "description": "Python's message, such as division by zero. Empty for an error class the Program defines, whose message could only be had by running its code.", "type": "string" },
+        "line": { "description": "The line of the Program where it happened, counted from 1, if Python names one.", "type": "integer", "minimum": 1 }
+      }
+    },
+    "CodeIndex": {
+      "title": "CodeIndex",
+      "description": "Which of the Program's code objects: 0 is the file's own, then each one inside it, depth first, in the order Python stores them.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "StepRun": {
+      "title": "StepRun",
+      "description": "One time a step ran, recorded with sys.monitoring INSTRUCTION events. RESUME, which those don't report, is added where each code object starts or carries on after a yield.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "code", "offset"],
+      "properties": {
+        "id": {
+          "description": "Fact ID: run-0 for the first step run, run-1 for the next, and so on.",
+          "type": "string",
+          "pattern": "^run-(0|[1-9][0-9]*)$"
+        },
+        "code": { "$ref": "#/$defs/CodeIndex" },
+        "offset": { "description": "Which step of that code object ran: its offset in bytes, as dis shows it.", "type": "integer", "minimum": 0 },
+        "printed": { "description": "What the Program wrote to standard output while this step ran, if anything.", "type": "string", "minLength": 1 }
+      }
+    },
+    "Event": {
+      "title": "Event",
+      "description": "One step recorded while the Program ran, in the Program's own code: a call, a line, a return or an exception.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "code", "line", "locals"],
+      "properties": {
+        "id": {
+          "description": "Fact ID: ev-0 for the first Event, ev-1 for the next, and so on.",
+          "type": "string",
+          "pattern": "^ev-(0|[1-9][0-9]*)$"
+        },
+        "kind": {
+          "description": "Recorded as sys.settrace reports them. call: a code object starts, or carries on after a yield. line: a new line is about to run, or a loop goes back to the start of the same line. return: a code object returns, yields, or ends with an error. exception: an error happens, or passes through.",
+          "type": "string",
+          "enum": ["call", "line", "return", "exception"]
+        },
+        "code": { "$ref": "#/$defs/CodeIndex" },
+        "line": { "description": "The line, counted from 1. For a call, the line the code object starts on, or the line it carries on from after a yield.", "type": "integer", "minimum": 1 },
+        "locals": {
+          "description": "Each variable of that code object at that moment, by name, as Python's repr shows it, cut to 80 characters. Names that start and end with __ are left out. Only Python's own types are shown that way; any other object is named by its class, such as <Point object>, because showing it would run its code.",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "value": { "description": "For a return, the value returned or yielded, shown like a variable; none when an error ends the code object. For an exception, the error, such as ZeroDivisionError: division by zero.", "type": "string" }
+      }
+    },
     "CommandRun": {
       "title": "CommandRun",
       "description": "One Try it yourself command, run by the browser's Python on the Program saved as fileName.",
@@ -314,10 +406,11 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits", "machineMap", "tryItOutput"],
+          "required": ["byteBits", "machineMap", "terminal", "tryItOutput"],
           "properties": {
             "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
             "machineMap": { "description": "The Machine map, beside every zoom level.", "type": "string" },
+            "terminal": { "description": "The Terminal, beside every zoom level: what the Program printed when it ran.", "type": "string" },
             "tryItOutput": { "description": "Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.", "type": "string" }
           }
         }

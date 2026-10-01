@@ -5,6 +5,7 @@ import { buttonClass } from './button';
 import { ConceptsButton } from './concepts/ConceptsButton';
 import { MachineMap } from './machine/MachineMap';
 import { mapState } from './machine/mapState';
+import { Terminal } from './terminal/Terminal';
 import { ThemeToggle } from './ThemeToggle';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
@@ -73,7 +74,7 @@ export function App({ engine }: { engine: Engine }) {
         </header>
 
         <div className="grid grid-cols-[310px_168px_minmax(0,1fr)] mid:grid-cols-[270px_150px_minmax(0,1fr)] narrow:grid-cols-[minmax(0,1fr)]">
-          {/* The left column: the editor, then the Machine map. */}
+          {/* The left column: the editor, the Terminal, then the Machine map. */}
           <div className="min-w-0 border-r border-rule narrow:border-r-0">
             <aside
               className={`flex min-w-0 flex-col gap-3 px-[18px] py-[22px] narrow:border-b narrow:border-rule narrow:px-4 narrow:pt-3 ${codeHidden ? 'narrow:pb-3' : 'narrow:pb-4'}`}
@@ -118,6 +119,7 @@ export function App({ engine }: { engine: Engine }) {
                 </p>
               </div>
             </aside>
+            <Terminal analysis={analysis} />
             <MachineMap state={mapState({ level, analysis, selection: selectedFactId })} />
           </div>
 

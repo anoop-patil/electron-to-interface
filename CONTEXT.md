@@ -44,6 +44,10 @@ _Avoid_: opcode (for the instruction in the program), instruction
 One time a Step ran. A Step inside a loop or a function has several; one that never ran has none.
 _Avoid_: iteration, execution, hit, run (on its own, which means the learner's Run)
 
+**Terminal**:
+The panel under the editor that shows what the Program printed when it ran, as a terminal would.
+_Avoid_: console, output panel
+
 **Handler**:
 The interpreter's machine code for one kind of Step, or for one of its specialized variants. On one Step run, a Step can run two Handlers: its general form, which rewrites the Step, then the specialized one.
 _Avoid_: opcode function, case

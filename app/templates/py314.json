@@ -84,6 +84,14 @@
       "subject": "program",
       "text": "your program · {characters}"
     },
+    "terminal.nothingPrinted": {
+      "subject": "program",
+      "text": "Your program printed nothing."
+    },
+    "terminal.cutShort": {
+      "subject": "program",
+      "text": "Your program ran too long to record in full. The app records up to 2,000 steps of a run, so the record of yours stops partway. Everything it printed is above."
+    },
     "tryIt.observed": {
       "subject": "program",
       "text": "Your browser’s Python did what this command does, on your program, just now."
