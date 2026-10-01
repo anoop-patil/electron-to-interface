@@ -31,6 +31,22 @@ export type AstField =
       value: string;
     };
 /**
+ * One fixed value of a code object: another of the Program's code objects, or a value shown as Python's repr shows it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Const".
+ */
+export type Const =
+  | {
+      code: CodeIndex;
+    }
+  | {
+      /**
+       * As Python's repr shows it, cut to 80 characters: 'Hello,'.
+       */
+      value: string;
+    };
+/**
  * Which of the Program's code objects: 0 is the file's own, then each one inside it, depth first, in the order Python stores them.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -38,12 +54,63 @@ export type AstField =
  */
 export type CodeIndex = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); or node, one AstFact (NodeSlot).
+ * A change to one of a frame's variables: it now holds a label, or it was deleted.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "VariableChange".
+ */
+export type VariableChange =
+  | {
+      frame: number;
+      name: string;
+      value: Label;
+    }
+  | {
+      frame: number;
+      name: string;
+      deleted: true;
+    };
+/**
+ * Which of the Program's code objects: 0 is the file's own, then each one inside it, depth first, in the order Python stores them.
+ */
+export type CodeIndex1 = number;
+/**
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); or step, one Step and, where one is selected, one of its step runs (StepSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte" | "line" | "token" | "node";
+export type Subject = "program" | "byte" | "line" | "token" | "node" | "step";
+/**
+ * A Fact about one step, or one step run of it, that a Template can name. A slot that doesn't apply is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "StepSlot".
+ */
+export type StepSlot =
+  | "opname"
+  | "argument"
+  | "number"
+  | "code"
+  | "name"
+  | "value"
+  | "callee"
+  | "count"
+  | "operator"
+  | "target"
+  | "afterRun"
+  | "runs"
+  | "times"
+  | "run"
+  | "overall"
+  | "total"
+  | "object"
+  | "printed"
+  | "trip"
+  | "next"
+  | "plates"
+  | "frames"
+  | "objects";
 /**
  * A Fact about one node of the syntax tree that a Template can name. A slot that doesn't apply to the node is empty.
  *
@@ -79,7 +146,8 @@ export type LineSlot = "line" | "indent" | "text";
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ProgramSlot".
  */
-export type ProgramSlot = "lines" | "characters" | "bytes" | "file" | "tokens" | "encoding" | "boxes";
+export type ProgramSlot =
+  "lines" | "characters" | "bytes" | "file" | "tokens" | "encoding" | "boxes" | "lists" | "steps" | "ran";
 /**
  * A Fact about one token that a Template can name.
  *
@@ -147,6 +215,10 @@ export interface Analysis {
    */
   ast: AstFact[];
   /**
+   * The Program's code objects, each with its steps as dis shows them before anything runs: zoom level 5. The file's own comes first, then each one inside it, depth first, in the order Python stores them, so a CodeIndex finds one. Empty if the Program has a syntax error.
+   */
+  bytecode: CodeObject[];
+  /**
    * Everything the Program wrote to standard output when it ran.
    */
   stdout: string;
@@ -166,6 +238,14 @@ export interface Analysis {
    * Each step run, in the order the steps ran: at most 2,000.
    */
   runs: StepRun[];
+  /**
+   * Each frame Python made to run one of the Program's code objects, in the order they started: frame-0 is the file's. A step run says which frame it ran in.
+   */
+  frames: Frame[];
+  /**
+   * Each object a plate or a variable pointed to, in the order the replay first saw them. Derived: the replay of the plates names them.
+   */
+  objects: ObjectFact[];
   /**
    * True if the run had more than 2,000 Events, so events holds only the first 2,000.
    */
@@ -284,6 +364,109 @@ export interface AstFact {
   fields: AstField[];
 }
 /**
+ * One of the Program's code objects, as the compiler made it: the file itself, or one function, class body, lambda or generator expression inside it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "CodeObject".
+ */
+export interface CodeObject {
+  /**
+   * Its name: <module> for the file, greet for a function, <lambda>, <genexpr>.
+   */
+  name: string;
+  /**
+   * Its full name, with the names of the code it sits in: Point.__init__.
+   */
+  qualname: string;
+  /**
+   * The line it starts on, counted from 1.
+   */
+  line: number;
+  /**
+   * The names its steps look up or store, other than its own variables, in order: co_names.
+   */
+  names: string[];
+  /**
+   * Its fixed values, in order: co_consts.
+   */
+  consts: Const[];
+  /**
+   * Its own variables, inputs first: co_varnames.
+   */
+  varnames: string[];
+  /**
+   * Its variables that a function inside it also uses: co_cellvars.
+   */
+  cellvars: string[];
+  /**
+   * The variables it uses from the code around it: co_freevars.
+   */
+  freevars: string[];
+  /**
+   * How many bytes of bytecode it has, counting the cache entries after some steps.
+   */
+  size: number;
+  /**
+   * Its steps, in order.
+   */
+  steps: Step[];
+}
+/**
+ * One step of a code object, as dis shows it before anything runs.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Step".
+ */
+export interface Step {
+  /**
+   * Fact ID: bc-0 for the first step of the file's code object, then on through each code object in turn.
+   */
+  id: string;
+  /**
+   * Where it starts in its code object's bytecode, in bytes.
+   */
+  offset: number;
+  /**
+   * The kind of step, as dis names it: LOAD_NAME.
+   */
+  opname: string;
+  /**
+   * Its argument, a number, or null for a step that takes none.
+   */
+  arg: number | null;
+  /**
+   * What dis says the argument means: print + NULL, to L2. A code object is named without its address: <code object greet>.
+   */
+  argrepr: string;
+  /**
+   * Its two bytes: the kind of step, then the argument's lowest byte.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  bytes: [number, number];
+  /**
+   * How many 2-byte cache entries follow it, where Python keeps notes for rewriting it into a faster form.
+   */
+  caches: number;
+  /**
+   * The line it comes from, counted from 1; 0 for a step Python adds before the file's first line; null for a step with no line.
+   */
+  line: number | null;
+  /**
+   * The code it comes from, if it comes from one place.
+   */
+  span: ByteSpan | null;
+  /**
+   * For a step that can jump, the offset it jumps to.
+   */
+  jump: number | null;
+  /**
+   * The form it had become after the Program ran again, unwatched, as `python FILE`: RESUME_CHECK, LOAD_CONST_MORTAL, or its own opname if it wasn't rewritten. Left out if that run didn't happen.
+   */
+  afterRun?: string;
+}
+/**
  * The error that stopped the Program, as the last line of its traceback names it.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -354,6 +537,100 @@ export interface StepRun {
    * What the Program wrote to standard output while this step ran, if anything.
    */
   printed?: string;
+  /**
+   * The frame it ran in: its place in frames.
+   */
+  frame?: number;
+  /**
+   * The frame of the Program's own code that called that frame, which waits under it; null for the file's frame.
+   */
+  caller?: number | null;
+  /**
+   * Derived: how the plates of each frame changed by the end of this step, as the replay works them out with Python's rules. The frames after a step run are those standing when the next step runs: its frame, and the frames waiting under it.
+   */
+  plates?: PlateChange[];
+  /**
+   * Derived: how the variables of each frame changed by the end of this step.
+   */
+  variables?: VariableChange[];
+  /**
+   * Objects seen again at this step whose repr had changed since they were last seen, such as a list something was added to.
+   */
+  objects?: ObjectSeen[];
+  /**
+   * True if Python's rules can't account for the plates of this step's frame from here on, so they aren't shown.
+   */
+  platesUnsure?: true;
+}
+/**
+ * A change to one frame's plates: took plates off the top, then put these on, the last on top.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "PlateChange".
+ */
+export interface PlateChange {
+  frame: number;
+  took: number;
+  put: Label[];
+}
+/**
+ * What a plate or a variable holds: a label for an object. madeBy is the step run that made it. object is the object, if the replay can tell which one. An empty plate holds nothing, where a call has no object to go with its function.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Label".
+ */
+export interface Label {
+  madeBy: string;
+  object?: string;
+  empty?: true;
+}
+/**
+ * An object seen again, whose repr had changed.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ObjectSeen".
+ */
+export interface ObjectSeen {
+  object: string;
+  repr: string;
+}
+/**
+ * One frame: the workspace Python made to run one of the Program's code objects once, with its own plates and variables.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "Frame".
+ */
+export interface Frame {
+  /**
+   * Fact ID: frame-0 for the file's frame, then each in the order it started.
+   */
+  id: string;
+  code: CodeIndex;
+}
+/**
+ * One object a plate or a variable pointed to.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ObjectFact".
+ */
+export interface ObjectFact {
+  /**
+   * Fact ID: obj-0 for the first object the replay saw, and so on.
+   */
+  id: string;
+  /**
+   * Its class's name: str, function, Point.
+   */
+  type: string;
+  /**
+   * As Python's repr shows it when the replay first saw it, cut to 80 characters, for Python's own types: 'Ada', <function greet>. Any other object is named by its class, <Point object>, because showing it would run its code.
+   */
+  repr: string;
+  /**
+   * Its size in bytes, as sys.getsizeof gives it, for an object of one of Python's own types. Left out for an object of a class the Program defines, which could run its code to say.
+   */
+  size?: number;
+  code?: CodeIndex1;
 }
 /**
  * One Try it yourself command, run by the browser's Python on the Program saved as fileName.
@@ -584,6 +861,26 @@ export interface HonestyLabels {
      * Zoom level 2's panel How the number N is stored.
      */
     byteBits: string;
+    /**
+     * Zoom level 5's strip of every step that ran, in order.
+     */
+    stepRuns: string;
+    /**
+     * Zoom level 5's plates of every frame after the selected step run, replayed with Python's rules.
+     */
+    plates: string;
+    /**
+     * Zoom level 5's objects the plates and variables point to.
+     */
+    objects: string;
+    /**
+     * Zoom level 5's recipe card: a code object's names, fixed values and variables.
+     */
+    recipeCard: string;
+    /**
+     * Zoom level 5's note on the form a step had become after the Program ran again, unwatched.
+     */
+    afterRun: string;
     /**
      * The Machine map, beside every zoom level.
      */

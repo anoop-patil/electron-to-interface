@@ -15,12 +15,13 @@ const GROUP_CLASSES = 'grid min-w-0 gap-1.5 rounded-xl border-[1.5px] border-das
 const FLOW_CLASSES = 'text-center text-[11px] leading-[1.3] text-ink3';
 const NOTE_CLASSES = 'mt-0.5 block font-mono text-[12px] leading-[1.45] text-ink [overflow-wrap:anywhere]';
 
-function Name({ id, quiet = false }: { id: PartId; quiet?: boolean }) {
+/** A part's name, then what it is in small print, darker on a lit part's tinted background so it can still be read. */
+function Name({ id, quiet = false, tinted = false }: { id: PartId; quiet?: boolean; tinted?: boolean }) {
   const { name, sub } = PARTS[id];
   return (
     <span className={quiet ? 'text-[12px] font-medium text-ink2' : 'text-[13px] font-semibold'}>
       {name}
-      {sub && <small className="ml-1 text-[length:inherit] font-normal text-ink3"> {sub}</small>}
+      {sub && <small className={`ml-1 text-[length:inherit] font-normal ${tinted ? 'text-ink2' : 'text-ink3'}`}> {sub}</small>}
     </span>
   );
 }
@@ -38,12 +39,13 @@ const Chevron = ({ up }: { up: boolean }) => (
 function PartButton({ id, lit, full = lit, note, className }: { id: PartId; lit: boolean; full?: boolean; note?: Span[]; className: string }) {
   const { openCard } = useConcepts();
   const { sizeAndSpeed } = PARTS[id];
+  const tinted = className === LIT_CLASSES;
   return (
     <button type="button" className={`${PART_CLASSES} ${className}`} aria-haspopup="dialog" aria-current={lit ? 'true' : undefined} onClick={() => openCard(id)}>
       {full ? (
         <>
           <span className="flex flex-wrap items-baseline justify-between gap-x-2">
-            <Name id={id} /> {sizeAndSpeed && <span className="text-[11px] text-ink3">{sizeAndSpeed}</span>}
+            <Name id={id} tinted={tinted} /> {sizeAndSpeed && <span className={`text-[11px] ${tinted ? 'text-ink2' : 'text-ink3'}`}>{sizeAndSpeed}</span>}
           </span>{' '}
           {note && (
             <span className={NOTE_CLASSES}>

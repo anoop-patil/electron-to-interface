@@ -12,7 +12,7 @@ const LABELS = {
 };
 
 test.describe('Honesty labels', () => {
-  test('zoom levels 1 to 4 each carry exactly one, and levels not built yet carry none', async ({ page }) => {
+  test('zoom levels 1 to 5 each carry one for the level, level 5’s panels carry their own, and levels not built yet carry none', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
 
@@ -33,7 +33,15 @@ test.describe('Honesty labels', () => {
     await expect(zoomLevel(page, 4, 'Structure').getByRole('button', { name: /^How we know:/ })).toHaveCount(1);
     await expect(zoomLevel(page, 4, 'Structure').getByRole('button', { name: 'How we know: Observed' })).toBeVisible();
 
-    for (let level = 5; level <= 9; level++) {
+    await page.getByRole('button', { name: 'Zoom in: Bytecode' }).click();
+    const bytecode = zoomLevel(page, 5, 'Bytecode');
+    // The level is Observed, as are the strip of step runs and the recipe card; the plates and objects are Derived.
+    await expect(bytecode.getByRole('button', { name: /^How we know:/ }).first()).toHaveAccessibleName('How we know: Observed');
+    await expect(bytecode.getByRole('region', { name: 'Plates, after this step' }).getByRole('button', { name: 'How we know: Derived' })).toBeVisible();
+    await expect(bytecode.getByRole('region', { name: 'Objects, so far' }).getByRole('button', { name: 'How we know: Derived' })).toBeVisible();
+    await expect(bytecode.getByRole('region', { name: 'Every step that ran, in order' }).getByRole('button', { name: 'How we know: Observed' })).toBeVisible();
+
+    for (let level = 6; level <= 9; level++) {
       await gauge(page).getByRole('button').nth(level - 1).click();
       await expect(anyZoomLevel(page, level)).toBeVisible();
       await expect(anyZoomLevel(page, level).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);

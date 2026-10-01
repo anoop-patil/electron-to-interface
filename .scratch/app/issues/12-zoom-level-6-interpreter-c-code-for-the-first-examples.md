@@ -15,3 +15,7 @@
 - [ ] Steps with no Reference Library entry show a hand-written explanation, labeled Typical.
 - [ ] Try it yourself: links to the quoted lines on GitHub, plus the faster forms the learner's steps had become after the run, observed live (ticket 06). Ticket 06 confirmed Pyodide 314.0.7 rewrites steps as native CPython does.
 - [ ] CPython excerpts ship with the PSF License notice.
+
+## Comments
+
+- Ticket 10: each step records `afterRun`, the form it had become after the unwatched `python program.py` run, so Try it yourself can show it without running anything more. The recorded run itself rewrites no steps, because it is watched.

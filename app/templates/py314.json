@@ -588,6 +588,577 @@
     "tryIt.astRow.constant": {
       "subject": "node",
       "text": "A fixed value: **value** is the value, as Python writes it."
+    },
+    "level5.intro": {
+      "subject": "program",
+      "text": "Boxes describe meaning, but they aren’t something a computer can carry out step by step. So Python compiles them into lists of simple steps, called [[code|bytecode]]: {lists}. By default, CPython runs your program by reading these steps one at a time, rather than compiling it to your CPU’s own machine code. Then it runs the steps, and some run more than once."
+    },
+    "level5.caption": {
+      "subject": "program",
+      "text": "Your program has {steps}, and {ran} happened, in the order the strip shows. Select a step, or step through with Next."
+    },
+    "level5.noBytecode": {
+      "subject": "program",
+      "text": "Python made no steps from your program, because it has a syntax error. The Terminal shows where."
+    },
+    "level5.cutShort": {
+      "subject": "program",
+      "text": "Your program ran more than 2,000 steps, so only the first 2,000 are here."
+    },
+    "level5.strip": {
+      "subject": "program",
+      "title": "Every step that ran, in order",
+      "text": "Squares are your program’s own steps; circles are the steps of the code inside it, such as a function. Filled ones have run."
+    },
+    "level5.plates": {
+      "subject": "program",
+      "title": "Plates, after this step",
+      "text": "What Python is holding in each [[frame|frame]], on its [[stack|plates]], and each frame’s variables."
+    },
+    "level5.platesUnsure": {
+      "subject": "program",
+      "text": "Python’s rules can’t account for this frame’s plates from here, so they aren’t shown."
+    },
+    "level5.noFrames": {
+      "subject": "program",
+      "text": "No frames: your program has finished."
+    },
+    "level5.objects": {
+      "subject": "program",
+      "title": "Objects, so far",
+      "text": "The [[heap|objects]] the plates and variables have pointed to so far. Those still in use after this step are outlined. Each of Python’s own types gives its size in bytes, as Python in your browser measures it; Python on a 64-bit computer uses more bytes for the same object. A list or dictionary is shown as it was when last seen."
+    },
+    "level5.recipe": {
+      "subject": "step",
+      "title": "{code}’s recipe card",
+      "text": "What the compiler wrote down with the steps: the names they use, their fixed values, and their own variables."
+    },
+    "level5.note": {
+      "subject": "program",
+      "text": "Next and Back follow the order the steps ran in, moving between your program and the code inside it. The steps, the order they ran in and the recipe cards are observed from your program. The plates and objects are derived: worked out from what each step does, using Python’s rules, because Python can’t show them directly."
+    },
+    "level5.frameRunning": {
+      "subject": "step",
+      "title": "{code}’s frame",
+      "text": "running now"
+    },
+    "level5.frameWaiting": {
+      "subject": "step",
+      "title": "{code}’s frame",
+      "text": "waiting for {code}"
+    },
+    "level5.answer": {
+      "subject": "step",
+      "text": "the answer of step {number}"
+    },
+    "level5.ranOnce": {
+      "subject": "step",
+      "text": "Step {number} of {code} ran once."
+    },
+    "level5.ranMore": {
+      "subject": "step",
+      "text": "Step {number} of {code} {runs}. Showing run:"
+    },
+    "level5.overall": {
+      "subject": "step",
+      "text": "Step run {overall} of {total}."
+    },
+    "level5.neverRan": {
+      "subject": "step",
+      "text": "Step {number} of {code} never ran."
+    },
+    "step.term": {
+      "subject": "step",
+      "text": "{opname}{argument} · step {number} of {code}"
+    },
+    "step.termRun": {
+      "subject": "step",
+      "text": "{opname}{argument} · step {number} of {code}, run {run} of {times}"
+    },
+    "step.termNeverRan": {
+      "subject": "step",
+      "text": "{opname}{argument} · step {number} of {code}, never ran"
+    },
+    "step.put": {
+      "subject": "step",
+      "text": "This time it put {object} on a plate."
+    },
+    "step.stored": {
+      "subject": "step",
+      "text": "This time **{name}** got {object}."
+    },
+    "step.printed": {
+      "subject": "step",
+      "text": "{callee} wrote a line to the terminal: {printed}"
+    },
+    "step.startsFrame": {
+      "subject": "step",
+      "text": "Because {callee} is written in Python, Python doesn’t leave the interpreter to run it: it sets up a fresh [[frame|frame]] for {callee}, with its own plates and variables, and carries on with its steps."
+    },
+    "step.neverRan": {
+      "subject": "step",
+      "text": "This step **never ran** for your program."
+    },
+    "step.afterRun": {
+      "subject": "step",
+      "text": "When your program ran again without being watched, Python rewrote this step into **{afterRun}**, a faster form for the objects it met. Watching every step, as this zoom level does, stops Python rewriting them."
+    },
+    "step.resume": {
+      "subject": "step",
+      "title": "Get ready",
+      "text": "Every piece of code starts with this step. Python checks whether anything urgent is waiting, such as you pressing Ctrl+C. You didn’t write it; Python adds it."
+    },
+    "step.loadConst": {
+      "subject": "step",
+      "title": "Get {value}",
+      "text": "Python takes the fixed value **{value}** from {code}’s recipe card and puts a label for it on a plate."
+    },
+    "step.loadConstCode": {
+      "subject": "step",
+      "title": "Get {name}’s steps",
+      "text": "The steps of **{name}** were compiled into a code object of their own. This step puts a label for it on a plate, ready to make a function or a class from it."
+    },
+    "step.loadSmallInt": {
+      "subject": "step",
+      "title": "Get {value}",
+      "text": "Python puts a label for the small number **{value}** on a plate. Python makes the small numbers once, when it starts, so this step needs no fixed value."
+    },
+    "step.loadName": {
+      "subject": "step",
+      "title": "Find {name}",
+      "text": "Python looks up the name **{name}**: first in the names {code} has so far, then in Python’s built-in toolbox. It puts a label for what it finds on a plate."
+    },
+    "step.storeName": {
+      "subject": "step",
+      "title": "Call it {name}",
+      "text": "Python takes the label off the top plate and stores it under the name **{name}**, so later steps can find it."
+    },
+    "step.loadGlobal": {
+      "subject": "step",
+      "title": "Find {name}",
+      "text": "**{name}** isn’t one of {code}’s own variables, so Python looks in your program’s names, then in its built-in toolbox. It puts a label for what it finds on a plate."
+    },
+    "step.loadGlobalNull": {
+      "subject": "step",
+      "title": "Find {name}, plus an empty plate",
+      "text": "**{name}** isn’t one of {code}’s own variables, so Python looks in your program’s names, then in its built-in toolbox. It puts a label for what it finds on a plate, then an empty plate, ready for a call."
+    },
+    "step.storeGlobal": {
+      "subject": "step",
+      "title": "Call it {name}, in your program’s names",
+      "text": "Python takes the label off the top plate and stores it under **{name}** in your program’s names, not in {code}’s own variables."
+    },
+    "step.loadFast": {
+      "subject": "step",
+      "title": "Get {name}",
+      "text": "Python gets {code}’s own variable **{name}** and puts a label for it on a plate."
+    },
+    "step.loadFastBorrow": {
+      "subject": "step",
+      "title": "Get {name}",
+      "text": "Python gets {code}’s own variable **{name}** and puts a label for it on a plate. It borrows the label rather than making a new one, which is quicker."
+    },
+    "step.loadFastCheck": {
+      "subject": "step",
+      "title": "Get {name}",
+      "text": "Python gets {code}’s own variable **{name}** and puts a label for it on a plate, after checking that it has been given a value."
+    },
+    "step.loadFastLoadFast": {
+      "subject": "step",
+      "title": "Get {name}",
+      "text": "Python gets two of {code}’s own variables, **{name}**, in one step, and puts a label for each on a plate."
+    },
+    "step.loadFastBorrowLoadFastBorrow": {
+      "subject": "step",
+      "title": "Get {name}",
+      "text": "Python gets two of {code}’s own variables, **{name}**, in one step, and puts a label for each on a plate. It borrows the labels, which is quicker."
+    },
+    "step.loadFastAndClear": {
+      "subject": "step",
+      "title": "Put {name} aside",
+      "text": "Python moves the variable **{name}** onto a plate, so the comprehension can use the name for itself. It puts it back afterwards."
+    },
+    "step.storeFast": {
+      "subject": "step",
+      "title": "Call it {name}",
+      "text": "Python takes the label off the top plate and stores it in {code}’s own variable **{name}**."
+    },
+    "step.storeFastStoreFast": {
+      "subject": "step",
+      "title": "Store {name}",
+      "text": "Python takes two labels off the plates and stores them in two of {code}’s own variables, **{name}**, in one step."
+    },
+    "step.storeFastLoadFast": {
+      "subject": "step",
+      "title": "Store, then get: {name}",
+      "text": "Python stores the top plate’s label in one of {code}’s own variables, then gets a variable, in one step: **{name}**."
+    },
+    "step.loadDeref": {
+      "subject": "step",
+      "title": "Get {name}",
+      "text": "Python gets the variable **{name}**, which {code} shares with the code around it, and puts a label for it on a plate."
+    },
+    "step.storeDeref": {
+      "subject": "step",
+      "title": "Call it {name}",
+      "text": "Python takes the label off the top plate and stores it in **{name}**, a variable {code} shares with the code around it."
+    },
+    "step.deleteName": {
+      "subject": "step",
+      "title": "Forget {name}",
+      "text": "Python removes the name **{name}**, so later steps can no longer find it."
+    },
+    "step.deleteFast": {
+      "subject": "step",
+      "title": "Forget {name}",
+      "text": "Python removes {code}’s own variable **{name}**."
+    },
+    "step.loadAttr": {
+      "subject": "step",
+      "title": "Get its {name}",
+      "text": "Python takes the object off the top plate, looks up its attribute **{name}**, and puts a label for what it finds on a plate."
+    },
+    "step.loadAttrMethod": {
+      "subject": "step",
+      "title": "Find its {name}, ready for a call",
+      "text": "Python takes the object off the top plate and looks up **{name}** on it, ready for a call. For a method, it puts the method on a plate, then the object it belongs to; for anything else, what it found, then an empty plate."
+    },
+    "step.storeAttr": {
+      "subject": "step",
+      "title": "Set its {name}",
+      "text": "Python takes two labels off the plates: an object, and a value to store in its attribute **{name}**."
+    },
+    "step.pushNull": {
+      "subject": "step",
+      "title": "Add an empty plate",
+      "text": "An empty plate, ready for a call. When you call a method, such as **name.upper()**, this place holds the object. For a plain function, it stays empty."
+    },
+    "step.call": {
+      "subject": "step",
+      "title": "Call it with {count}",
+      "text": "Python calls the function on the plates. It takes the plates the call needs off, and puts the answer on a plate when the call ends."
+    },
+    "step.callNamed": {
+      "subject": "step",
+      "title": "Call {callee} with {count}",
+      "text": "Python calls **{callee}**. It takes the plates the call needs off: the function, an empty plate or the object it belongs to, and what the call is given. When the call ends, it puts the answer on a plate."
+    },
+    "step.callKw": {
+      "subject": "step",
+      "title": "Call it, with names",
+      "text": "Python calls a function with things given by name, such as **end=\"\"**. It takes the plates the call needs off, and puts the answer on a plate when the call ends."
+    },
+    "step.callFunctionEx": {
+      "subject": "step",
+      "title": "Call it with a list of things",
+      "text": "Python calls a function with things unpacked from a list or a dictionary, as one or two stars in front of them ask. It puts the answer on a plate when the call ends."
+    },
+    "step.popTop": {
+      "subject": "step",
+      "title": "Throw away the answer",
+      "text": "Nobody needs what is on the top plate, so Python takes the plate off."
+    },
+    "step.returnValue": {
+      "subject": "step",
+      "title": "Hand back the answer",
+      "text": "{code} has finished. Python takes the label off the top plate and hands it back to whoever ran {code}, then clears away its [[frame|frame]]."
+    },
+    "step.returnValueProgram": {
+      "subject": "step",
+      "title": "Hand back the answer",
+      "text": "Python hands the label on the top plate back to whoever started your program, and clears away its [[frame|frame]]. **Your program is finished.**"
+    },
+    "step.makeFunction": {
+      "subject": "step",
+      "title": "Make a function",
+      "text": "Python takes the code object off the top plate and wraps it into a function object: its steps, plus the names it should use. Now it can be called."
+    },
+    "step.loadBuildClass": {
+      "subject": "step",
+      "title": "Get the class builder",
+      "text": "Python puts a label for its built-in class builder on a plate, ready to make a class."
+    },
+    "step.getIter": {
+      "subject": "step",
+      "title": "Start walking through it",
+      "text": "To go through the object on the top plate one item at a time, Python asks it for a small helper that remembers how far it has got: a walker, called an **iterator**."
+    },
+    "step.forIter": {
+      "subject": "step",
+      "title": "Take the next item, or stop",
+      "text": "Python asks the walker for the next item, and puts it on a plate, above the walker. When there are no items left, the loop ends."
+    },
+    "step.forIterTrip": {
+      "subject": "step",
+      "title": "Take the next item, or stop",
+      "text": "**Trip {trip} round the loop.** Python asks the walker for the next item, and puts it on a plate, above the walker."
+    },
+    "step.forIterDone": {
+      "subject": "step",
+      "title": "Take the next item, or stop",
+      "text": "**Trip {trip} round the loop.** The walker has no items left, so the loop ends: Python jumps out of it, to step {next}."
+    },
+    "step.endFor": {
+      "subject": "step",
+      "title": "End of the loop",
+      "text": "Python takes the last item off the plates when a loop ends the long way round. Usually this step never runs: when the walker runs out, Python jumps straight past it."
+    },
+    "step.popIter": {
+      "subject": "step",
+      "title": "Put the walker away",
+      "text": "The loop is over. Python takes the walker off its plate and lets it go."
+    },
+    "step.jumpBackward": {
+      "subject": "step",
+      "title": "Back to the top of the loop",
+      "text": "The end of the loop’s body: Python goes back to step {target} to go round again."
+    },
+    "step.jumpForward": {
+      "subject": "step",
+      "title": "Jump ahead to step {target}",
+      "text": "Python skips the steps in between and carries on at step {target}."
+    },
+    "step.popJumpIfFalse": {
+      "subject": "step",
+      "title": "If not, jump to step {target}",
+      "text": "Python takes the answer off the top plate. If it is false, Python jumps to step {target}; if it is true, it carries on with the next step."
+    },
+    "step.popJumpIfTrue": {
+      "subject": "step",
+      "title": "If so, jump to step {target}",
+      "text": "Python takes the answer off the top plate. If it is true, Python jumps to step {target}; if it is false, it carries on with the next step."
+    },
+    "step.popJumpIfNone": {
+      "subject": "step",
+      "title": "If it is None, jump to step {target}",
+      "text": "Python takes the top plate off. If its label points to [[none|None]], Python jumps to step {target}; otherwise it carries on with the next step."
+    },
+    "step.popJumpIfNotNone": {
+      "subject": "step",
+      "title": "If it isn’t None, jump to step {target}",
+      "text": "Python takes the top plate off. Unless its label points to [[none|None]], Python jumps to step {target}; otherwise it carries on with the next step."
+    },
+    "step.notTaken": {
+      "subject": "step",
+      "title": "Didn’t jump",
+      "text": "A step that does nothing. It marks where the program goes when the jump before it isn’t taken, for tools that follow which way a program went."
+    },
+    "step.toBool": {
+      "subject": "step",
+      "title": "Is it true?",
+      "text": "Python turns the object on the top plate into True or False, ready for a decision."
+    },
+    "step.compareOp": {
+      "subject": "step",
+      "title": "Compare with {operator}",
+      "text": "Python takes the two top plates off, compares their objects with **{operator}**, and puts the answer, True or False, on a plate."
+    },
+    "step.binaryOp": {
+      "subject": "step",
+      "title": "Work out {operator}",
+      "text": "Python takes the two top plates off, works out **{operator}** with their objects, and puts a label for the answer on a plate."
+    },
+    "step.binaryOpSubscript": {
+      "subject": "step",
+      "title": "Look up an item",
+      "text": "Python takes the two top plates off: an object, and a position or key. It looks up that item in the object, and puts a label for it on a plate."
+    },
+    "step.storeSubscr": {
+      "subject": "step",
+      "title": "Store an item",
+      "text": "Python takes three plates off: a value, an object, and a position or key. It stores the value in the object, at that position or key."
+    },
+    "step.unaryNegative": {
+      "subject": "step",
+      "title": "Make it negative",
+      "text": "Python takes the number off the top plate and puts its negative on a plate."
+    },
+    "step.unaryNot": {
+      "subject": "step",
+      "title": "Not",
+      "text": "Python takes the top plate off and puts the opposite, True or False, on a plate."
+    },
+    "step.isOp": {
+      "subject": "step",
+      "title": "Is it the same object?",
+      "text": "Python takes the two top plates off and checks whether their labels point to the same object. It puts the answer, True or False, on a plate."
+    },
+    "step.containsOp": {
+      "subject": "step",
+      "title": "Is it in there?",
+      "text": "Python takes the two top plates off and checks whether the first object is in the second. It puts the answer, True or False, on a plate."
+    },
+    "step.buildList": {
+      "subject": "step",
+      "title": "Make a list of {count}",
+      "text": "Python takes the {count} off the plates, makes a new list of them, and puts a label for the list on a plate."
+    },
+    "step.buildTuple": {
+      "subject": "step",
+      "title": "Make a tuple of {count}",
+      "text": "Python takes the {count} off the plates, makes a tuple of them, a list that can’t change, and puts a label for it on a plate."
+    },
+    "step.buildMap": {
+      "subject": "step",
+      "title": "Make a dictionary",
+      "text": "Python takes the keys and values off the plates, makes a new dictionary of them, and puts a label for it on a plate."
+    },
+    "step.buildSet": {
+      "subject": "step",
+      "title": "Make a set of {count}",
+      "text": "Python takes the {count} off the plates, makes a new set of them, and puts a label for it on a plate."
+    },
+    "step.buildString": {
+      "subject": "step",
+      "title": "Join {count} into text",
+      "text": "Python takes {count} of text off the plates and joins them into one piece of text, as an f-string asks."
+    },
+    "step.formatSimple": {
+      "subject": "step",
+      "title": "Turn it into text",
+      "text": "Python takes the object off the top plate and puts the text that shows it on a plate, for an f-string."
+    },
+    "step.formatWithSpec": {
+      "subject": "step",
+      "title": "Turn it into text, as asked",
+      "text": "Python takes an object and a format, such as **.2f**, off the plates, and puts the text that shows the object in that format on a plate."
+    },
+    "step.convertValue": {
+      "subject": "step",
+      "title": "Show it with str or repr",
+      "text": "Python turns the object on the top plate into text, as **!r**, **!s** or **!a** in an f-string asks."
+    },
+    "step.listAppend": {
+      "subject": "step",
+      "title": "Add it to the list",
+      "text": "Python takes the top plate off and adds its object to the list further down the plates, as a list comprehension does for each item."
+    },
+    "step.listExtend": {
+      "subject": "step",
+      "title": "Add them to the list",
+      "text": "Python takes the top plate off and adds each of its object’s items to the list further down the plates."
+    },
+    "step.copy": {
+      "subject": "step",
+      "title": "Copy a label",
+      "text": "Python makes a second label for an object already on the plates, and puts it on top."
+    },
+    "step.swap": {
+      "subject": "step",
+      "title": "Swap two plates",
+      "text": "Python swaps the top plate with one further down, so the next steps find them in the order they need."
+    },
+    "step.unpackSequence": {
+      "subject": "step",
+      "title": "Unpack into {count}",
+      "text": "Python takes the object off the top plate and puts each of its {count} on a plate of its own, ready to be stored."
+    },
+    "step.yieldValue": {
+      "subject": "step",
+      "title": "Hand back an item, and pause",
+      "text": "The generator takes the label off the top plate and hands it to whoever asked for the next item. Its frame waits, with its plates as they are, until it is asked again."
+    },
+    "step.returnGenerator": {
+      "subject": "step",
+      "title": "Make a generator",
+      "text": "A function with yield in it doesn’t run straight away. This step makes a generator object, which runs the function’s steps one item at a time, when asked."
+    },
+    "step.raiseVarargs": {
+      "subject": "step",
+      "title": "Raise an error",
+      "text": "Python takes the error off the top plate and raises it. Python stops running the steps in order, and looks for code that handles the error."
+    },
+    "step.pushExcInfo": {
+      "subject": "step",
+      "title": "Catch the error",
+      "text": "The error is caught. Python puts it on a plate, ready for the steps that handle it."
+    },
+    "step.checkExcMatch": {
+      "subject": "step",
+      "title": "Is it this kind of error?",
+      "text": "Python checks whether the error on the plates is the kind this **except** names, and puts the answer, True or False, on a plate."
+    },
+    "step.popExcept": {
+      "subject": "step",
+      "title": "Done with the error",
+      "text": "The error has been handled. Python takes it off its plate and goes back to the error it was handling before, if any."
+    },
+    "step.reraise": {
+      "subject": "step",
+      "title": "Raise the error again",
+      "text": "Python raises the error on the top plate again, for code further out to handle."
+    },
+    "step.importName": {
+      "subject": "step",
+      "title": "Import {name}",
+      "text": "Python finds the module **{name}**, running its code the first time, and puts a label for the module on a plate."
+    },
+    "step.importFrom": {
+      "subject": "step",
+      "title": "Get {name} from the module",
+      "text": "Python looks up **{name}** in the module on the top plate and puts a label for it on a plate."
+    },
+    "step.nop": {
+      "subject": "step",
+      "title": "Do nothing",
+      "text": "A step that does nothing. The compiler leaves it where a line of your program needs no step of its own, so tools can still see the line."
+    },
+    "step.other": {
+      "subject": "step",
+      "title": "A {opname} step",
+      "text": "Python has many kinds of step. This one, **{opname}**, doesn’t have its own explanation here yet."
+    },
+    "map.level5.code": {
+      "subject": "step",
+      "text": "{code}, step {number} · run {overall} of {total}"
+    },
+    "map.level5.codeNeverRan": {
+      "subject": "step",
+      "text": "{code}, step {number} · never ran"
+    },
+    "map.level5.stack": {
+      "subject": "step",
+      "text": "{plates}, in {frames}"
+    },
+    "map.level5.stackOneFrame": {
+      "subject": "step",
+      "text": "{plates}"
+    },
+    "map.level5.heap": {
+      "subject": "step",
+      "text": "{objects} in use"
+    },
+    "tryIt.disRow.lines": {
+      "subject": "program",
+      "text": "The line of your file each group of steps comes from. 0 is Python’s own setup step, before line 1."
+    },
+    "tryIt.disRow.linesNoSetup": {
+      "subject": "program",
+      "text": "The line of your file each group of steps comes from."
+    },
+    "tryIt.disRow.labels": {
+      "subject": "program",
+      "text": "Labels for places the steps jump to. A step that jumps names the label it jumps to."
+    },
+    "tryIt.disRow.code": {
+      "subject": "step",
+      "text": "{code}’s own steps. The number after **at** is where its code object sat in memory; it changes every time you run it."
+    },
+    "tryIt.disRow.loadGlobalNull": {
+      "subject": "step",
+      "text": "Find **{name}**, and add an empty plate. The number holds both: which name, counting from 0, doubled, plus 1 for “add the empty plate”."
+    },
+    "tryIt.disRow.loadFast": {
+      "subject": "step",
+      "text": "{code}’s own variable **{name}**: the number says which, counting from 0."
+    },
+    "tryIt.disRow.loadConst": {
+      "subject": "step",
+      "text": "A fixed value from the recipe card: the number says which, counting from 0, and dis shows it in brackets."
+    },
+    "step.printedText": {
+      "subject": "step",
+      "text": "{callee} wrote to the terminal: {printed}"
     }
   },
   "tryIt": {
@@ -667,6 +1238,23 @@
         }
       ],
       "read": []
+    },
+    "5": {
+      "command": "python -m dis {file}",
+      "intro": "Ask Python to show the bytecode it made from your file:",
+      "parts": [
+        {
+          "code": "python -m dis",
+          "text": "Run **dis**, which shows bytecode in a readable form. The name is short for “disassemble”."
+        },
+        {
+          "code": "{file}",
+          "text": "The file to read."
+        }
+      ],
+      "read": [
+        "dis shows the steps as the compiler made them, before the program runs. It doesn’t show how Python rewrites them while it runs."
+      ]
     }
   }
 }

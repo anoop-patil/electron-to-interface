@@ -70,6 +70,12 @@
       "text": "Python’s own program, the **interpreter**. The usual one is called CPython. It is copied into [[ram|RAM]] when Python starts; in this app, it runs inside your browser. Python doesn’t turn your code into [[cpu|CPU]] instructions. It turns it into [[code|steps]], and the interpreter reads each step and does what it says.",
       "related": ["code", "cpu", "ram"]
     },
+    "frame": {
+      "name": "Frame",
+      "like": "A desk set up for one job.",
+      "text": "The workspace Python sets up each time a piece of code runs: its [[stack|plates]], its bookmark saying which step it is on, and its variables. When a function calls another, the caller’s frame waits under the new one. When the code finishes, its frame is cleared away.",
+      "related": ["stack", "code", "py"]
+    },
     "disk": {
       "name": "Disk",
       "like": "A pantry: lots of room, keeps everything even when the power is off, but slow to fetch from.",
@@ -92,7 +98,13 @@
       "name": "Plates",
       "like": "A stack of plates: you add to the top and take from the top.",
       "text": "What Python is holding right now, in the middle of a step. A plate never holds an [[heap|object]] itself, only a label pointing to it: the object’s address in [[ram|RAM]]. Each piece of code that is running, such as a function call, has its own stack of plates. The [[cpu|CPU]] keeps a separate stack of its own, to remember where to come back to after a jump.",
-      "related": ["heap", "code"]
+      "related": ["heap", "code", "frame"]
+    },
+    "none": {
+      "name": "None",
+      "like": "An empty box that means “nothing here”.",
+      "text": "Python’s way of saying “no value”. A function with nothing to give back, such as print, answers with None. There is only one None object in all of Python: every None anywhere is a label pointing to the same one.",
+      "related": ["heap", "stack"]
     },
     "cpu": {
       "name": "CPU",
@@ -135,8 +147,8 @@
     { "name": "This page", "cards": ["honesty"] },
     { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] },
     { "name": "How Python reads your code", "cards": ["token", "structure", "code"] },
-    { "name": "Running it", "cards": ["py"] },
-    { "name": "Memory", "cards": ["disk", "ram", "heap", "stack"] },
+    { "name": "Running it", "cards": ["py", "frame"] },
+    { "name": "Memory", "cards": ["disk", "ram", "heap", "stack", "none"] },
     { "name": "The CPU", "cards": ["cpu", "reg", "cache"] },
     { "name": "Talking to the outside world", "cards": ["os", "terminal"] },
     { "name": "The screen", "cards": ["screen"] }

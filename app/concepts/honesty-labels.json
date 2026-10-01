@@ -26,12 +26,18 @@
     "1": "observed",
     "2": "observed",
     "3": "observed",
-    "4": "observed"
+    "4": "observed",
+    "5": "observed"
   },
   "panels": {
     "byteBits": "derived",
     "machineMap": "typical",
     "terminal": "observed",
-    "tryItOutput": "observed"
+    "tryItOutput": "observed",
+    "stepRuns": "observed",
+    "plates": "derived",
+    "objects": "derived",
+    "recipeCard": "observed",
+    "afterRun": "observed"
   }
 }

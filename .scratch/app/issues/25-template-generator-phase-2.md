@@ -13,3 +13,7 @@
 - [ ] It runs only on manual trigger or when its inputs change, never on pull requests from forks. Outputs are committed, so a normal deploy never calls Claude.
 - [ ] CI fails if any opname, node type or token type in the pinned version has no Template.
 - [ ] Hand-written Templates from earlier tickets aren't silently overwritten.
+
+## Comments
+
+- Ticket 10 wrote level 5's Templates by hand: `step.*` for about 80 opnames and variants, `level5.*` for the page and `map.level5.*` for the Machine map. They aren't to be overwritten silently.

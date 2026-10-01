@@ -44,6 +44,14 @@ _Avoid_: opcode (for the instruction in the program), instruction
 One time a Step ran. A Step inside a loop or a function has several; one that never ran has none.
 _Avoid_: iteration, execution, hit, run (on its own, which means the learner's Run)
 
+**Frame**:
+The workspace Python makes each time a Code object runs, with its own plates and variables. A function's frame waits under the frame of the code that called it.
+_Avoid_: stack frame (in the UI), activation
+
+**Plates**:
+A Frame's stack: the labels Python holds in the middle of a step, each pointing to an object. Level 5 replays them from the Step runs with Python's rules, so they are Derived.
+_Avoid_: value stack, stack (in the UI)
+
 **Terminal**:
 The panel under the editor that shows what the Program printed when it ran, as a terminal would.
 _Avoid_: console, output panel

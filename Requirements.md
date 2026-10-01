@@ -139,11 +139,12 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 **Engine (Pyodide in a Web Worker)**
 
 - Pin Pyodide 314.0.7, self-hosted; show its Python version in the UI.
-- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `fileName` (the name the Try it yourself commands use), `commands` (what each Try it yourself command printed when run on the Program), `bytes`, `encoding` (the encoding `tokenize` read the bytes with), `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
-- Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, numbered from 0) that Explanations and highlights point at.
+- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `fileName` (the name the Try it yourself commands use), `commands` (what each Try it yourself command printed when run on the Program), `bytes`, `encoding` (the encoding `tokenize` read the bytes with), `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `frames`, `objects`, `stdout`, `stderr`, `error`.
+- Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, `frame-0`, `obj-0`, numbered from 0) that Explanations and highlights point at.
 - Events (line, call, return, exception) are recorded with the `sys.monitoring` events that `sys.settrace` is built on, in the same run as the step runs, with a safe, truncated repr of locals. With `sys.settrace` on, Python reports no INSTRUCTION events.
 - Step runs, the order the bytecode steps ran in, are recorded with `sys.monitoring` INSTRUCTION events. It doesn't report RESUME, so RESUME's runs are added where each code object starts. Each line of output is tied to the step run that printed it.
-- Record, after the run, which **specialized** form each step had become (`dis` with `adaptive=True`; e.g. `BINARY_OP_ADD_INT`), so Phase 3 can match it in the Reference Library.
+- Record, after the run, which **specialized** form each step had become (`dis` with `adaptive=True`; e.g. `BINARY_OP_ADD_INT`), so Phase 3 can match it in the Reference Library. While `sys.monitoring` reports every step, Python rewrites none, so the forms come from a second run of the Program, unwatched: the `python program.py` command of level 1's Try it yourself.
+- Replay each frame's plates (its stack) and variables from the step runs with Python's rules: how many plates each step takes and puts back, from CPython 3.14.2's own opcode metadata. A plate points to an object where the replay can tell which, without running any of the learner's code. Derived.
 - Cap Events and step runs at 2,000 each, and tell the learner when a record is cut short.
 
 **Zoom UI**
@@ -273,7 +274,7 @@ Each milestone ships on its own; the next one starts only when every box above i
 
 **M1: Real Facts in the browser**
 
-- [ ] A learner types a multi-line program and clicks Run; the worker returns its bytes, tokens, AST, bytecode, Events and stdout, rendered raw.
+- [x] A learner types a multi-line program and clicks Run; the worker returns its bytes, tokens, AST, bytecode, Events and stdout, rendered raw.
 - [ ] Python 3.14.2 is displayed; Pyodide is served from our own domain.
 - [ ] The Analysis validates against the JSON Schema.
 
@@ -325,7 +326,7 @@ Each milestone ships on its own; the next one starts only when every box above i
 - Domain name.
 - When to add ARM64 to the Reference Library.
 - Donation platform, if any.
-- **Which form ran on each run, for the learner's own program.** For the Examples, gdb records at build time which handler ran on every step run. In the browser only the form each step had become after the run is known. How levels 6–7 show earlier runs of the learner's own program is still open.
+- **Which form ran on each run, for the learner's own program.** For the Examples, gdb records at build time which handler ran on every step run. In the browser only the form each step had become after a second, unwatched run is known: the recorded run can't show any, because watching every step stops Python rewriting them. How levels 6–7 show earlier runs of the learner's own program is still open.
 
 **Out of scope for v1**
 

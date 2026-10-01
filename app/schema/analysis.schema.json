@@ -4,7 +4,7 @@
   "description": "The complete set of Facts produced from one Program on one Python version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "stdout", "stderr", "error", "events", "runs", "eventsCutShort", "runsCutShort", "commands"],
+  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "bytecode", "stdout", "stderr", "error", "events", "runs", "frames", "objects", "eventsCutShort", "runsCutShort", "commands"],
   "properties": {
     "pythonVersion": {
       "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
@@ -39,6 +39,11 @@
       "type": "array",
       "items": { "$ref": "#/$defs/AstFact" }
     },
+    "bytecode": {
+      "description": "The Program's code objects, each with its steps as dis shows them before anything runs: zoom level 5. The file's own comes first, then each one inside it, depth first, in the order Python stores them, so a CodeIndex finds one. Empty if the Program has a syntax error.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/CodeObject" }
+    },
     "stdout": {
       "description": "Everything the Program wrote to standard output when it ran.",
       "type": "string"
@@ -60,6 +65,16 @@
       "description": "Each step run, in the order the steps ran: at most 2,000.",
       "type": "array",
       "items": { "$ref": "#/$defs/StepRun" }
+    },
+    "frames": {
+      "description": "Each frame Python made to run one of the Program's code objects, in the order they started: frame-0 is the file's. A step run says which frame it ran in.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Frame" }
+    },
+    "objects": {
+      "description": "Each object a plate or a variable pointed to, in the order the replay first saw them. Derived: the replay of the plates names them.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/ObjectFact" }
     },
     "eventsCutShort": {
       "description": "True if the run had more than 2,000 Events, so events holds only the first 2,000.",
@@ -94,6 +109,67 @@
       "type": "integer",
       "minimum": 0
     },
+    "CodeObject": {
+      "title": "CodeObject",
+      "description": "One of the Program's code objects, as the compiler made it: the file itself, or one function, class body, lambda or generator expression inside it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "qualname", "line", "names", "consts", "varnames", "cellvars", "freevars", "size", "steps"],
+      "properties": {
+        "name": { "description": "Its name: <module> for the file, greet for a function, <lambda>, <genexpr>.", "type": "string", "minLength": 1 },
+        "qualname": { "description": "Its full name, with the names of the code it sits in: Point.__init__.", "type": "string", "minLength": 1 },
+        "line": { "description": "The line it starts on, counted from 1.", "type": "integer", "minimum": 0 },
+        "names": { "description": "The names its steps look up or store, other than its own variables, in order: co_names.", "type": "array", "items": { "type": "string" } },
+        "consts": { "description": "Its fixed values, in order: co_consts.", "type": "array", "items": { "$ref": "#/$defs/Const" } },
+        "varnames": { "description": "Its own variables, inputs first: co_varnames.", "type": "array", "items": { "type": "string" } },
+        "cellvars": { "description": "Its variables that a function inside it also uses: co_cellvars.", "type": "array", "items": { "type": "string" } },
+        "freevars": { "description": "The variables it uses from the code around it: co_freevars.", "type": "array", "items": { "type": "string" } },
+        "size": { "description": "How many bytes of bytecode it has, counting the cache entries after some steps.", "type": "integer", "minimum": 0 },
+        "steps": { "description": "Its steps, in order.", "type": "array", "items": { "$ref": "#/$defs/Step" } }
+      }
+    },
+    "Const": {
+      "title": "Const",
+      "description": "One fixed value of a code object: another of the Program's code objects, or a value shown as Python's repr shows it.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code"],
+          "properties": { "code": { "$ref": "#/$defs/CodeIndex" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value"],
+          "properties": { "value": { "description": "As Python's repr shows it, cut to 80 characters: 'Hello,'.", "type": "string" } }
+        }
+      ]
+    },
+    "Step": {
+      "title": "Step",
+      "description": "One step of a code object, as dis shows it before anything runs.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "offset", "opname", "arg", "argrepr", "bytes", "caches", "line", "span", "jump"],
+      "properties": {
+        "id": {
+          "description": "Fact ID: bc-0 for the first step of the file's code object, then on through each code object in turn.",
+          "type": "string",
+          "pattern": "^bc-(0|[1-9][0-9]*)$"
+        },
+        "offset": { "description": "Where it starts in its code object's bytecode, in bytes.", "type": "integer", "minimum": 0 },
+        "opname": { "description": "The kind of step, as dis names it: LOAD_NAME.", "type": "string", "pattern": "^[A-Z_0-9]+$" },
+        "arg": { "description": "Its argument, a number, or null for a step that takes none.", "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "argrepr": { "description": "What dis says the argument means: print + NULL, to L2. A code object is named without its address: <code object greet>.", "type": "string" },
+        "bytes": { "description": "Its two bytes: the kind of step, then the argument's lowest byte.", "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 }, "minItems": 2, "maxItems": 2 },
+        "caches": { "description": "How many 2-byte cache entries follow it, where Python keeps notes for rewriting it into a faster form.", "type": "integer", "minimum": 0 },
+        "line": { "description": "The line it comes from, counted from 1; 0 for a step Python adds before the file's first line; null for a step with no line.", "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "span": { "description": "The code it comes from, if it comes from one place.", "anyOf": [{ "$ref": "#/$defs/ByteSpan" }, { "type": "null" }] },
+        "jump": { "description": "For a step that can jump, the offset it jumps to.", "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "afterRun": { "description": "The form it had become after the Program ran again, unwatched, as `python FILE`: RESUME_CHECK, LOAD_CONST_MORTAL, or its own opname if it wasn't rewritten. Left out if that run didn't happen.", "type": "string", "pattern": "^[A-Z_0-9]+$" }
+      }
+    },
     "StepRun": {
       "title": "StepRun",
       "description": "One time a step ran, recorded with sys.monitoring INSTRUCTION events. RESUME, which those don't report, is added where each code object starts or carries on after a yield.",
@@ -108,7 +184,111 @@
         },
         "code": { "$ref": "#/$defs/CodeIndex" },
         "offset": { "description": "Which step of that code object ran: its offset in bytes, as dis shows it.", "type": "integer", "minimum": 0 },
-        "printed": { "description": "What the Program wrote to standard output while this step ran, if anything.", "type": "string", "minLength": 1 }
+        "printed": { "description": "What the Program wrote to standard output while this step ran, if anything.", "type": "string", "minLength": 1 },
+        "frame": { "description": "The frame it ran in: its place in frames.", "type": "integer", "minimum": 0 },
+        "caller": { "description": "The frame of the Program's own code that called that frame, which waits under it; null for the file's frame.", "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "plates": {
+          "description": "Derived: how the plates of each frame changed by the end of this step, as the replay works them out with Python's rules. The frames after a step run are those standing when the next step runs: its frame, and the frames waiting under it.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/PlateChange" }
+        },
+        "variables": {
+          "description": "Derived: how the variables of each frame changed by the end of this step.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/VariableChange" }
+        },
+        "objects": {
+          "description": "Objects seen again at this step whose repr had changed since they were last seen, such as a list something was added to.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/ObjectSeen" }
+        },
+        "platesUnsure": { "description": "True if Python's rules can't account for the plates of this step's frame from here on, so they aren't shown.", "const": true }
+      }
+    },
+    "Frame": {
+      "title": "Frame",
+      "description": "One frame: the workspace Python made to run one of the Program's code objects once, with its own plates and variables.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "code"],
+      "properties": {
+        "id": { "description": "Fact ID: frame-0 for the file's frame, then each in the order it started.", "type": "string", "pattern": "^frame-(0|[1-9][0-9]*)$" },
+        "code": { "$ref": "#/$defs/CodeIndex" }
+      }
+    },
+    "Label": {
+      "title": "Label",
+      "description": "What a plate or a variable holds: a label for an object. madeBy is the step run that made it. object is the object, if the replay can tell which one. An empty plate holds nothing, where a call has no object to go with its function.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["madeBy"],
+      "properties": {
+        "madeBy": { "type": "string", "pattern": "^run-(0|[1-9][0-9]*)$" },
+        "object": { "type": "string", "pattern": "^obj-(0|[1-9][0-9]*)$" },
+        "empty": { "const": true }
+      }
+    },
+    "PlateChange": {
+      "title": "PlateChange",
+      "description": "A change to one frame's plates: took plates off the top, then put these on, the last on top.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame", "took", "put"],
+      "properties": {
+        "frame": { "type": "integer", "minimum": 0 },
+        "took": { "type": "integer", "minimum": 0 },
+        "put": { "type": "array", "items": { "$ref": "#/$defs/Label" } }
+      }
+    },
+    "VariableChange": {
+      "title": "VariableChange",
+      "description": "A change to one of a frame's variables: it now holds a label, or it was deleted.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frame", "name", "value"],
+          "properties": {
+            "frame": { "type": "integer", "minimum": 0 },
+            "name": { "type": "string", "minLength": 1 },
+            "value": { "$ref": "#/$defs/Label" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frame", "name", "deleted"],
+          "properties": {
+            "frame": { "type": "integer", "minimum": 0 },
+            "name": { "type": "string", "minLength": 1 },
+            "deleted": { "const": true }
+          }
+        }
+      ]
+    },
+    "ObjectFact": {
+      "title": "ObjectFact",
+      "description": "One object a plate or a variable pointed to.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "repr"],
+      "properties": {
+        "id": { "description": "Fact ID: obj-0 for the first object the replay saw, and so on.", "type": "string", "pattern": "^obj-(0|[1-9][0-9]*)$" },
+        "type": { "description": "Its class's name: str, function, Point.", "type": "string", "minLength": 1 },
+        "repr": { "description": "As Python's repr shows it when the replay first saw it, cut to 80 characters, for Python's own types: 'Ada', <function greet>. Any other object is named by its class, <Point object>, because showing it would run its code.", "type": "string" },
+        "size": { "description": "Its size in bytes, as sys.getsizeof gives it, for an object of one of Python's own types. Left out for an object of a class the Program defines, which could run its code to say.", "type": "integer", "minimum": 0 },
+        "code": { "description": "For one of the Program's code objects, which one.", "$ref": "#/$defs/CodeIndex" }
+      }
+    },
+    "ObjectSeen": {
+      "title": "ObjectSeen",
+      "description": "An object seen again, whose repr had changed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object", "repr"],
+      "properties": {
+        "object": { "type": "string", "pattern": "^obj-(0|[1-9][0-9]*)$" },
+        "repr": { "type": "string" }
       }
     },
     "Event": {
@@ -362,9 +542,38 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); or node, one AstFact (NodeSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); or step, one Step and, where one is selected, one of its step runs (StepSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line", "token", "node"]
+      "enum": ["program", "byte", "line", "token", "node", "step"]
+    },
+    "StepSlot": {
+      "title": "StepSlot",
+      "description": "A Fact about one step, or one step run of it, that a Template can name. A slot that doesn't apply is empty.",
+      "oneOf": [
+        { "const": "opname", "description": "The kind of step, as dis names it: LOAD_NAME." },
+        { "const": "argument", "description": "Its argument as dis shows it, after a space: the number, then what it means, 0 (greet). Empty for a step that takes none." },
+        { "const": "number", "description": "Its place in its code object, counted from 1." },
+        { "const": "code", "description": "Its code object, in words: your program, or the function's name, greet." },
+        { "const": "name", "description": "The name it looks up or stores: greet, print. For a step that handles two, both: a and b." },
+        { "const": "value", "description": "The fixed value it gets, as Python writes it: 'Hello,'." },
+        { "const": "callee", "description": "For a call, the code of what it calls, if that is a plain name such as print or name.upper." },
+        { "const": "count", "description": "How many things a call is given, or a list is made from, with the word: 1 thing, 2 items." },
+        { "const": "operator", "description": "For a sum or a comparison, its operator as you write it: +, <." },
+        { "const": "target", "description": "For a step that can jump, the step it jumps to: 7." },
+        { "const": "afterRun", "description": "The form it had become after the Program ran again, unwatched: LOAD_CONST_MORTAL." },
+        { "const": "runs", "description": "How many times it ran, in words: ran once, ran 2 times, never ran." },
+        { "const": "times", "description": "How many times it ran, as a number: 3." },
+        { "const": "run", "description": "Which of its runs is selected, counted from 1." },
+        { "const": "overall", "description": "Which step run is selected, counted from 1 over the whole run of the Program." },
+        { "const": "total", "description": "How many steps ran in all, as a number: 42." },
+        { "const": "object", "description": "For the selected step run, the object it put on its top plate or stored, as Python's repr shows it, if the replay knows it." },
+        { "const": "printed", "description": "What the selected step run printed, without its last newline." },
+        { "const": "trip", "description": "For a step run of FOR_ITER, which trip round the loop it is, counted from 1." },
+        { "const": "next", "description": "The step its frame ran next, counted from 1 in its code object." },
+        { "const": "plates", "description": "How many plates all frames hold after the selected step run, with the word: 4 plates." },
+        { "const": "frames", "description": "How many frames there are after the selected step run, with the word: 2 frames." },
+        { "const": "objects", "description": "How many objects the plates and variables point to after the selected step run, with the word: 6 objects." }
+      ]
     },
     "NodeSlot": {
       "title": "NodeSlot",
@@ -406,7 +615,10 @@
         { "const": "file", "description": "The name to save the Program under, for the Try it yourself commands: program.py." },
         { "const": "tokens", "description": "How many tokens, with the word: 6 tokens." },
         { "const": "encoding", "description": "The encoding tokenize read the bytes with: utf-8." },
-        { "const": "boxes", "description": "How many nodes the syntax tree has, as boxes, with the word: 5 boxes." }
+        { "const": "boxes", "description": "How many nodes the syntax tree has, as boxes, with the word: 5 boxes." },
+        { "const": "lists", "description": "The lists of steps the compiler made, in words: one list for your program, and one for greet." },
+        { "const": "steps", "description": "How many steps all the code objects have, with the word: 26 steps." },
+        { "const": "ran", "description": "How many steps ran in all, with the word: 42 step runs." }
       ]
     },
     "TokenSlot": {
@@ -557,9 +769,14 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits", "machineMap", "terminal", "tryItOutput"],
+          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "stepRuns", "plates", "objects", "recipeCard", "afterRun"],
           "properties": {
             "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
+            "stepRuns": { "description": "Zoom level 5's strip of every step that ran, in order.", "type": "string" },
+            "plates": { "description": "Zoom level 5's plates of every frame after the selected step run, replayed with Python's rules.", "type": "string" },
+            "objects": { "description": "Zoom level 5's objects the plates and variables point to.", "type": "string" },
+            "recipeCard": { "description": "Zoom level 5's recipe card: a code object's names, fixed values and variables.", "type": "string" },
+            "afterRun": { "description": "Zoom level 5's note on the form a step had become after the Program ran again, unwatched.", "type": "string" },
             "machineMap": { "description": "The Machine map, beside every zoom level.", "type": "string" },
             "terminal": { "description": "The Terminal, beside every zoom level: what the Program printed when it ran.", "type": "string" },
             "tryItOutput": { "description": "Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.", "type": "string" }

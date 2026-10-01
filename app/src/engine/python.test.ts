@@ -4,6 +4,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { beforeAll, expect, test } from 'vitest';
 import schema from '../../schema/analysis.schema.json';
 import { astOf } from '../testAnalysis';
+import { framesAfter } from '../explain/bytecode';
 import { startPython, type Python } from './python';
 
 let python: Python;
@@ -54,6 +55,21 @@ test('the Try it yourself commands run on the Program, saved as program.py', () 
     {
       command: 'python -m ast program.py',
       output: "Module(\n   body=[\n      Expr(\n         value=Call(\n            func=Name(id='print', ctx=Load()),\n            args=[\n               Constant(value='Hi')]))])\n",
+      exitStatus: 0,
+    },
+    {
+      command: 'python -m dis program.py',
+      output: [
+        '  0           RESUME                   0',
+        '',
+        '  1           LOAD_NAME                0 (print)',
+        '              PUSH_NULL',
+        "              LOAD_CONST               0 ('Hi')",
+        '              CALL                     1',
+        '              POP_TOP',
+        '              LOAD_CONST               1 (None)',
+        '              RETURN_VALUE',
+      ].map((line) => `${line}\n`).join(''),
       exitStatus: 0,
     },
   ]);
@@ -158,11 +174,41 @@ test('for greet.py, the output of every command matches the output captured with
   const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
   const { commands } = python.analyze(captured.source, captured.file);
 
-  const outputs = Object.fromEntries(commands.map(({ command, output }) => [command, output]));
+  // dis names greet's code object by where it sat in memory, which changes from run to run.
+  const anywhere = (output: string) => output.replace(/ at 0x[0-9a-f]+,/g, ' at 0x…,');
+  const outputs = Object.fromEntries(commands.map(({ command, output }) => [command, anywhere(output)]));
   expect(outputs).toEqual({
     'python greet.py': captured.commands.run,
     [`python -c "print(list(open('greet.py', 'rb').read()))"`]: captured.commands.bytes,
     'python -m tokenize greet.py': captured.commands.tokenize,
     'python -m ast greet.py': captured.commands.ast,
+    'python -m dis greet.py': anywhere(captured.commands.dis),
   });
+});
+
+test('for greet.py, the bytecode and the forms its steps had become after the unwatched run match the capture of prototype v8', async () => {
+  const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
+  const { bytecode } = python.analyze(captured.source, captured.file);
+
+  expect(bytecode.map(({ name, size }) => [name, size])).toEqual(captured.codes.map(({ name, size_code_bytes }: { name: string; size_code_bytes: number }) => [name, size_code_bytes]));
+  bytecode.forEach((code, at) => {
+    expect(code.steps.map(({ offset, opname, arg }) => [offset, opname, arg])).toEqual(captured.codes[at].ins.map(({ off, op, arg }: { off: number; op: string; arg: number | null }) => [off, op, arg]));
+    expect(Object.fromEntries(code.steps.map(({ offset, afterRun }) => [String(offset), afterRun]))).toEqual(Object.values(captured.after_run)[at]);
+  });
+});
+
+test('for greet.py, the plates after the first run of greet’s LOAD_FAST_BORROW are those prototype v8 worked out', async () => {
+  const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
+  const analysis = python.analyze(captured.source, captured.file);
+
+  const at = analysis.runs.findIndex(({ code, offset }) => code === 1 && offset === 14);
+  const shown = framesAfter(analysis, at).map(({ code, plates, variables }) => ({
+    code: analysis.bytecode[code].name,
+    plates: plates.map((plate) => plate.object?.repr ?? (plate.empty ? 'empty' : '?')),
+    variables: Object.fromEntries(variables.map(({ name, value }) => [name, value.object?.repr])),
+  }));
+  expect(shown).toEqual([
+    { code: '<module>', plates: ['?'], variables: { greet: '<function greet>', person: "'Ada'" } },
+    { code: 'greet', plates: ['<function print>', 'empty', "'Hello,'", "'Ada'"], variables: { name: "'Ada'" } },
+  ]);
 });

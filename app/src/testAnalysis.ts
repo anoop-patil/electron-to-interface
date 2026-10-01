@@ -1,8 +1,8 @@
 import greetCapture from '../../prototype/data/example-greet-cpython-3.14.2.json';
-import type { Analysis, AstFact, AstField, CommandRun, TokenFact } from './generated/analysis';
+import type { Analysis, AstFact, AstField, CodeObject, CommandRun, TokenFact } from './generated/analysis';
 
 /** What the recorded run of a Program left in its Analysis, and the tokens and syntax tree Python found. */
-type RecordedRun = Pick<Analysis, 'encoding' | 'tokens' | 'ast' | 'stdout' | 'stderr' | 'error' | 'events' | 'runs' | 'eventsCutShort' | 'runsCutShort'>;
+type RecordedRun = Pick<Analysis, 'encoding' | 'tokens' | 'ast' | 'bytecode' | 'stdout' | 'stderr' | 'error' | 'events' | 'runs' | 'frames' | 'objects' | 'eventsCutShort' | 'runsCutShort'>;
 
 /**
  * For tests: an Analysis as the analyzer makes one. The Program ends with a newline, every byte knows its character
@@ -24,11 +24,14 @@ export function analysisOf(program: string, commands: CommandRun[] = [], run: Pa
     encoding: 'utf-8',
     tokens: [],
     ast: [],
+    bytecode: [],
     stdout: '',
     stderr: '',
     error: null,
     events: [],
     runs: [],
+    frames: [],
+    objects: [],
     eventsCutShort: false,
     runsCutShort: false,
     ...run,
@@ -136,7 +139,47 @@ export const greetAnalysis = (commands: CommandRun[] = []) =>
       ['def', 'for', 'in'],
     ),
     ast: astOf(greetCapture.ast),
+    bytecode: bytecodeOf(greetCapture.codes),
   });
+
+/** A code object as prototype v8's capture records it. */
+interface CapturedCode {
+  name: string;
+  qualname: string;
+  names: string[];
+  consts: string[];
+  locals: string[];
+  size_code_bytes: number;
+  ins: { off: number; op: string; arg: number | null; argrepr: string; line: number | null; span: number[] | null; caches: number; bytes: number[]; jump: number | null }[];
+}
+
+/** For tests: the code objects of v8's capture, as the analyzer records them, with a code object named without its address. */
+export function bytecodeOf(codes: CapturedCode[]): CodeObject[] {
+  let numbered = 0;
+  return codes.map((code) => ({
+    name: code.name,
+    qualname: code.qualname,
+    line: 1,
+    names: code.names,
+    consts: code.consts.map((value) => (value.startsWith('<code ') ? { code: codes.findIndex((other) => `<code ${other.name}>` === value) } : { value })),
+    varnames: code.locals,
+    cellvars: [],
+    freevars: [],
+    size: code.size_code_bytes,
+    steps: code.ins.map((ins) => ({
+      id: `bc-${numbered++}`,
+      offset: ins.off,
+      opname: ins.op,
+      arg: ins.arg,
+      argrepr: ins.argrepr.replace(/^<code object (\S+) at .*>$/, '<code object $1>'),
+      bytes: [ins.bytes[0], ins.bytes[1]],
+      caches: ins.caches,
+      line: ins.line,
+      span: ins.span && { start: ins.span[0], end: ins.span[1] },
+      jump: ins.jump,
+    })),
+  }));
+}
 
 /** What greet.py printed for each Try it yourself command, captured with CPython 3.14.2 on Linux for prototype v8. */
 export const GREET_OUTPUT = greetCapture.commands;

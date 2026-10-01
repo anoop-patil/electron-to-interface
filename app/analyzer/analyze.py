@@ -7,6 +7,7 @@ The shape of its output is defined by schema/analysis.schema.json.
 import ast
 import builtins
 import codecs
+import dis
 import importlib.machinery
 import importlib.util
 import io
@@ -18,6 +19,7 @@ import sys
 import tokenize
 import traceback
 import types
+import weakref
 
 # The most Events, and the most step runs, the Analysis records. A longer run is cut short, and the Analysis says so.
 RECORD_LIMIT = 2000
@@ -37,10 +39,17 @@ def analyze(code, file_name="program.py", commands=(), folder=None):
         file.write(program.encode("utf-8"))
     try:
         recorded = _record_run(file_name, folder)
-        command_runs = [_run_command(command, folder) for command in commands]
+        command_runs, after_run = [], None
+        for command in commands:
+            run, ran = _run_command(command, folder)
+            command_runs.append(run)
+            # `python FILE` runs the Program again, unwatched, so Python rewrites its busy steps as it would anywhere.
+            if shlex.split(command) == ["python", file_name] and isinstance(ran, types.CodeType):
+                after_run = _forms_after_run(ran)
     finally:
         os.remove(path)
     encoding, tokens = _tokens(program)
+    bytecode = _bytecode(program, encoding, after_run)
     return {
         "pythonVersion": platform.python_version(),
         "program": program,
@@ -49,6 +58,7 @@ def analyze(code, file_name="program.py", commands=(), folder=None):
         "encoding": encoding,
         "tokens": tokens,
         "ast": _syntax_tree(program, encoding),
+        "bytecode": bytecode,
         **recorded,
         "commands": command_runs,
     }
@@ -131,12 +141,7 @@ def _syntax_tree(program, encoding):
         tree = ast.parse(raw)
     except (SyntaxError, ValueError):
         return []
-    byte_at = _byte_positions(raw, encoding)
-    lines = raw.decode(encoding).split("\n")
-
-    def position(line, column):
-        # ast counts columns in the UTF-8 bytes of the text it decoded; tokenize, and so byte_at, counts characters.
-        return byte_at(line, len(lines[line - 1].encode("utf-8")[:column].decode("utf-8")))
+    position = _compiler_positions(raw, encoding)
 
     # Each node in order, with its parent's place in the order and the field holding it. This walks a stack rather
     # than calling itself, because one long line, such as 1+1+...+1, nests deeper than Python lets a function recurse.
@@ -170,6 +175,16 @@ def _syntax_tree(program, encoding):
     return facts
 
 
+def _compiler_positions(raw, encoding):
+    """
+    Turns a line and column, as ast and the compiler give them, into a position in the Program's bytes. They count
+    columns in the UTF-8 bytes of the text they decoded; tokenize, and so _byte_positions, counts characters.
+    """
+    byte_at = _byte_positions(raw, encoding)
+    lines = raw.decode(encoding).split("\n")
+    return lambda line, column: byte_at(line, len(lines[line - 1].encode("utf-8")[:column].decode("utf-8")))
+
+
 def _items(value):
     return value if isinstance(value, list) else [value]
 
@@ -200,6 +215,68 @@ def _shown_value(value):
     if isinstance(value, list):
         return "[" + ", ".join(_shown_value(item) for item in value) + "]"
     return repr(value)
+
+
+# Bytecode
+
+def _bytecode(program, encoding, after_run=None):
+    """
+    The steps of each of the Program's code objects, as dis shows them before anything runs, in the order step runs
+    count the code objects, with the form each had become after the unwatched run, if there was one. A Program with a
+    syntax error has none.
+    """
+    raw = program.encode("utf-8")
+    try:
+        module = compile(raw, "program.py", "exec")
+    except (SyntaxError, ValueError):
+        return []
+    position = _compiler_positions(raw, encoding)
+    codes = _code_objects(module)
+    index = {code: at for at, code in enumerate(codes)}
+    facts, numbered = [], 0
+    for at, code in enumerate(codes):
+        steps = list(dis.get_instructions(code))
+        facts.append({
+            "name": code.co_name,
+            "qualname": code.co_qualname,
+            "line": code.co_firstlineno,
+            "names": list(code.co_names),
+            "consts": [{"code": index[const]} if const in index else {"value": _safe_repr(const)} for const in code.co_consts],
+            "varnames": list(code.co_varnames),
+            "cellvars": list(code.co_cellvars),
+            "freevars": list(code.co_freevars),
+            "size": len(code.co_code),
+            "steps": [_step(code, step, after, numbered + place, position)
+                      for place, (step, after) in enumerate(zip(steps, steps[1:] + [None]))],
+        })
+        if after_run:
+            for step, form in zip(facts[-1]["steps"], after_run[at]):
+                step["afterRun"] = form
+        numbered += len(steps)
+    return facts
+
+
+def _step(code, step, after, number, position):
+    """One step, as dis shows it, with its two bytes, how many cache entries follow it, and its place in the Program."""
+    where = step.positions
+    span = None
+    if where and where.lineno and where.col_offset is not None and where.end_col_offset is not None:
+        span = {"start": position(where.lineno, where.col_offset), "end": position(where.end_lineno, where.end_col_offset)}
+    # dis names a code object with its address in memory and the path of its file, which change from run to run.
+    argrepr = f"<code object {step.argval.co_name}>" if isinstance(step.argval, types.CodeType) else step.argrepr
+    end = after.offset if after else len(code.co_code)
+    return {
+        "id": f"bc-{number}",
+        "offset": step.offset,
+        "opname": step.opname,
+        "arg": step.arg,
+        "argrepr": argrepr,
+        "bytes": list(code.co_code[step.offset:step.offset + 2]),
+        "caches": (end - step.offset - 2) // 2,
+        "line": step.line_number,
+        "span": span,
+        "jump": step.jump_target,
+    }
 
 
 # Running the Program as Python runs a file
@@ -269,6 +346,11 @@ def _run_command(command, folder):
         file_name = os.path.join(folder, words[1])
         with open(file_name, "rb") as file:
             source = file.read()
+        # Compiled here, so the code objects that ran can be read afterwards. A syntax error is left for the run to report.
+        try:
+            source = compile(source, file_name, "exec")
+        except (SyntaxError, ValueError):
+            pass
         argv, path_entry, main = words[1:], folder, _main_module(file_name)
     else:
         raise ValueError(f"The analyzer can’t run {command}")
@@ -276,7 +358,15 @@ def _run_command(command, folder):
     # A terminal shows stdout and stderr together, in the order they were written.
     terminal = io.StringIO()
     status, _ = _run_as_main(source, file_name, argv, path_entry, main, folder, terminal, terminal)
-    return {"command": command, "output": terminal.getvalue(), "exitStatus": status}
+    return {"command": command, "output": terminal.getvalue(), "exitStatus": status}, source
+
+
+def _forms_after_run(module):
+    """
+    The form each step of each code object had become after it ran, as dis shows it with adaptive=True: RESUME_CHECK,
+    LOAD_CONST_MORTAL. Only an unwatched run shows them: while sys.monitoring watches each step, Python rewrites none.
+    """
+    return [[step.opname for step in dis.get_instructions(code, adaptive=True)] for code in _code_objects(module)]
 
 
 def _module_as_main(name, args, folder):
@@ -313,6 +403,7 @@ def _record_run(file_name, folder):
         "error": _error_fact(error, path),
         "events": recorder.events,
         "runs": recorder.runs,
+        **(recorder.replay.facts(recorder.runs) if recorder.replay else {"frames": [], "objects": []}),
         "eventsCutShort": recorder.events_cut_short,
         "runsCutShort": recorder.runs_cut_short,
     }
@@ -352,11 +443,12 @@ class _Recorder:
     """
 
     _EVENTS = sys.monitoring.events
-    # The monitoring events each record needs. RAISE, PY_UNWIND and PY_THROW can't be turned on for single code
-    # objects, only everywhere.
-    _FOR_STEP_RUNS = _EVENTS.INSTRUCTION | _EVENTS.PY_START | _EVENTS.PY_RESUME
+    # The monitoring events each record needs. RAISE, RERAISE, PY_UNWIND and PY_THROW can't be turned on for single
+    # code objects, only everywhere. Step runs need returns, yields and errors to replay the plates.
+    _FOR_STEP_RUNS = _EVENTS.INSTRUCTION | _EVENTS.PY_START | _EVENTS.PY_RESUME | _EVENTS.PY_RETURN | _EVENTS.PY_YIELD
     _FOR_EVENTS = _EVENTS.PY_START | _EVENTS.PY_RESUME | _EVENTS.LINE | _EVENTS.JUMP | _EVENTS.PY_RETURN | _EVENTS.PY_YIELD
     _FOR_EVENTS_EVERYWHERE = _EVENTS.RAISE | _EVENTS.PY_UNWIND | _EVENTS.PY_THROW
+    _FOR_STEP_RUNS_EVERYWHERE = _FOR_EVENTS_EVERYWHERE | _EVENTS.RERAISE
 
     def __init__(self, stdout):
         self.events, self.runs = [], []
@@ -367,10 +459,12 @@ class _Recorder:
         self._lines = {}
         self._callbacks = {}
         self._tool = None
+        self.replay = None
 
     def start(self, module):
         monitoring, events = sys.monitoring, self._EVENTS
         self._codes = {code: index for index, code in enumerate(_code_objects(module))}
+        self.replay = _Replay(self._codes)
         self._tool = next(tool for tool in range(6) if monitoring.get_tool(tool) is None)
         monitoring.use_tool_id(self._tool, "ElectronToInterface")
         self._callbacks = {
@@ -381,9 +475,10 @@ class _Recorder:
             events.LINE: self._on_line,
             events.JUMP: self._on_jump,
             events.PY_RETURN: self._on_return,
-            events.PY_YIELD: self._on_return,
+            events.PY_YIELD: self._on_yield,
             events.PY_UNWIND: self._on_unwind,
             events.RAISE: self._on_raise,
+            events.RERAISE: self._on_reraise,
         }
         for event, callback in self._callbacks.items():
             monitoring.register_callback(self._tool, event, callback)
@@ -407,7 +502,8 @@ class _Recorder:
         local = (0 if self.runs_cut_short else self._FOR_STEP_RUNS) | (0 if self.events_cut_short else self._FOR_EVENTS)
         for code in self._codes:
             sys.monitoring.set_local_events(self._tool, code, local)
-        sys.monitoring.set_events(self._tool, 0 if self.events_cut_short else self._FOR_EVENTS_EVERYWHERE)
+        everywhere = (0 if self.runs_cut_short else self._FOR_STEP_RUNS_EVERYWHERE) | (0 if self.events_cut_short else self._FOR_EVENTS_EVERYWHERE)
+        sys.monitoring.set_events(self._tool, everywhere)
 
     # Step runs
 
@@ -420,7 +516,7 @@ class _Recorder:
             step_run["printed"] = step_run.get("printed", "") + self._stdout.getvalue()[self._printed:]
         self._printed = length
 
-    def _add_run(self, code, offset):
+    def _add_run(self, code, offset, frame, starting=False):
         if self.runs_cut_short:
             return
         self._tie_output()
@@ -429,19 +525,33 @@ class _Recorder:
             self._update_events()
             return
         self.runs.append({"id": f"run-{len(self.runs)}", "code": self._codes[code], "offset": offset})
+        self._replaying(self.replay.step, self.runs, frame, code, offset, starting)
+
+    def _replaying(self, call, *args):
+        """Replays the plates. A mistake in the replay marks the plates unsure from there, rather than stopping the Program."""
+        if self.runs_cut_short or self.replay.broken:
+            if self.runs and not self.runs_cut_short:
+                self.runs[-1]["platesUnsure"] = True
+            return
+        try:
+            call(*args)
+        except Exception:
+            self.replay.broken = True
+            if self.runs:
+                self.runs[-1]["platesUnsure"] = True
 
     def _on_instruction(self, code, offset):
-        self._add_run(code, offset)
+        self._add_run(code, offset, sys._getframe(1))
 
     # INSTRUCTION events don't report RESUME. It runs where a code object starts, or carries on after a yield, which
     # is when PY_START and PY_RESUME are reported, at its offset.
 
     def _on_start(self, code, offset):
-        self._add_run(code, offset)
+        self._add_run(code, offset, sys._getframe(1), starting=True)
         self._add_event("call", code, line=code.co_firstlineno)
 
     def _on_resume(self, code, offset):
-        self._add_run(code, offset)
+        self._add_run(code, offset, sys._getframe(1))
         self._add_event("call", code)
 
     # Events
@@ -469,6 +579,7 @@ class _Recorder:
 
     def _on_throw(self, code, offset, exception):
         self._add_event("call", code)
+        self._replay_raise(code, exception)
 
     def _on_line(self, code, line):
         self._add_event("line", code, line=line)
@@ -486,12 +597,581 @@ class _Recorder:
 
     def _on_return(self, code, offset, value):
         self._add_event("return", code, value=_safe_repr(value))
+        self._replaying(self.replay.returned, sys._getframe(1), code, value)
+
+    def _on_yield(self, code, offset, value):
+        self._add_event("return", code, value=_safe_repr(value))
+        self._replaying(self.replay.yielded, sys._getframe(1), code, value)
 
     def _on_unwind(self, code, offset, exception):
         self._add_event("return", code)
+        if code in self._codes:
+            self._replaying(self.replay.ended, sys._getframe(1), code)
 
     def _on_raise(self, code, offset, exception):
         self._add_event("exception", code, value=_safe_exception(exception))
+        self._replay_raise(code, exception)
+
+    def _on_reraise(self, code, offset, exception):
+        self._replay_raise(code, exception)
+
+    def _replay_raise(self, code, exception):
+        # This callback was called by the Program's own frame.
+        if code in self._codes:
+            self._replaying(self.replay.raised, sys._getframe(2), code, exception)
+
+
+# The plates: each frame's stack, replayed from the step runs with Python's rules
+
+# How many plates each kind of step takes and puts back, given its argument, as CPython 3.14.2 says in
+# Include/internal/pycore_opcode_metadata.h (_PyOpcode_num_popped and _PyOpcode_num_pushed), then how many of the
+# plates it takes it leaves as they were, from the step's stack signature in Python/bytecodes.c: FOR_ITER takes the
+# iterator and puts it back with the next item on top, so it keeps 1.
+_PLATE_RULES = {
+    "ANNOTATIONS_PLACEHOLDER": (0, 0), "BINARY_OP": (2, 1), "BINARY_SLICE": (3, 1),
+    "BUILD_INTERPOLATION": (lambda arg: 2 + (arg & 1), 1), "BUILD_LIST": (lambda arg: arg, 1),
+    "BUILD_MAP": (lambda arg: arg * 2, 1), "BUILD_SET": (lambda arg: arg, 1), "BUILD_SLICE": (lambda arg: arg, 1),
+    "BUILD_STRING": (lambda arg: arg, 1), "BUILD_TEMPLATE": (2, 1), "BUILD_TUPLE": (lambda arg: arg, 1),
+    "CALL": (lambda arg: 2 + arg, 1), "CALL_FUNCTION_EX": (4, 1), "CALL_INTRINSIC_1": (1, 1),
+    "CALL_INTRINSIC_2": (2, 1), "CALL_KW": (lambda arg: 3 + arg, 1), "CHECK_EG_MATCH": (2, 2),
+    "CHECK_EXC_MATCH": (2, 2, 1), "CLEANUP_THROW": (3, 2), "COMPARE_OP": (2, 1), "CONTAINS_OP": (2, 1),
+    "CONVERT_VALUE": (1, 1), "COPY": (lambda arg: arg, lambda arg: arg + 1, lambda arg: arg), "COPY_FREE_VARS": (0, 0),
+    "DELETE_ATTR": (1, 0), "DELETE_DEREF": (0, 0), "DELETE_FAST": (0, 0), "DELETE_GLOBAL": (0, 0),
+    "DELETE_NAME": (0, 0), "DELETE_SUBSCR": (2, 0),
+    "DICT_MERGE": (lambda arg: 4 + arg, lambda arg: 3 + arg, lambda arg: 3 + arg),
+    "DICT_UPDATE": (lambda arg: 1 + arg, lambda arg: arg, lambda arg: arg), "END_ASYNC_FOR": (2, 0),
+    "END_FOR": (1, 0), "END_SEND": (2, 1), "EXIT_INIT_CHECK": (1, 0), "EXTENDED_ARG": (0, 0),
+    "FORMAT_SIMPLE": (1, 1), "FORMAT_WITH_SPEC": (2, 1), "FOR_ITER": (1, 2, 1), "GET_AITER": (1, 1),
+    "GET_ANEXT": (1, 2, 1), "GET_AWAITABLE": (1, 1), "GET_ITER": (1, 1), "GET_LEN": (1, 2, 1),
+    "GET_YIELD_FROM_ITER": (1, 1), "IMPORT_FROM": (1, 2, 1), "IMPORT_NAME": (2, 1), "IS_OP": (2, 1),
+    "JUMP_BACKWARD": (0, 0), "JUMP_BACKWARD_NO_INTERRUPT": (0, 0), "JUMP_FORWARD": (0, 0),
+    "LIST_APPEND": (lambda arg: 1 + arg, lambda arg: arg, lambda arg: arg),
+    "LIST_EXTEND": (lambda arg: 1 + arg, lambda arg: arg, lambda arg: arg),
+    "LOAD_ATTR": (1, lambda arg: 1 + (arg & 1)), "LOAD_BUILD_CLASS": (0, 1), "LOAD_COMMON_CONSTANT": (0, 1),
+    "LOAD_CONST": (0, 1), "LOAD_DEREF": (0, 1), "LOAD_FAST": (0, 1), "LOAD_FAST_AND_CLEAR": (0, 1),
+    "LOAD_FAST_BORROW": (0, 1), "LOAD_FAST_BORROW_LOAD_FAST_BORROW": (0, 2), "LOAD_FAST_CHECK": (0, 1),
+    "LOAD_FAST_LOAD_FAST": (0, 2), "LOAD_FROM_DICT_OR_DEREF": (1, 1), "LOAD_FROM_DICT_OR_GLOBALS": (1, 1),
+    "LOAD_GLOBAL": (0, lambda arg: 1 + (arg & 1)), "LOAD_LOCALS": (0, 1), "LOAD_NAME": (0, 1),
+    "LOAD_SMALL_INT": (0, 1), "LOAD_SPECIAL": (1, 2), "LOAD_SUPER_ATTR": (3, lambda arg: 1 + (arg & 1)),
+    "MAKE_CELL": (0, 0), "MAKE_FUNCTION": (1, 1),
+    "MAP_ADD": (lambda arg: 2 + arg, lambda arg: arg, lambda arg: arg), "MATCH_CLASS": (3, 1),
+    "MATCH_KEYS": (2, 3, 2), "MATCH_MAPPING": (1, 2, 1), "MATCH_SEQUENCE": (1, 2, 1), "NOP": (0, 0),
+    "NOT_TAKEN": (0, 0), "POP_EXCEPT": (1, 0), "POP_ITER": (1, 0), "POP_JUMP_IF_FALSE": (1, 0),
+    "POP_JUMP_IF_NONE": (1, 0), "POP_JUMP_IF_NOT_NONE": (1, 0), "POP_JUMP_IF_TRUE": (1, 0), "POP_TOP": (1, 0),
+    "PUSH_EXC_INFO": (1, 2), "PUSH_NULL": (0, 1), "RAISE_VARARGS": (lambda arg: arg, 0),
+    "RERAISE": (lambda arg: 1 + arg, lambda arg: arg, lambda arg: arg), "RESUME": (0, 0),
+    "RETURN_GENERATOR": (0, 1), "RETURN_VALUE": (1, 1), "SEND": (2, 2, 1), "SETUP_ANNOTATIONS": (0, 0),
+    "SET_ADD": (lambda arg: 1 + arg, lambda arg: arg, lambda arg: arg), "SET_FUNCTION_ATTRIBUTE": (2, 1),
+    "SET_UPDATE": (lambda arg: 1 + arg, lambda arg: arg, lambda arg: arg), "STORE_ATTR": (2, 0),
+    "STORE_DEREF": (1, 0), "STORE_FAST": (1, 0), "STORE_FAST_LOAD_FAST": (1, 1), "STORE_FAST_STORE_FAST": (2, 0),
+    "STORE_GLOBAL": (1, 0), "STORE_NAME": (1, 0), "STORE_SLICE": (4, 0), "STORE_SUBSCR": (3, 0),
+    "SWAP": (lambda arg: arg, lambda arg: arg), "TO_BOOL": (1, 1), "UNARY_INVERT": (1, 1),
+    "UNARY_NEGATIVE": (1, 1), "UNARY_NOT": (1, 1),
+    "UNPACK_EX": (1, lambda arg: 1 + (arg & 0xFF) + (arg >> 8)), "UNPACK_SEQUENCE": (1, lambda arg: arg),
+    "WITH_EXCEPT_START": (5, 6, 5), "YIELD_VALUE": (1, 1),
+}
+
+
+def _plate_counts(opname, arg):
+    """How many plates a step takes, how many it puts back, and how many of those it takes it leaves as they were."""
+    took, put, *kept = _PLATE_RULES[opname]
+    count = lambda rule: rule(arg) if callable(rule) else rule
+    return count(took), count(put), count(kept[0]) if kept else 0
+
+
+_MISSING = object()
+_CO_OPTIMIZED = 0x1  # a code object whose variables live in its frame: a function, lambda or comprehension
+# What frame.f_locals gives for a function: a view of its variables, which reading runs none of the Program's code.
+_FRAME_LOCALS = type((lambda: sys._getframe().f_locals)())
+_OBJECT_GETATTRIBUTE = object.__dict__["__getattribute__"]
+_HEAP_TYPE = 1 << 9  # Py_TPFLAGS_HEAPTYPE: a class made by running Python code, rather than built into Python
+# Objects the replay can hold on to without changing what the Program does: they can't hold the Program's objects,
+# and nothing happens when they are freed.
+_HELD = (int, float, complex, bool, str, bytes, type(None), type(...), range, types.CodeType)
+# Objects whose repr can change while the Program runs, because they hold others that can change.
+_CHANGING = (list, dict, set, bytearray, tuple, frozenset)
+# Variables Python itself gives a class body or a method, rather than the Program.
+_PYTHONS_NAMES = {"__module__", "__qualname__", "__firstlineno__", "__static_attributes__", "__classdict__", "__classdictcell__",
+                  "__classcell__", "__class__", "__type_params__", "__annotate__", "__conditional_annotations__"}
+
+
+class _Label:
+    """
+    What a plate or a variable holds: a label for an object. `found` is the object's place in the list of objects,
+    once Python's rules or the run show which object it is. Copies of a label share it.
+    """
+
+    __slots__ = ("made_by", "found", "empty", "value")
+
+    def __init__(self, made_by, found=None, empty=False, value=_MISSING):
+        self.made_by = made_by
+        self.found = found if found is not None else [None]
+        self.empty = empty
+        # While the label is on a plate, the replay holds its object, if it has it. The frame's own stack holds the
+        # object then too, so holding it changes nothing for the Program.
+        self.value = value
+
+    def copy(self, made_by):
+        return _Label(made_by, self.found, self.empty, self.value)
+
+    def fact(self):
+        fact = {"madeBy": f"run-{self.made_by}"}
+        if self.empty:
+            fact["empty"] = True
+        elif self.found[0] is not None:
+            fact["object"] = f"obj-{self.found[0]}"
+        return fact
+
+
+class _Objects:
+    """
+    The objects that plates and variables point to, each recorded the first time it is seen. The list holds on to
+    none of the Program's own objects, which would change when they are freed, and so what the Program does.
+    """
+
+    def __init__(self, codes):
+        self.facts = []
+        self._codes = codes
+        self._seen = {}  # id(object) -> (its place, a way to get it back, its class)
+        self._getters = []  # by place: a way to get the object back, if the list holds it or can hold it weakly
+        self._calls = {}  # its place -> the code object calling it runs, for a function written in Python
+        self._shown_last = []  # by place: its repr when last seen
+        self.run = None  # the step run being replayed, which records a changed repr
+
+    def place(self, value):
+        """The object's place in the list, recording it if it is new. A list or dictionary seen again may have changed."""
+        kind = type(value)
+        seen = self._seen.get(id(value))
+        if seen is not None:
+            at, get, kind_seen = seen
+            # An object can be freed, and a new one made at the same address. An object held, or held weakly, is
+            # checked; any other is taken to be the same object if it is of the same class.
+            if kind_seen is kind and (get is None or get() is value):
+                if kind in _CHANGING and self.run is not None:
+                    shown = self._shown(value)
+                    if shown != self._shown_last[at]:
+                        self._shown_last[at] = shown
+                        self.run.setdefault("objects", []).append({"object": f"obj-{at}", "repr": shown})
+                return at
+        at = len(self.facts)
+        if kind in _HELD:
+            get = (lambda held: lambda: held)(value)
+        else:
+            try:
+                get = weakref.ref(value)
+            except TypeError:
+                get = None
+        self._seen[id(value)] = (at, get, kind)
+        self._getters.append(get)
+        fact = {"id": f"obj-{at}", "type": _class_name(kind), "repr": self._shown(value)}
+        self._shown_last.append(fact["repr"])
+        if value in self._codes if kind is types.CodeType else False:
+            fact["code"] = self._codes[value]
+        # Python's own types report their size themselves; a class of the Program's could run its code to do it.
+        if not type.__dict__["__flags__"].__get__(kind) & _HEAP_TYPE:
+            fact["size"] = sys.getsizeof(value)
+        self.facts.append(fact)
+        if kind is types.FunctionType:
+            self._calls[at] = value.__code__
+        elif kind is types.MethodType and type(value.__func__) is types.FunctionType:
+            self._calls[at] = value.__func__.__code__
+        return at
+
+    @staticmethod
+    def _shown(value):
+        if type(value) is types.CodeType:
+            return f"<code object {value.co_name}>"
+        # isinstance would ask the object for its __class__, which the Program's own class can make run code.
+        if BaseException in type.__dict__["__mro__"].__get__(type(value)):
+            return _safe_exception(value)
+        if type(value) in (types.MethodDescriptorType, types.WrapperDescriptorType, types.MethodWrapperType):
+            return f"<method {value.__name__}>"
+        if type(value) is types.MethodType and type(value.__func__) is types.FunctionType:
+            return f"<method {value.__func__.__qualname__}>"
+        return _safe_repr(value)
+
+    def get(self, label):
+        """The object a label points to, if it is known and can still be had, or _MISSING."""
+        if label.value is not _MISSING:
+            return label.value
+        at = label.found[0]
+        get = None if at is None or label.empty else self._getters[at]
+        value = get() if get else None
+        return _MISSING if value is None else value
+
+    def calls(self, label):
+        """The code object a call to the labeled object runs, if it is a function written in Python."""
+        return None if label.empty or label.found[0] is None else self._calls.get(label.found[0])
+
+
+class _Frame:
+    """The replay's record of one frame: its plates, and what its last step left to settle when its next step runs."""
+
+    __slots__ = ("index", "code", "plates", "variables", "caller", "last", "last_run", "pending", "pending_at", "awaiting",
+                 "calling", "raised", "returns_to", "unsure")
+
+    def __init__(self, index, code, caller):
+        self.index, self.code, self.caller = index, code, caller
+        self.plates = []
+        self.variables = {}  # name -> label
+        self.last = self.last_run = None
+        self.pending = []  # the labels its last step puts on its plates, once it is known that it finished
+        self.pending_at = None  # for FOR_ITER, the offset its next step must have for them to go on
+        self.awaiting = None  # the label for what a generator it resumed hands back, for FOR_ITER and SEND
+        self.calling = None  # (code object, label) while a call it made to a function written in Python is under way
+        self.raised = None  # the label for an error raised in it since its last step
+        self.returns_to = None  # (frame, label) for the frame whose call started it, waiting for its answer
+        self.unsure = False
+
+
+class _Replay:
+    """
+    Replays each frame's plates and variables from the step runs, with Python's rules for how many plates each step
+    takes and puts back. A step's labels are known from what it loads: a fixed value, or a variable or name read from
+    the frame just before it runs. A step that works out a new object, such as a call or a sum, puts a label whose
+    object is found later, if a variable stores it or a frame returns it. Nothing here runs the Program's code.
+    """
+
+    def __init__(self, codes):
+        self.codes = codes
+        self.objects = _Objects(codes)
+        self.frames = []
+        self._steps = {}
+        self._live = {}  # id(frame) -> _Frame, for the frames still running or suspended
+        self._module = None
+        self.broken = False
+
+    def _step_at(self, code, offset):
+        if code not in self._steps:
+            steps = list(dis.get_instructions(code))
+            ends = [after.offset for after in steps[1:]] + [len(code.co_code)]
+            self._steps[code] = {step.offset: (step, end) for step, end in zip(steps, ends)}
+        return self._steps[code][offset]
+
+    # The frames
+
+    def _frame(self, frame, code, starting, previous):
+        record = self._live.get(id(frame))
+        if record is not None and record.code is code and not starting:
+            if record.last is None or self._step_at(code, record.last)[0].opname == "YIELD_VALUE":
+                record.caller = self._caller_of(frame)
+            return record
+        caller = self._caller_of(frame)
+        record = _Frame(len(self.frames), code, caller)
+        self.frames.append({"id": f"frame-{record.index}", "code": self.codes[code]})
+        self._live[id(frame)] = record
+        if self._module is None:
+            self._module = record
+        if caller and caller.calling and caller.calling[0] is code:
+            record.returns_to = (caller, caller.calling[1])
+            caller.calling = None
+        # A function starts with its inputs already in its variables. They are there as the step that called it ends.
+        if code.co_flags & _CO_OPTIMIZED and previous is not None:
+            for name, value in frame.f_locals.items():
+                self._set(previous, record, name, _Label(previous["index"], [self.objects.place(value)]))
+        return record
+
+    def _caller_of(self, frame):
+        """The frame of the Program's own code that the frame was called from, perhaps through Python's own code."""
+        frame = frame.f_back
+        while frame is not None:
+            record = self._live.get(id(frame))
+            if record is not None and record.code is frame.f_code:
+                return record
+            frame = frame.f_back
+        return None
+
+    def step(self, runs, frame, code, offset, starting):
+        """Replays a step run, just before the step runs, in `frame`."""
+        at = len(runs) - 1
+        run = runs[at]
+        run["index"] = at
+        previous = runs[at - 1] if at else None
+        record = self._frame(frame, code, starting, previous)
+        run["frame"] = record.index
+        run["caller"] = record.caller.index if record.caller else None
+        self.objects.run = run
+        if not record.unsure:
+            self._settle(record, offset, previous)
+            self._refresh(record, frame, run)
+        if not record.unsure:
+            self._run(record, frame, code, offset, run)
+        if record.unsure:
+            run["platesUnsure"] = True
+        record.last, record.last_run = offset, at
+
+    def returned(self, frame, code, value):
+        record = self._live.pop(id(frame), None)
+        if record is None or record.code is not code:
+            return
+        self._let_go(record)
+        found = [self.objects.place(value)]
+        if record.returns_to:
+            caller, answer = record.returns_to
+            # The caller is still waiting for this answer, unless an error ended the call.
+            if answer in caller.pending:
+                answer.found[0] = found[0]
+
+    def yielded(self, frame, code, value):
+        record = self._live.get(id(frame))
+        if record is None or record.code is not code:
+            return
+        if record.caller and record.caller.awaiting:
+            record.caller.awaiting.found[0] = self.objects.place(value)
+
+    def ended(self, frame, code):
+        record = self._live.get(id(frame))
+        if record is not None and record.code is code:
+            del self._live[id(frame)]
+            self._let_go(record)
+
+    @staticmethod
+    def _let_go(record):
+        """A frame that has finished holds no objects."""
+        for label in record.plates:
+            label.value = _MISSING
+
+    def raised(self, frame, code, exception):
+        record = self._live.get(id(frame))
+        if record is not None and record.code is code and record.last_run is not None:
+            record.raised = _Label(record.last_run, [self.objects.place(exception)])
+
+    # Changing a frame's plates and variables
+
+    def _change(self, run, record, took, put):
+        if took > len(record.plates):
+            # The rules can't account for this frame's plates any more, so it shows none from here.
+            record.unsure = True
+            run["platesUnsure"] = True
+            took, put = len(record.plates), []
+        if took:
+            for label in record.plates[len(record.plates) - took:]:
+                label.value = _MISSING
+            del record.plates[len(record.plates) - took:]
+        record.plates.extend(put)
+        if took or put:
+            run.setdefault("plates", []).append({"frame": record.index, "took": took, "put": put})
+
+    def _settle(self, record, offset, previous):
+        """What the frame's last step left: its labels put on the plates, now that it finished, or an error caught."""
+        pending, record.pending = record.pending, []
+        record.awaiting = None
+        if record.raised is not None:
+            error, record.raised = record.raised, None
+            handler = next((entry for entry in dis._parse_exception_table(record.code)
+                            if entry.start <= record.last < entry.end), None)
+            if handler and handler.target == offset:
+                # The plates go back to where they were when the try started, then the error goes on top: under it,
+                # for some handlers, the place in the bytecode where it happened.
+                where = [_Label(record.last_run, [self.objects.place(record.last // 2)])] if handler.lasti else []
+                self._change(previous, record, max(0, len(record.plates) - handler.depth), where + [error])
+                return
+        # FOR_ITER puts the next item on only if the frame carries on with the step after it, inside the loop.
+        if pending and record.pending_at in (None, offset):
+            self._change(previous, record, 0, pending)
+
+    def _refresh(self, record, frame, run):
+        """
+        Reads the frame's variables as its step starts. A variable stored a label whose object wasn't known gets it;
+        one changed by another frame, through nonlocal or global, gets a new label.
+        """
+        for name, label in list(record.variables.items()):
+            value = self._read(frame.f_locals, name)
+            if value is _MISSING:
+                continue
+            at = self.objects.place(value)
+            if label.found[0] is None:
+                label.found[0] = at
+            elif label.found[0] != at:
+                self._set(run, record, name, _Label(run["index"], [at]))
+
+    def _run(self, record, frame, code, offset, run):
+        step, end = self._step_at(code, offset)
+        name, arg, at = step.opname, step.arg, run["index"]
+        if name not in _PLATE_RULES:
+            record.unsure = True
+            return
+        took, put, kept = _plate_counts(name, arg)
+        plates = record.plates
+        new = lambda: _Label(at)
+        known = lambda value: _Label(at, [self.objects.place(value)], value=value) if value is not _MISSING else _Label(at)
+        empty = lambda: _Label(at, empty=True)
+        puts = None
+        if took > len(plates):
+            self._change(run, record, took, [])
+            return
+
+        if name == "LOAD_CONST" or name == "LOAD_SMALL_INT":
+            puts = [known(step.argval)]
+        elif name == "LOAD_COMMON_CONSTANT":
+            puts = [known(step.argval if not isinstance(step.argval, str) else builtins.__dict__.get(step.argval, _MISSING))]
+        elif name == "PUSH_NULL":
+            puts = [empty()]
+        elif name == "LOAD_BUILD_CLASS":
+            puts = [known(builtins.__build_class__)]
+        elif name == "LOAD_NAME":
+            puts = [known(self._lookup(frame, step.argval, local=True))]
+        elif name == "LOAD_GLOBAL":
+            puts = [known(self._lookup(frame, step.argval))] + ([empty()] if arg & 1 else [])
+        elif name in ("LOAD_FAST", "LOAD_FAST_BORROW", "LOAD_FAST_CHECK", "LOAD_DEREF"):
+            puts = [known(self._read(frame.f_locals, step.argval))]
+        elif name == "LOAD_FAST_AND_CLEAR":
+            value = self._read(frame.f_locals, step.argval)
+            puts = [empty() if value is _MISSING else known(value)]
+            self._delete(run, record, step.argval)
+        elif name in ("LOAD_FAST_LOAD_FAST", "LOAD_FAST_BORROW_LOAD_FAST_BORROW"):
+            puts = [known(self._read(frame.f_locals, variable)) for variable in step.argval]
+        elif name == "LOAD_ATTR":
+            found = self._attribute(plates[-1], step.argval, arg & 1)
+            puts = [known(value) if value is not None else empty() for value in found] if found else [new() for _ in range(put)]
+        elif name in ("STORE_NAME", "STORE_FAST", "STORE_DEREF", "STORE_GLOBAL"):
+            self._store(run, record, step.argval, plates[-1], name)
+        elif name == "STORE_FAST_STORE_FAST":
+            first, second = step.argval
+            self._store(run, record, first, plates[-1], name)
+            self._store(run, record, second, plates[-2], name)
+        elif name == "STORE_FAST_LOAD_FAST":
+            stored, loaded = step.argval
+            label = plates[-1]
+            self._store(run, record, stored, label, name)
+            puts = [label.copy(at) if loaded == stored else known(self._read(frame.f_locals, loaded))]
+        elif name in ("DELETE_NAME", "DELETE_FAST", "DELETE_DEREF", "DELETE_GLOBAL"):
+            self._delete(run, self._module if name == "DELETE_GLOBAL" else record, step.argval)
+        elif name in ("CALL", "CALL_KW", "CALL_FUNCTION_EX"):
+            answer = new()
+            callee = self.objects.calls(plates[-took])
+            if callee in self.codes:
+                record.calling = (callee, answer)
+            puts = [answer]
+        elif name == "COPY":
+            puts = [plates[-arg].copy(at)]
+        elif name == "SWAP":
+            swapped = [label.copy(label.made_by) for label in plates[-arg:]]
+            swapped[0], swapped[-1] = swapped[-1], swapped[0]
+            puts = swapped
+        elif name in ("PUSH_EXC_INFO", "LOAD_SPECIAL"):
+            puts = [new(), plates[-1].copy(plates[-1].made_by)]
+        elif name in ("SET_FUNCTION_ATTRIBUTE", "END_SEND"):
+            puts = [plates[-1].copy(plates[-1].made_by)]
+        elif name in ("FOR_ITER", "SEND"):
+            record.awaiting = new()
+            puts = [record.awaiting]
+        elif name == "RETURN_VALUE":
+            took, puts = 1, []
+
+        took -= kept
+        if puts is None:
+            puts = [new() for _ in range(put - kept)]
+        self._change(run, record, took, [])
+        # The labels go on when the step has finished, which is known when the frame's next step runs: FOR_ITER
+        # puts the next item on only if it didn't jump past the loop, and an error means nothing goes on at all.
+        record.pending = puts
+        record.pending_at = end if name == "FOR_ITER" else None
+
+    def _store(self, run, record, name, label, opname):
+        owner = self._module if opname == "STORE_GLOBAL" else record
+        # An empty plate stored in a variable unbinds it, as a comprehension does to put back a variable it borrowed.
+        if label.empty:
+            self._delete(run, owner, name)
+        else:
+            self._set(run, owner, name, label.copy(label.made_by))
+
+    @staticmethod
+    def _set(run, record, name, label):
+        record.variables[name] = label
+        if name not in _PYTHONS_NAMES:
+            run.setdefault("variables", []).append({"frame": record.index, "name": name, "value": label})
+
+    @staticmethod
+    def _delete(run, record, name):
+        if record.variables.pop(name, None) is not None and name not in _PYTHONS_NAMES:
+            run.setdefault("variables", []).append({"frame": record.index, "name": name, "deleted": True})
+
+    # Reading what a step loads, without running any code
+
+    @staticmethod
+    def _read(mapping, name):
+        """A variable's object, from a frame's own variables or a dictionary of names; _MISSING if it has none."""
+        if type(mapping) not in (dict, _FRAME_LOCALS):
+            return _MISSING
+        try:
+            return mapping[name]
+        except KeyError:
+            return _MISSING
+
+    def _lookup(self, frame, name, local=False):
+        """What LOAD_NAME or LOAD_GLOBAL finds: the frame's own names first, for LOAD_NAME, then the globals, then the built-ins."""
+        places = ([frame.f_locals] if local else []) + [frame.f_globals, frame.f_builtins]
+        for mapping in places:
+            value = self._read(mapping, name)
+            if value is not _MISSING:
+                return value
+        return _MISSING
+
+    def _attribute(self, owner_label, name, method):
+        """What LOAD_ATTR puts on the plates, an object or None for an empty plate each, if it can be told without running code."""
+        owner = self.objects.get(owner_label)
+        if owner is _MISSING:
+            return None
+        kind = type(owner)
+        if kind is types.ModuleType:
+            value = types.ModuleType.__dict__["__dict__"].__get__(owner).get(name, _MISSING)
+            return None if value is _MISSING else _found(value, method)
+        if kind is type:
+            if _class_lookup(type, name) is not _MISSING:
+                return None
+            value = _class_lookup(owner, name)
+            plain = value is not _MISSING and (type(value) is types.FunctionType or _class_lookup(type(value), "__get__") is _MISSING)
+            return _found(value, method) if plain else None
+        if _class_lookup(kind, "__getattribute__") is not _OBJECT_GETATTRIBUTE:
+            return None
+        found = _class_lookup(kind, name)
+        if found is not _MISSING and (_class_lookup(type(found), "__set__") is not _MISSING or _class_lookup(type(found), "__delete__") is not _MISSING):
+            return None
+        own = _instance_dict(owner)
+        if own is not None and name in own:
+            return _found(own[name], method)
+        if found is _MISSING:
+            return None
+        if method and type(found) in (types.FunctionType, types.MethodDescriptorType):
+            return [found, owner]
+        if _class_lookup(type(found), "__get__") is _MISSING:
+            return _found(found, method)
+        return None
+
+    def facts(self, runs):
+        """The plates, variables, frames and objects, as the Analysis records them."""
+        for run in runs:
+            run.pop("index", None)
+            for change in run.get("plates", []):
+                change["put"] = [label.fact() for label in change["put"]]
+            for change in run.get("variables", []):
+                if "value" in change:
+                    change["value"] = change["value"].fact()
+        return {"frames": self.frames, "objects": self.objects.facts}
+
+
+def _found(value, method):
+    """What LOAD_ATTR puts on the plates for an attribute that isn't a method: the attribute, then, ready for a call, an empty plate."""
+    return [value, None] if method else [value]
+
+
+def _class_lookup(kind, name):
+    """What a class, or the first of its bases that has it, holds under a name, read from their own dictionaries."""
+    for klass in type.__dict__["__mro__"].__get__(kind):
+        namespace = type.__dict__["__dict__"].__get__(klass)
+        if name in namespace:
+            return namespace[name]
+    return _MISSING
+
+
+def _instance_dict(owner):
+    """An object's own dictionary of attributes, if Python's own code keeps one for it."""
+    found = _class_lookup(type(owner), "__dict__")
+    if type(found) is not types.GetSetDescriptorType:
+        return None
+    own = found.__get__(owner, type(owner))
+    return own if type(own) is dict else None
 
 
 def _is_dunder(name):

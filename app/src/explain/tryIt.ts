@@ -2,6 +2,8 @@ import templateFile from '../../templates/py314.json';
 import type { Analysis, AstFact, CommandRun, LineSlot, Templates, TokenFact } from '../generated/analysis';
 import { linesOf } from '../zoom/characters';
 import { byteFacts, counted, fillString, isAfterLastLine, programFacts, template, tokenFacts, type Span, type TemplateId } from './explain';
+import { allSteps, stepsOf, type StepInCode } from './bytecode';
+import { stepFacts } from './steps';
 import { nodeFacts, nodeKind } from './syntaxTree';
 
 /** Each zoom level's Try it yourself, from the Template file. The build checks it like the Templates (see checkContent.ts). */
@@ -158,11 +160,61 @@ function astRows(analysis: Analysis, result: CommandRun) {
 const level4Notes = (analysis: Analysis, result: CommandRun) =>
   printedTree(analysis, result) ? (['tryIt.level4.boxes', 'tryIt.level4.indent'] as const).map((id) => fillString(template(id, 'program').text, programFacts(analysis))) : [];
 
+/** One step as `python -m dis` prints it: its line, if a new one starts there, a label, if steps jump to it, the opname, the argument and what it means. */
+const DIS_LINE = /^\s*(\d+)?\s+(L\d+:)?\s*([A-Z][A-Z0-9_]*)(?:\s+(\d+))?(?:\s+\((.*)\))?\s*$/;
+
+/**
+ * dis's lines, each paired with the step it shows, in the order dis prints the code objects, which is the order the
+ * Analysis lists them. Null if dis stopped with an error, or its lines don't match the steps, in order.
+ */
+function disLines(analysis: Analysis, { output, exitStatus }: CommandRun) {
+  const lines = output.split('\n');
+  const stepLines = lines.map((line) => DIS_LINE.exec(line)).filter((match) => match !== null);
+  const steps = allSteps(analysis);
+  const matches = stepLines.length === steps.length && stepLines.every((match, index) => match[3] === steps[index].step.opname);
+  return exitStatus === 0 && matches ? { lines, steps: stepLines.map((match, index) => ({ match, step: steps[index] })) } : null;
+}
+
+/** The Templates for the first step of each kind level 5's reading tab explains, by what picks it. */
+const DIS_ROWS: { id: TemplateId; picks(step: StepInCode): boolean }[] = [
+  { id: 'tryIt.disRow.loadConst', picks: ({ step }) => step.opname === 'LOAD_CONST' && !step.argrepr.startsWith('<code object') },
+  { id: 'tryIt.disRow.loadGlobalNull', picks: ({ step }) => step.opname === 'LOAD_GLOBAL' && ((step.arg ?? 0) & 1) === 1 },
+  { id: 'tryIt.disRow.loadFast', picks: ({ step }) => /^LOAD_FAST(_BORROW|_CHECK)?$/.test(step.opname) },
+];
+
+/** Level 5's rows: the line numbers, the labels, each code object's heading, and the first step of each kind the tab explains, in the order dis prints them. */
+function disRows(analysis: Analysis, result: CommandRun) {
+  const found = disLines(analysis, result);
+  if (!found) return [];
+  const facts = programFacts(analysis);
+  const numbers = [...new Set(found.steps.flatMap(({ match }) => (match[1] ? [match[1]] : [])))];
+  const labels = found.steps.flatMap(({ match }) => (match[2] ? [match[2]] : []));
+  const rows: { at: number; printed: string; text: Span[] }[] = [];
+  rows.push({ at: -2, printed: `${numbers.join(', ')} (far left)`, text: fillString(template(numbers.includes('0') ? 'tryIt.disRow.lines' : 'tryIt.disRow.linesNoSetup', 'program').text, facts) });
+  if (labels.length) rows.push({ at: -1, printed: labels.length > 1 ? `${labels[0]} … ${labels.at(-1)}` : labels[0], text: fillString(template('tryIt.disRow.labels', 'program').text, facts) });
+  const heading = found.lines.findIndex((line) => line.startsWith('Disassembly of <code object '));
+  if (heading >= 0 && analysis.bytecode.length > 1) {
+    const [code] = stepsOf(analysis, 1);
+    rows.push({ at: heading, printed: found.lines[heading].replace(/ at 0x[0-9a-f]+, .*>:$/, ' at 0x…>'), text: fillString(template('tryIt.disRow.code', 'step').text, stepFacts(analysis, code, null)) });
+  }
+  for (const { id, picks } of DIS_ROWS) {
+    const first = found.steps.find(({ step }) => picks(step));
+    if (!first) continue;
+    const [, , , opname, arg, argrepr] = first.match;
+    rows.push({
+      at: found.lines.indexOf(first.match.input),
+      printed: `${opname}${arg ? ` ${arg}` : ''}${argrepr ? ` (${argrepr})` : ''}`,
+      text: fillString(template(id, 'step').text, stepFacts(analysis, first.step, null)),
+    });
+  }
+  return rows.sort((one, other) => one.at - other.at).map(({ printed, text }) => ({ printed, text }));
+}
+
 /** The notes on reading a level's output that the page works out from the Program and what its command printed. */
 const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes, 4: level4Notes };
 
 /** The rows of a level's reading tab, worked out from the Program and what its command printed. */
-const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows };
+const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows, 5: disRows };
 
 /** The Try it yourself of a zoom level, or null if the level has none yet. */
 export function explainTryIt(level: number, analysis: Analysis): TryItExplanation | null {

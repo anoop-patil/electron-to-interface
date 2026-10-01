@@ -2,6 +2,7 @@ import templateFile from '../../templates/py314.json';
 import type { Analysis, ByteFact, ByteSlot, ProgramSlot, Template, Templates, TokenFact, TokenSlot } from '../generated/analysis';
 import { bitsOf } from '../concepts/bits';
 import { charLabel, linesOf } from '../zoom/characters';
+import { codeName } from './bytecode';
 
 /** The Templates for Python 3.14. The build checks them against the schema, the slots and the Concept cards (see checkContent.ts). */
 const TEMPLATES = (templateFile as Templates).templates;
@@ -69,7 +70,20 @@ export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
     // Only filled in where the page knows tokenize named an encoding.
     encoding: analysis.encoding ?? '',
     boxes: counted(analysis.ast.length, 'box', 'boxes'),
+    lists: listsOf(analysis),
+    steps: counted(analysis.bytecode.reduce((count, code) => count + code.steps.length, 0), 'step', 'steps'),
+    ran: counted(analysis.runs.length, 'step run', 'step runs'),
   };
+}
+
+/** Names in a sentence: greet, add and Point. */
+const joined = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+
+/** The lists of steps the compiler made, one for each code object, in words. */
+function listsOf(analysis: Analysis) {
+  const others = analysis.bytecode.slice(1).map(codeName);
+  if (others.length === 0) return 'one list, for your program';
+  return others.length === 1 ? `one for your program, and one for ${others[0]}` : `one for your program, and one each for ${joined(others)}`;
 }
 
 /** Whether a Template with this ID exists, for Templates looked up by the kind of thing they explain, such as field.call.args. */

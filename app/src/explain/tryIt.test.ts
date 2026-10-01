@@ -8,6 +8,7 @@ const RUN = 'python program.py';
 const BYTES = `python -c "print(list(open('program.py', 'rb').read()))"`;
 const TOKENIZE = 'python -m tokenize program.py';
 const AST = 'python -m ast program.py';
+const DIS = 'python -m dis program.py';
 
 /** An Analysis of the Program, with what each command printed: nothing, unless `printed` says otherwise. */
 const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'command'>> = {}) =>
@@ -15,15 +16,16 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 to 4 have a command for the learner’s file; the others aren’t built yet', () => {
-  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST]);
+test('levels 1 to 5 have a command for the learner’s file; the others aren’t built yet', () => {
+  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS]);
   expect(tryItCommands('greet.py')).toEqual([
     'python greet.py',
     `python -c "print(list(open('greet.py', 'rb').read()))"`,
     'python -m tokenize greet.py',
     'python -m ast greet.py',
+    'python -m dis greet.py',
   ]);
-  expect(explainTryIt(5, analysisOf('x = 1\n'))).toBeNull();
+  expect(explainTryIt(6, analysisOf('x = 1\n'))).toBeNull();
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {
@@ -190,4 +192,30 @@ test('when the Program has a syntax error, level 4 shows what python -m ast prin
   expect(tryIt.output).toBe(error);
   expect(tryIt.rows).toEqual([]);
   expect(tryIt.read).toEqual([]);
+});
+
+test('level 5 runs python -m dis and explains its columns and the first step of each kind, as v8 did for greet.py', () => {
+  const tryIt = explainTryIt(5, greetAnalysis([{ command: DIS, output: GREET_OUTPUT.dis, exitStatus: 0 }]))!;
+
+  expect(tryIt.command).toBe('python -m dis program.py');
+  expect(plain(tryIt.intro)).toBe('Ask Python to show the bytecode it made from your file:');
+  expect(tryIt.parts.map((part) => part.code)).toEqual(['python -m dis', 'program.py']);
+  expect(tryIt.output).toBe(GREET_OUTPUT.dis);
+  expect(tryIt.rows.map((row) => [row.printed, plain(row.text)])).toEqual([
+    ['0, 1, 4, 5, 2 (far left)', 'The line of your file each group of steps comes from. 0 is Python’s own setup step, before line 1.'],
+    ['L1: … L2:', 'Labels for places the steps jump to. A step that jumps names the label it jumps to.'],
+    ["LOAD_CONST 2 (('Ada', 'Grace'))", 'A fixed value from the recipe card: the number says which, counting from 0, and dis shows it in brackets.'],
+    ['Disassembly of <code object greet at 0x…>', 'greet’s own steps. The number after at is where its code object sat in memory; it changes every time you run it.'],
+    ['LOAD_GLOBAL 1 (print + NULL)', 'Find print, and add an empty plate. The number holds both: which name, counting from 0, doubled, plus 1 for “add the empty plate”.'],
+    ['LOAD_FAST_BORROW 0 (name)', 'greet’s own variable name: the number says which, counting from 0.'],
+  ]);
+  expect(tryIt.read.map(plain)).toEqual(['dis shows the steps as the compiler made them, before the program runs. It doesn’t show how Python rewrites them while it runs.']);
+});
+
+test('when dis stops with an error, level 5 shows what it printed and explains no lines', () => {
+  const error = "Traceback (most recent call last):\n  …\nSyntaxError: '(' was never closed\n";
+  const tryIt = explainTryIt(5, analysisOf('print("Hi"\n', { [DIS]: { output: error, exitStatus: 1 } }))!;
+
+  expect(tryIt.output).toBe(error);
+  expect(tryIt.rows).toEqual([]);
 });

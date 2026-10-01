@@ -116,7 +116,7 @@ def test_each_step_run_is_a_fact_numbered_in_the_order_the_steps_ran():
     runs = analyze("x = 1")["runs"]
 
     assert [run["id"] for run in runs] == [f"run-{n}" for n in range(len(runs))]
-    assert runs[0] == {"id": "run-0", "code": 0, "offset": 0}
+    assert runs[0] == {"id": "run-0", "code": 0, "offset": 0, "frame": 0, "caller": None}
 
 
 def test_a_generator_runs_its_resume_step_each_time_it_carries_on():

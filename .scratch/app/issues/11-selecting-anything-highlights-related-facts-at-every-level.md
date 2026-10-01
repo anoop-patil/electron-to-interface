@@ -17,3 +17,4 @@
 ## Comments
 
 - Ticket 09: a syntax-tree node with no place in the code, such as the Module or `arguments`, has no span. v8 picked the smallest node around a byte, skipping `arguments`, and fell back to the Module when none matched; this ticket can do the same.
+- Ticket 10: level 5's Selection is a step run, `run-N`, or a step that never ran, `bc-N`; `level5Selection` in `src/explain/steps.ts` reads it. Any other Selection, such as a box from level 4, selects the first step run for now. Each step has a span, so a box or token can find its step through it.
