@@ -13,3 +13,7 @@
 - [ ] The mapping is data, so levels 6 to 9 can plug into it.
 - [ ] A Playwright test follows a byte of `print` through its token, node and `LOAD_NAME` step.
 - [ ] In a multi-line Program, selecting an element highlights its own line in the editor, and nothing on other lines.
+
+## Comments
+
+- Ticket 09: a syntax-tree node with no place in the code, such as the Module or `arguments`, has no span. v8 picked the smallest node around a byte, skipping `arguments`, and fell back to the Module when none matched; this ticket can do the same.

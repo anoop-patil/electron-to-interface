@@ -12,3 +12,5 @@
 ## Comments
 
 - Ticket 08 gave level 3 a general Template, `token.other`, for any token type without its own. It has no link to Python's docs yet.
+- Ticket 09 gave level 4 general Templates for any kind of syntax-tree node without its own: `node.other`, which names the node's type and its code, and `node.otherNoPlace`, for a node with no place in the code. They have no link to Python's docs yet.
+- Ticket 09 found that one long line, `print(1+1+…+1)` with 3,000 terms, stops Pyodide in Chromium with a fatal error, as it did before ticket 09. 1,200 terms works at every built level. The test program set can include a deeply nested line.

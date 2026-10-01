@@ -22,7 +22,11 @@ test('at zoom level 3, RAM is lit: the Program, now read as tokens, not copied f
   expect(lit(mapState({ level: 3, analysis: hello, selection: 'tok-0' }))).toEqual({ ram: 'your program · read as 6 tokens' });
 });
 
+test('at zoom level 4, RAM is lit: the Program, now as boxes, which Python keeps only until it has made the bytecode', () => {
+  expect(lit(mapState({ level: 4, analysis: hello, selection: 'ast-0' }))).toEqual({ ram: 'your program · as 5 boxes, temporary' });
+});
+
 test('nothing is lit before the first Run, or at a zoom level that isn’t built yet', () => {
   expect(mapState({ level: 1, analysis: null, selection: null }).lit).toEqual([]);
-  for (let level = 4; level <= 9; level++) expect(mapState({ level, analysis: hello, selection: null }).lit).toEqual([]);
+  for (let level = 5; level <= 9; level++) expect(mapState({ level, analysis: hello, selection: null }).lit).toEqual([]);
 });

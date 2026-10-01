@@ -4,11 +4,13 @@ import { levelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
 import { explainByte, explainProgram, explainToken, type TemplateId } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
+import { explainNode } from '../explain/syntaxTree';
 import { explainTryIt } from '../explain/tryIt';
 import type { Analysis } from '../generated/analysis';
 import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
+import { SyntaxTreeZoomLevel } from './SyntaxTreeZoomLevel';
 import { TokensZoomLevel } from './TokensZoomLevel';
 import { TryItYourself, type TryItTab } from './TryItYourself';
 
@@ -25,7 +27,7 @@ const ArrowUp = () => (
 );
 
 /** The Template that introduces each zoom level that has one. */
-const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro' };
+const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro' };
 
 /** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
@@ -38,7 +40,7 @@ export function ZoomView({
 }: {
   level: number;
   analysis: Analysis | null;
-  /** The Fact ID of the Selection, such as byte-3 or tok-0. */
+  /** The Fact ID of the Selection, such as byte-3, tok-0 or ast-2. */
   selection: string | null;
   onSelect(factId: string): void;
   onGo(level: number): void;
@@ -50,18 +52,21 @@ export function ZoomView({
   const [tryItTab, setTryItTab] = useState<TryItTab>('does');
   const selectedByte = analysis?.bytes.find((byte) => byte.id === selection) ?? null;
   const selectedToken = analysis?.tokens.find((token) => token.id === selection) ?? null;
+  const selectedNode = analysis?.ast.find((node) => node.id === selection) ?? null;
 
   let visual;
-  if (level > 3) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
+  if (level > 4) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
   else if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
   else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChar={selectedByte?.charIndex ?? null} />;
   else if (level === 2) visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={(byte) => onSelect(byte.id)} />;
-  else visual = <TokensZoomLevel analysis={analysis} selectedToken={selectedToken} onSelect={(token) => onSelect(token.id)} />;
+  else if (level === 3) visual = <TokensZoomLevel analysis={analysis} selectedToken={selectedToken} onSelect={(token) => onSelect(token.id)} />;
+  else visual = <SyntaxTreeZoomLevel analysis={analysis} selectedNode={selectedNode} onSelect={(node) => onSelect(node.id)} />;
 
   const intro = analysis && INTROS[level] ? explainProgram(INTROS[level], analysis) : null;
   let explanation = null;
   if (analysis && level === 2 && selectedByte) explanation = explainByte(analysis, selectedByte);
   if (analysis && level === 3 && selectedToken) explanation = explainToken(analysis, selectedToken);
+  if (analysis && level === 4 && selectedNode) explanation = explainNode(analysis, selectedNode);
   // A zoom level carries its Honesty label once it shows something.
   const label = analysis ? levelLabel(level) : null;
   const tryIt = analysis && explainTryIt(level, analysis);

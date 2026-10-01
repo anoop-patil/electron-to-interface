@@ -4,7 +4,7 @@
   "description": "The complete set of Facts produced from one Program on one Python version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "stdout", "stderr", "error", "events", "runs", "eventsCutShort", "runsCutShort", "commands"],
+  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "stdout", "stderr", "error", "events", "runs", "eventsCutShort", "runsCutShort", "commands"],
   "properties": {
     "pythonVersion": {
       "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
@@ -33,6 +33,11 @@
       "description": "The Program's tokens, in order, as tokenize finds them, leaving out its ENCODING token: zoom level 3. A Program that breaks the tokenizer has the tokens found before the break.",
       "type": "array",
       "items": { "$ref": "#/$defs/TokenFact" }
+    },
+    "ast": {
+      "description": "The Program's syntax tree, as ast finds it: zoom level 4. The nodes come in the order `python -m ast` prints them: a node, then the nodes in each of its fields, in turn, so the first is the Module. Empty if the Program has a syntax error.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/AstFact" }
     },
     "stdout": {
       "description": "Everything the Program wrote to standard output when it ran.",
@@ -177,7 +182,7 @@
     },
     "TokenFact": {
       "title": "TokenFact",
-      "description": "One token of the Program, as tokenize reports it.",
+      "description": "One token of the Program, as tokenize reports it. A token that takes up no bytes has a span whose start and end are equal.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "type", "exactType", "text", "start", "end", "span"],
@@ -193,18 +198,73 @@
         "keyword": { "description": "True for a NAME that Python reserves, such as for or def, as its keyword module lists them. Left out for any other token.", "const": true },
         "start": { "$ref": "#/$defs/Position" },
         "end": { "$ref": "#/$defs/Position" },
-        "span": {
-          "title": "ByteSpan",
-          "description": "The token's bytes, as positions in bytes: from start up to, but not including, end. Equal for a token that takes up no bytes.",
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["start", "end"],
-          "properties": {
-            "start": { "type": "integer", "minimum": 0 },
-            "end": { "type": "integer", "minimum": 0 }
-          }
+        "span": { "$ref": "#/$defs/ByteSpan" }
+      }
+    },
+    "ByteSpan": {
+      "title": "ByteSpan",
+      "description": "A run of the Program's bytes, as positions in bytes: from start up to, but not including, end.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "AstFact": {
+      "title": "AstFact",
+      "description": "One node of the Program's syntax tree, a box at zoom level 4, as ast reports it. Its span is null if it has no place in the code, as for the Module or arguments.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "parent", "field", "span", "fields"],
+      "properties": {
+        "id": {
+          "description": "Fact ID: ast-0 for the Module, ast-1 for the next node, and so on.",
+          "type": "string",
+          "pattern": "^ast-(0|[1-9][0-9]*)$"
+        },
+        "type": { "description": "The kind of node, as ast names it: Module, Call, Name and so on.", "type": "string", "pattern": "^[A-Za-z_]+$" },
+        "parent": {
+          "description": "The Fact ID of the node that holds this one. Null for the Module.",
+          "anyOf": [{ "type": "string", "pattern": "^ast-(0|[1-9][0-9]*)$" }, { "type": "null" }]
+        },
+        "field": {
+          "description": "The field of the parent that holds this node, such as body or func. Null for the Module.",
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "span": { "anyOf": [{ "$ref": "#/$defs/ByteSpan" }, { "type": "null" }] },
+        "fields": {
+          "description": "The node's fields, in order, as `python -m ast` prints them: it leaves out a field that holds an empty list, or None where None is the default.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/AstField" }
         }
       }
+    },
+    "AstField": {
+      "title": "AstField",
+      "description": "One field of a node: either other nodes, or a value. Markers such as Load, Store or Add are values: they say what the node does, and have no place in the code.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "nodes", "list"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "nodes": { "description": "The Fact IDs of the nodes the field holds, in order.", "type": "array", "items": { "type": "string", "pattern": "^ast-(0|[1-9][0-9]*)$" } },
+            "list": { "description": "True if the field holds a list, such as a body, even of one node.", "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "value"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "value": { "description": "The value as `python -m ast` writes it: 'print', Load(), 1.", "type": "string" }
+          }
+        }
+      ]
     },
     "Position": {
       "title": "Position",
@@ -302,9 +362,30 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); or token, one TokenFact (TokenSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); or node, one AstFact (NodeSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line", "token"]
+      "enum": ["program", "byte", "line", "token", "node"]
+    },
+    "NodeSlot": {
+      "title": "NodeSlot",
+      "description": "A Fact about one node of the syntax tree that a Template can name. A slot that doesn't apply to the node is empty.",
+      "oneOf": [
+        { "const": "type", "description": "The kind of node, as ast names it: Call." },
+        { "const": "name", "description": "The node's own name, without quote marks: print for a Name, greet for a FunctionDef, name for an arg." },
+        { "const": "value", "description": "A Constant's value as its box shows it: a piece of text without its quote marks, Hello World!, anything else as Python writes it, 42." },
+        { "const": "code", "description": "The node's code, as it is in the Program: print(\"Hello World!\")." },
+        { "const": "statements", "description": "How many statements its body holds, with the word: 1 statement." },
+        { "const": "items", "description": "How many items a List holds, with the word: 2 items." },
+        { "const": "func", "description": "For a Call, the code of what it calls: print." },
+        { "const": "function", "description": "For arguments or an arg, the function it belongs to: greet, or the lambda." },
+        { "const": "target", "description": "For a For, the code of the name each item gets; for an Assign, what the value is stored in." },
+        { "const": "iter", "description": "For a For, the code of what it goes through: [\"Ada\", \"Grace\"]." },
+        { "const": "test", "description": "For an If, the code of its test: x > 1." },
+        { "const": "operator", "description": "For a BinOp, its operator as you write it: +." },
+        { "const": "op", "description": "For a BinOp, its operator as ast names it: Add." },
+        { "const": "owner", "description": "For an Attribute, the code before the dot: name in name.upper." },
+        { "const": "inside", "description": "How many boxes it holds, at any depth, with the word: 2 boxes. Filled in only where a box is too deep in the tree to draw them." }
+      ]
     },
     "LineSlot": {
       "title": "LineSlot",
@@ -324,7 +405,8 @@
         { "const": "bytes", "description": "How many bytes, with the word: 22 bytes." },
         { "const": "file", "description": "The name to save the Program under, for the Try it yourself commands: program.py." },
         { "const": "tokens", "description": "How many tokens, with the word: 6 tokens." },
-        { "const": "encoding", "description": "The encoding tokenize read the bytes with: utf-8." }
+        { "const": "encoding", "description": "The encoding tokenize read the bytes with: utf-8." },
+        { "const": "boxes", "description": "How many nodes the syntax tree has, as boxes, with the word: 5 boxes." }
       ]
     },
     "TokenSlot": {

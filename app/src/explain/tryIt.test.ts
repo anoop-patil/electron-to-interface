@@ -7,6 +7,7 @@ import { explainTryIt, tryItCommands } from './tryIt';
 const RUN = 'python program.py';
 const BYTES = `python -c "print(list(open('program.py', 'rb').read()))"`;
 const TOKENIZE = 'python -m tokenize program.py';
+const AST = 'python -m ast program.py';
 
 /** An Analysis of the Program, with what each command printed: nothing, unless `printed` says otherwise. */
 const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'command'>> = {}) =>
@@ -14,10 +15,15 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 to 3 have a command for the learner’s file; the others aren’t built yet', () => {
-  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE]);
-  expect(tryItCommands('greet.py')).toEqual(['python greet.py', `python -c "print(list(open('greet.py', 'rb').read()))"`, 'python -m tokenize greet.py']);
-  expect(explainTryIt(4, analysisOf('x = 1\n'))).toBeNull();
+test('levels 1 to 4 have a command for the learner’s file; the others aren’t built yet', () => {
+  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST]);
+  expect(tryItCommands('greet.py')).toEqual([
+    'python greet.py',
+    `python -c "print(list(open('greet.py', 'rb').read()))"`,
+    'python -m tokenize greet.py',
+    'python -m ast greet.py',
+  ]);
+  expect(explainTryIt(5, analysisOf('x = 1\n'))).toBeNull();
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {
@@ -147,6 +153,39 @@ test('level 3 explains no lines when tokenize’s output doesn’t match the Pro
 test('when tokenize stops with an error, level 3 shows what it printed and explains no lines', () => {
   const error = 'program.py:1:0: error: unexpected EOF in multi-line statement\n';
   const tryIt = explainTryIt(3, analysisOf('print("Hi"\n', { [TOKENIZE]: { output: error, exitStatus: 1 } }))!;
+
+  expect(tryIt.output).toBe(error);
+  expect(tryIt.rows).toEqual([]);
+  expect(tryIt.read).toEqual([]);
+});
+
+test('level 4 runs python -m ast and explains the first box of each kind, as v8 did for greet.py', () => {
+  const tryIt = explainTryIt(4, greetAnalysis([{ command: AST, output: GREET_OUTPUT.ast, exitStatus: 0 }]))!;
+
+  expect(tryIt.command).toBe('python -m ast program.py');
+  expect(plain(tryIt.intro)).toBe('Ask Python to print the structure of your file as text:');
+  expect(tryIt.parts.map((part) => part.code)).toEqual(['python -m ast', 'program.py']);
+  expect(tryIt.output).toBe(GREET_OUTPUT.ast);
+  expect(tryIt.rows.map((row) => [row.printed, plain(row.text)])).toEqual([
+    ['Module(body=[…])', 'Your program. body is its list of statements: here, 2 statements.'],
+    ["FunctionDef(name='greet', args=…, body=[…])", 'The function: its name, what it takes, and its own list of statements.'],
+    ["arg(arg='name')", 'The one thing greet takes: name.'],
+    ['Expr(value=…)', 'One statement. value is what it does.'],
+    ['Call(func=…, args=[…])', 'A call: func is what to call, and args is what to give it.'],
+    ["Name(id='print', ctx=Load())", 'A name: id is the name itself. ctx=Load() means the name is read.'],
+    ["Constant(value='Hello,')", 'A fixed value: value is the value, as Python writes it.'],
+    ['For(target=…, iter=…, body=[…])', 'The loop: target is the name each item gets, iter is what to go through, body is what to do each time.'],
+    ["Name(id='person', ctx=Store())", 'A name being stored: ctx=Store() means the name is given a value.'],
+  ]);
+  expect(tryIt.read.map(plain)).toEqual([
+    'Each name followed by brackets, such as Call(…), is one of the boxes at this zoom level, in the same order. The exceptions are Load(), Store() and Del(), and operators such as Add() or Lt(): each says what the box around it does.',
+    'The indentation shows which box sits inside which.',
+  ]);
+});
+
+test('when the Program has a syntax error, level 4 shows what python -m ast printed and explains no lines', () => {
+  const error = "Traceback (most recent call last):\n  …\nSyntaxError: '(' was never closed\n";
+  const tryIt = explainTryIt(4, analysisOf('print("Hi"\n', { [AST]: { output: error, exitStatus: 1 } }))!;
 
   expect(tryIt.output).toBe(error);
   expect(tryIt.rows).toEqual([]);

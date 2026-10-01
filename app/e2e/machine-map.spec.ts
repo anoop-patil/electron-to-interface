@@ -4,7 +4,7 @@ import { gauge, run } from './helpers';
 const map = (page: Page | FrameLocator) => page.getByRole('region', { name: 'Your computer' });
 const lit = (page: Page | FrameLocator) => map(page).locator('[aria-current="true"]');
 
-test('the map shows the learner’s computer, and lights where the Program is at zoom levels 1 to 3', async ({ page }) => {
+test('the map shows the learner’s computer, and lights where the Program is at zoom levels 1 to 4', async ({ page }) => {
   await page.goto('/zoom/1');
   for (const part of ['Disk', 'RAM', 'Python itself', 'Your steps', 'Objects', 'Plates', 'CPU', 'Registers', 'Cache', 'Operating system', 'Screen']) {
     await expect(map(page).getByRole('button', { name: new RegExp(`^${part}`) })).toBeVisible();
@@ -23,8 +23,11 @@ test('the map shows the learner’s computer, and lights where the Program is at
   await page.getByRole('button', { name: 'Zoom in: Tokens' }).click();
   await expect(lit(page)).toHaveAccessibleName(/^RAM .*your program · read as 6 tokens$/);
 
+  await page.getByRole('button', { name: 'Zoom in: Structure' }).click();
+  await expect(lit(page)).toHaveAccessibleName(/^RAM .*your program · as 5 boxes, temporary$/);
+
   // A zoom level that isn't built yet lights nothing.
-  await gauge(page).getByRole('button', { name: '4 Structure' }).click();
+  await gauge(page).getByRole('button', { name: '5 Bytecode' }).click();
   await expect(lit(page)).toHaveCount(0);
 });
 

@@ -217,6 +217,230 @@
       "subject": "token",
       "text": "**Bytes:** {bytes}."
     },
+    "level4.intro": {
+      "subject": "program",
+      "text": "Words alone don’t say what goes with what. So Python works out the [[structure|structure]]: which pieces belong together, which lines belong inside which block, and what each line does, recorded as boxes inside boxes."
+    },
+    "level4.caption": {
+      "subject": "program",
+      "text": "Your program as the {boxes} Python made, each inside the box that holds it. Select one to see its role."
+    },
+    "level4.noTree": {
+      "subject": "program",
+      "text": "Python couldn’t work out the structure of your program, because it has a syntax error. The Terminal shows where."
+    },
+    "level4.signposts": {
+      "subject": "program",
+      "title": "Where did the brackets, colons and indentation go?",
+      "text": "They were signposts. Brackets showed which pieces go together, and colons and indentation showed which lines belong inside a block. The boxes now show that directly, by sitting inside each other, so the signposts are no longer needed."
+    },
+    "level4.signpostsBrackets": {
+      "subject": "program",
+      "title": "Where did the brackets go?",
+      "text": "They were signposts, showing which pieces go together. The boxes now show that directly, by sitting inside each other, so the signposts are no longer needed."
+    },
+    "level4.signpostsBlocks": {
+      "subject": "program",
+      "title": "Where did the colons and indentation go?",
+      "text": "They were signposts. Colons and indentation showed which lines belong inside a block. The boxes now show that directly, by sitting inside each other, so the signposts are no longer needed."
+    },
+    "level4.notDrawn": {
+      "subject": "node",
+      "text": "Not drawn: the {inside} inside this one. Your program’s tree is too deep to draw in full."
+    },
+    "node.module": {
+      "subject": "node",
+      "title": "Your program",
+      "text": "The biggest box is the whole program. It holds a list of your program’s statements, {statements} in all. Python calls this box a **Module**."
+    },
+    "node.functionDef": {
+      "subject": "node",
+      "title": "Define a function",
+      "text": "Everything from **def** to the end of its indented block. It has a name, **{name}**, a list of what it takes, and its own list of statements, {statements} in all. Defining it doesn’t run it. Python calls this box a **FunctionDef**."
+    },
+    "node.arguments": {
+      "subject": "node",
+      "title": "What it takes",
+      "text": "The list of what {function} takes. Python calls this box **arguments**. It doesn’t match any single piece of your code."
+    },
+    "node.argOnly": {
+      "subject": "node",
+      "title": "One input",
+      "text": "The one input {function} takes: **{name}**. When {function} is called, whatever it is given gets this name, inside {function} only. Python calls this an **arg**."
+    },
+    "node.arg": {
+      "subject": "node",
+      "title": "One input",
+      "text": "One of the inputs {function} takes: **{name}**. When {function} is called, what it is given for this input gets this name, inside {function} only. Python calls this an **arg**."
+    },
+    "node.expr": {
+      "subject": "node",
+      "title": "One statement",
+      "text": "A statement that does something and doesn’t keep the answer, which is fine: nobody needs it. Python calls it an **Expr** statement."
+    },
+    "node.call": {
+      "subject": "node",
+      "title": "Call a function",
+      "text": "A call has two parts: what to call, and what to give it. This one calls **{func}**. Python calls this box a **Call**."
+    },
+    "node.name": {
+      "subject": "node",
+      "title": "A name",
+      "text": "Just a name for now: **{name}**. Python doesn’t know yet what it points to. It looks the name up when the program runs. Python calls this a **Name**."
+    },
+    "node.nameStore": {
+      "subject": "node",
+      "title": "A name",
+      "text": "The name **{name}** is given a value here. Python calls this a **Name** being stored."
+    },
+    "node.nameStoreLoop": {
+      "subject": "node",
+      "title": "A name",
+      "text": "The name **{name}** is given a value each trip round the loop. Python calls this a **Name** being stored."
+    },
+    "node.constantText": {
+      "subject": "node",
+      "title": "A fixed value",
+      "text": "A fixed value typed straight into your code: **{value}**. The quote marks are gone; they only marked where the text starts and ends. Python calls this a **Constant**."
+    },
+    "node.constant": {
+      "subject": "node",
+      "title": "A fixed value",
+      "text": "A fixed value typed straight into your code: **{value}**. Python calls this a **Constant**."
+    },
+    "node.for": {
+      "subject": "node",
+      "title": "A loop",
+      "text": "Everything from **for** to the end of its indented block. It has a name each item gets (**{target}**), something to go through (**{iter}**) and what to do each time ({statements}). Python calls this box a **For**."
+    },
+    "node.list": {
+      "subject": "node",
+      "title": "A list",
+      "text": "The list **{code}**, with its {items}. Python calls this box a **List**."
+    },
+    "node.assign": {
+      "subject": "node",
+      "title": "Store a value",
+      "text": "Python works out the value on the right of the **=**, then stores it in **{target}**, on the left. Python calls this box an **Assign**."
+    },
+    "node.binOp": {
+      "subject": "node",
+      "title": "A calculation",
+      "text": "Two values with an operator between them, **{operator}**. Python works out the answer when the program runs. Python calls this box a **BinOp**, short for “binary operation”: an operation on two values. It calls the operator **{op}**."
+    },
+    "node.if": {
+      "subject": "node",
+      "title": "A choice",
+      "text": "It has a test, **{test}**. If the test is true, Python runs the {statements} indented under it. If not, it moves on to the **elif** or **else** part, if there is one. Python calls this box an **If**."
+    },
+    "node.return": {
+      "subject": "node",
+      "title": "Hand back an answer",
+      "text": "It ends the function and hands an answer back to whoever called it: what comes after **return**, or None if nothing does. Python calls this box a **Return**."
+    },
+    "node.attribute": {
+      "subject": "node",
+      "title": "A part of something",
+      "text": "The dot reaches inside **{owner}** for something it has, called **{name}**. Python calls this an **Attribute**."
+    },
+    "node.other": {
+      "subject": "node",
+      "title": "Part of your program",
+      "text": "Python calls this box a **{type}**. It stands for this part of your code: **{code}**."
+    },
+    "node.otherNoPlace": {
+      "subject": "node",
+      "title": "Part of the structure",
+      "text": "Python calls this box a **{type}**. It doesn’t match any single piece of your code."
+    },
+    "role.call.func": {
+      "subject": "node",
+      "text": "What to call"
+    },
+    "role.call.args": {
+      "subject": "node",
+      "text": "What to give it"
+    },
+    "role.for.target": {
+      "subject": "node",
+      "text": "The name each item gets"
+    },
+    "role.list.elts": {
+      "subject": "node",
+      "text": "An item"
+    },
+    "field.body": {
+      "subject": "node",
+      "text": "its statements"
+    },
+    "field.orelse": {
+      "subject": "node",
+      "text": "otherwise"
+    },
+    "field.functionDef.args": {
+      "subject": "node",
+      "text": "what it takes"
+    },
+    "field.arguments.args": {
+      "subject": "node",
+      "text": "its inputs"
+    },
+    "field.call.func": {
+      "subject": "node",
+      "text": "what to call"
+    },
+    "field.call.args": {
+      "subject": "node",
+      "text": "what to give it"
+    },
+    "field.call.keywords": {
+      "subject": "node",
+      "text": "what to give it, by name"
+    },
+    "field.expr.value": {
+      "subject": "node",
+      "text": "what it does"
+    },
+    "field.for.target": {
+      "subject": "node",
+      "text": "each item is called"
+    },
+    "field.for.iter": {
+      "subject": "node",
+      "text": "what to go through"
+    },
+    "field.list.elts": {
+      "subject": "node",
+      "text": "the items"
+    },
+    "field.assign.targets": {
+      "subject": "node",
+      "text": "where it goes"
+    },
+    "field.assign.value": {
+      "subject": "node",
+      "text": "the value"
+    },
+    "field.binOp.left": {
+      "subject": "node",
+      "text": "on the left"
+    },
+    "field.binOp.right": {
+      "subject": "node",
+      "text": "on the right"
+    },
+    "field.if.test": {
+      "subject": "node",
+      "text": "the test"
+    },
+    "field.return.value": {
+      "subject": "node",
+      "text": "the answer"
+    },
+    "field.attribute.value": {
+      "subject": "node",
+      "text": "inside what"
+    },
     "map.level1.ram": {
       "subject": "program",
       "text": "your program · {lines}"
@@ -228,6 +452,10 @@
     "map.level3.ram": {
       "subject": "program",
       "text": "your program · read as {tokens}"
+    },
+    "map.level4.ram": {
+      "subject": "program",
+      "text": "your program · as {boxes}, temporary"
     },
     "terminal.nothingPrinted": {
       "subject": "program",
@@ -312,6 +540,54 @@
     "tryIt.tokenRow.endmarker": {
       "subject": "token",
       "text": "The file has ended, so the token is empty."
+    },
+    "tryIt.level4.boxes": {
+      "subject": "program",
+      "text": "Each name followed by brackets, such as **Call(…)**, is one of the boxes at this zoom level, in the same order. The exceptions are **Load()**, **Store()** and **Del()**, and operators such as **Add()** or **Lt()**: each says what the box around it does."
+    },
+    "tryIt.level4.indent": {
+      "subject": "program",
+      "text": "The indentation shows which box sits inside which."
+    },
+    "tryIt.astRow.module": {
+      "subject": "node",
+      "text": "Your program. **body** is its list of statements: here, {statements}."
+    },
+    "tryIt.astRow.functionDef": {
+      "subject": "node",
+      "text": "The function: its name, what it takes, and its own list of statements."
+    },
+    "tryIt.astRow.argOnly": {
+      "subject": "node",
+      "text": "The one thing {function} takes: {name}."
+    },
+    "tryIt.astRow.arg": {
+      "subject": "node",
+      "text": "One of the things {function} takes: {name}."
+    },
+    "tryIt.astRow.for": {
+      "subject": "node",
+      "text": "The loop: **target** is the name each item gets, **iter** is what to go through, **body** is what to do each time."
+    },
+    "tryIt.astRow.expr": {
+      "subject": "node",
+      "text": "One statement. **value** is what it does."
+    },
+    "tryIt.astRow.call": {
+      "subject": "node",
+      "text": "A call: **func** is what to call, and **args** is what to give it."
+    },
+    "tryIt.astRow.nameLoad": {
+      "subject": "node",
+      "text": "A name: **id** is the name itself. **ctx=Load()** means the name is read."
+    },
+    "tryIt.astRow.nameStore": {
+      "subject": "node",
+      "text": "A name being stored: **ctx=Store()** means the name is given a value."
+    },
+    "tryIt.astRow.constant": {
+      "subject": "node",
+      "text": "A fixed value: **value** is the value, as Python writes it."
     }
   },
   "tryIt": {
@@ -369,6 +645,21 @@
         {
           "code": "python -m tokenize",
           "text": "Run **tokenize**, the tokenizer that comes with Python, as a program."
+        },
+        {
+          "code": "{file}",
+          "text": "The file to read."
+        }
+      ],
+      "read": []
+    },
+    "4": {
+      "command": "python -m ast {file}",
+      "intro": "Ask Python to print the structure of your file as text:",
+      "parts": [
+        {
+          "code": "python -m ast",
+          "text": "Run **ast**, Python’s module for the structure of code, as a program."
         },
         {
           "code": "{file}",

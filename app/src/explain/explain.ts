@@ -49,7 +49,7 @@ export function fillString(string: string, facts: Record<string, string> = {}): 
 /** Text with bold words and words with a Concept card, but no slots, such as a Concept card's own text. */
 export const textSpans = (string: string) => fillString(string);
 
-function fill(template: Template, facts: Record<string, string>): Explanation {
+export function fill(template: Template, facts: Record<string, string>): Explanation {
   return {
     ...(template.title && { title: fillString(template.title, facts) }),
     text: fillString(template.text, facts),
@@ -68,8 +68,12 @@ export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
     tokens: counted(analysis.tokens.length, 'token', 'tokens'),
     // Only filled in where the page knows tokenize named an encoding.
     encoding: analysis.encoding ?? '',
+    boxes: counted(analysis.ast.length, 'box', 'boxes'),
   };
 }
+
+/** Whether a Template with this ID exists, for Templates looked up by the kind of thing they explain, such as field.call.args. */
+export const hasTemplate = (id: string): id is TemplateId => id in TEMPLATES;
 
 export function template(id: TemplateId, subject: Template['subject']) {
   const found = TEMPLATES[id];

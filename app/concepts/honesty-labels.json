@@ -25,7 +25,8 @@
   "levels": {
     "1": "observed",
     "2": "observed",
-    "3": "observed"
+    "3": "observed",
+    "4": "observed"
   },
   "panels": {
     "byteBits": "derived",

@@ -6,6 +6,31 @@
  */
 
 /**
+ * One field of a node: either other nodes, or a value. Markers such as Load, Store or Add are values: they say what the node does, and have no place in the code.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "AstField".
+ */
+export type AstField =
+  | {
+      name: string;
+      /**
+       * The Fact IDs of the nodes the field holds, in order.
+       */
+      nodes: string[];
+      /**
+       * True if the field holds a list, such as a body, even of one node.
+       */
+      list: boolean;
+    }
+  | {
+      name: string;
+      /**
+       * The value as `python -m ast` writes it: 'print', Load(), 1.
+       */
+      value: string;
+    };
+/**
  * Which of the Program's code objects: 0 is the file's own, then each one inside it, depth first, in the order Python stores them.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -13,12 +38,34 @@
  */
 export type CodeIndex = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); or token, one TokenFact (TokenSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); or node, one AstFact (NodeSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte" | "line" | "token";
+export type Subject = "program" | "byte" | "line" | "token" | "node";
+/**
+ * A Fact about one node of the syntax tree that a Template can name. A slot that doesn't apply to the node is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "NodeSlot".
+ */
+export type NodeSlot =
+  | "type"
+  | "name"
+  | "value"
+  | "code"
+  | "statements"
+  | "items"
+  | "func"
+  | "function"
+  | "target"
+  | "iter"
+  | "test"
+  | "operator"
+  | "op"
+  | "owner"
+  | "inside";
 /**
  * A Fact about one line of the Program that a Template can name.
  *
@@ -32,7 +79,7 @@ export type LineSlot = "line" | "indent" | "text";
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ProgramSlot".
  */
-export type ProgramSlot = "lines" | "characters" | "bytes" | "file" | "tokens" | "encoding";
+export type ProgramSlot = "lines" | "characters" | "bytes" | "file" | "tokens" | "encoding" | "boxes";
 /**
  * A Fact about one token that a Template can name.
  *
@@ -96,6 +143,10 @@ export interface Analysis {
    */
   tokens: TokenFact[];
   /**
+   * The Program's syntax tree, as ast finds it: zoom level 4. The nodes come in the order `python -m ast` prints them: a node, then the nodes in each of its fields, in turn, so the first is the Module. Empty if the Program has a syntax error.
+   */
+  ast: AstFact[];
+  /**
    * Everything the Program wrote to standard output when it ran.
    */
   stdout: string;
@@ -153,7 +204,7 @@ export interface ByteFact {
   line: number;
 }
 /**
- * One token of the Program, as tokenize reports it.
+ * One token of the Program, as tokenize reports it. A token that takes up no bytes has a span whose start and end are equal.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "TokenFact".
@@ -194,11 +245,43 @@ export interface Position {
   column: number;
 }
 /**
- * The token's bytes, as positions in bytes: from start up to, but not including, end. Equal for a token that takes up no bytes.
+ * A run of the Program's bytes, as positions in bytes: from start up to, but not including, end.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ByteSpan".
  */
 export interface ByteSpan {
   start: number;
   end: number;
+}
+/**
+ * One node of the Program's syntax tree, a box at zoom level 4, as ast reports it. Its span is null if it has no place in the code, as for the Module or arguments.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "AstFact".
+ */
+export interface AstFact {
+  /**
+   * Fact ID: ast-0 for the Module, ast-1 for the next node, and so on.
+   */
+  id: string;
+  /**
+   * The kind of node, as ast names it: Module, Call, Name and so on.
+   */
+  type: string;
+  /**
+   * The Fact ID of the node that holds this one. Null for the Module.
+   */
+  parent: string | null;
+  /**
+   * The field of the parent that holds this node, such as body or func. Null for the Module.
+   */
+  field: string | null;
+  span: ByteSpan | null;
+  /**
+   * The node's fields, in order, as `python -m ast` prints them: it leaves out a field that holds an empty list, or None where None is the default.
+   */
+  fields: AstField[];
 }
 /**
  * The error that stopped the Program, as the last line of its traceback names it.

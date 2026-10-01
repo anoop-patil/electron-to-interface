@@ -8,7 +8,7 @@ import type { ConceptCards, HonestyLabels, Subject, Templates } from '../generat
 import { MAP_NOTE, PARTS } from '../machine/parts';
 
 /** The schema definition that lists each subject's slots. */
-const SLOT_DEFS: Record<Subject, keyof typeof schema.$defs> = { program: 'ProgramSlot', byte: 'ByteSlot', line: 'LineSlot', token: 'TokenSlot' };
+const SLOT_DEFS: Record<Subject, keyof typeof schema.$defs> = { program: 'ProgramSlot', byte: 'ByteSlot', line: 'LineSlot', token: 'TokenSlot', node: 'NodeSlot' };
 
 const slotsOf = (subject: Subject) => new Set((schema.$defs[SLOT_DEFS[subject]] as { oneOf: { const: string }[] }).oneOf.map((slot) => slot.const));
 

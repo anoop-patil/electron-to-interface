@@ -1,7 +1,8 @@
 import templateFile from '../../templates/py314.json';
-import type { Analysis, CommandRun, LineSlot, Templates, TokenFact } from '../generated/analysis';
+import type { Analysis, AstFact, CommandRun, LineSlot, Templates, TokenFact } from '../generated/analysis';
 import { linesOf } from '../zoom/characters';
 import { byteFacts, counted, fillString, isAfterLastLine, programFacts, template, tokenFacts, type Span, type TemplateId } from './explain';
+import { nodeFacts, nodeKind } from './syntaxTree';
 
 /** Each zoom level's Try it yourself, from the Template file. The build checks it like the Templates (see checkContent.ts). */
 const TRY_IT = (templateFile as Templates).tryIt ?? {};
@@ -21,7 +22,7 @@ export interface TryItExplanation {
   observed: Span[];
   /** Shown in place of the output when the command printed nothing. */
   nothingPrinted: Span[];
-  /** Levels 2 and 3: lines of the output, or what they are made from, each with what it means. */
+  /** Levels 2 to 4: lines of the output, or what they are made from, each with what it means. */
   rows: { printed: string; text: Span[] }[];
   /** How to read the output. */
   read: Span[][];
@@ -118,11 +119,50 @@ function tokenRows(analysis: Analysis, result: CommandRun) {
 const level3Notes = (analysis: Analysis, result: CommandRun) =>
   tokenizeLines(analysis, result) ? [fillString(template('tryIt.level3.tokens', 'program').text, programFacts(analysis))] : [];
 
+/** The Template that explains a box's line of `python -m ast`'s output, by the Template that explains the box, for the kinds of box level 4's reading tab explains. */
+const AST_ROWS: Partial<Record<TemplateId, TemplateId>> = {
+  'node.module': 'tryIt.astRow.module',
+  'node.functionDef': 'tryIt.astRow.functionDef',
+  'node.argOnly': 'tryIt.astRow.argOnly',
+  'node.arg': 'tryIt.astRow.arg',
+  'node.for': 'tryIt.astRow.for',
+  'node.expr': 'tryIt.astRow.expr',
+  'node.call': 'tryIt.astRow.call',
+  'node.name': 'tryIt.astRow.nameLoad',
+  'node.nameStore': 'tryIt.astRow.nameStore',
+  'node.nameStoreLoop': 'tryIt.astRow.nameStore',
+  'node.constantText': 'tryIt.astRow.constant',
+  'node.constant': 'tryIt.astRow.constant',
+};
+
+/** A box as `python -m ast` starts it, with the boxes inside it shortened: Call(func=…, args=[…]). */
+const astSummary = ({ type, fields }: AstFact) =>
+  `${type}(${fields.map((field) => `${field.name}=${'value' in field ? field.value : field.list ? '[…]' : '…'}`).join(', ')})`;
+
+/** python -m ast printed the tree, rather than stopping at a syntax error. */
+const printedTree = (analysis: Analysis, result: CommandRun) => result.exitStatus === 0 && analysis.ast.length > 0;
+
+/** Level 4's rows: the first box of each kind the reading tab explains, in the order python -m ast prints them. */
+function astRows(analysis: Analysis, result: CommandRun) {
+  if (!printedTree(analysis, result)) return [];
+  const explained = new Set<TemplateId>();
+  return analysis.ast.flatMap((node) => {
+    const id = AST_ROWS[nodeKind(analysis, node)];
+    if (!id || explained.has(id)) return [];
+    explained.add(id);
+    return [{ printed: astSummary(node), text: fillString(template(id, 'node').text, nodeFacts(analysis, node)) }];
+  });
+}
+
+/** Level 4's notes: how the output's boxes match the boxes at this zoom level, when python -m ast printed the tree. */
+const level4Notes = (analysis: Analysis, result: CommandRun) =>
+  printedTree(analysis, result) ? (['tryIt.level4.boxes', 'tryIt.level4.indent'] as const).map((id) => fillString(template(id, 'program').text, programFacts(analysis))) : [];
+
 /** The notes on reading a level's output that the page works out from the Program and what its command printed. */
-const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes };
+const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes, 4: level4Notes };
 
 /** The rows of a level's reading tab, worked out from the Program and what its command printed. */
-const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows };
+const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows };
 
 /** The Try it yourself of a zoom level, or null if the level has none yet. */
 export function explainTryIt(level: number, analysis: Analysis): TryItExplanation | null {

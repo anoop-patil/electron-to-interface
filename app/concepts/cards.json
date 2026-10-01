@@ -50,7 +50,13 @@
       "name": "Token",
       "like": "A word in a sentence.",
       "text": "The smallest meaningful piece of code: a name like **print**, a piece of punctuation like **(**, a piece of text like **\"Ada\"**. Python’s tokenizer reads your characters one by one and groups them into tokens, the way you read letters and see words.",
-      "related": ["utf8", "code"]
+      "related": ["structure", "utf8", "code"]
+    },
+    "structure": {
+      "name": "Structure (syntax tree)",
+      "like": "Grammar: which words belong together, and what role each one plays.",
+      "text": "After tokenizing, Python works out what your code means and records it as boxes inside boxes. Programmers call it a **syntax tree**, because drawn another way it looks like an upside-down tree. The boxes keep the meaning and drop the punctuation.",
+      "related": ["token", "code"]
     },
     "code": {
       "name": "Your steps",
@@ -128,7 +134,7 @@
   "index": [
     { "name": "This page", "cards": ["honesty"] },
     { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] },
-    { "name": "How Python reads your code", "cards": ["token", "code"] },
+    { "name": "How Python reads your code", "cards": ["token", "structure", "code"] },
     { "name": "Running it", "cards": ["py"] },
     { "name": "Memory", "cards": ["disk", "ram", "heap", "stack"] },
     { "name": "The CPU", "cards": ["cpu", "reg", "cache"] },

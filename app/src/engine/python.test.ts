@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { beforeAll, expect, test } from 'vitest';
 import schema from '../../schema/analysis.schema.json';
+import { astOf } from '../testAnalysis';
 import { startPython, type Python } from './python';
 
 let python: Python;
@@ -50,6 +51,11 @@ test('the Try it yourself commands run on the Program, saved as program.py', () 
       ].map((line) => `${line}\n`).join(''),
       exitStatus: 0,
     },
+    {
+      command: 'python -m ast program.py',
+      output: "Module(\n   body=[\n      Expr(\n         value=Call(\n            func=Name(id='print', ctx=Load()),\n            args=[\n               Constant(value='Hi')]))])\n",
+      exitStatus: 0,
+    },
   ]);
 });
 
@@ -69,6 +75,30 @@ test('for greet.py, the tokens match the capture of prototype v8, with INDENT, D
   expect(tokens.map(({ type, exactType, text, start, end, span }) => ({ type, exact: exactType, text, start: [start.line, start.column], end: [end.line, end.column], span: [span.start, span.end] }))).toEqual(
     captured.tokens.slice(1),
   );
+});
+
+test('hello world’s syntax tree is a Module holding a call to print, each node a Fact', () => {
+  const { ast } = python.analyze('print("Hello World!")');
+
+  expect(ast.map(({ type }) => type)).toEqual(['Module', 'Expr', 'Call', 'Name', 'Constant']);
+  expect(ast[3]).toEqual({
+    id: 'ast-3',
+    type: 'Name',
+    parent: 'ast-2',
+    field: 'func',
+    span: { start: 0, end: 5 },
+    fields: [
+      { name: 'id', value: "'print'" },
+      { name: 'ctx', value: 'Load()' },
+    ],
+  });
+});
+
+test('for greet.py, the syntax tree matches the capture of prototype v8', async () => {
+  const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
+  const { ast } = python.analyze(captured.source, captured.file);
+
+  expect(ast).toEqual(astOf(captured.ast));
 });
 
 test('an error in the Program shows Python’s traceback, with the path where the browser’s Python saved the file', () => {
@@ -133,5 +163,6 @@ test('for greet.py, the output of every command matches the output captured with
     'python greet.py': captured.commands.run,
     [`python -c "print(list(open('greet.py', 'rb').read()))"`]: captured.commands.bytes,
     'python -m tokenize greet.py': captured.commands.tokenize,
+    'python -m ast greet.py': captured.commands.ast,
   });
 });

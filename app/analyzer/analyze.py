@@ -4,6 +4,7 @@ It runs inside Pyodide in the learner's browser, and under CPython for the tests
 The shape of its output is defined by schema/analysis.schema.json.
 """
 
+import ast
 import builtins
 import codecs
 import importlib.machinery
@@ -47,6 +48,7 @@ def analyze(code, file_name="program.py", commands=(), folder=None):
         "bytes": _bytes(program),
         "encoding": encoding,
         "tokens": tokens,
+        "ast": _syntax_tree(program, encoding),
         **recorded,
         "commands": command_runs,
     }
@@ -116,6 +118,88 @@ def _byte_positions(raw, encoding):
         return byte_of_char[min(line_starts[line - 1] + column, len(text))] if line <= len(line_starts) else len(raw)
 
     return byte_at
+
+
+def _syntax_tree(program, encoding):
+    """
+    The Program's syntax tree, as ast.parse finds it in the Program's bytes, as Python does when it runs a file. The
+    nodes come in the order `python -m ast` prints them: a node, then the nodes in each of its fields, in turn. A
+    Program with a syntax error has none.
+    """
+    raw = program.encode("utf-8")
+    try:
+        tree = ast.parse(raw)
+    except (SyntaxError, ValueError):
+        return []
+    byte_at = _byte_positions(raw, encoding)
+    lines = raw.decode(encoding).split("\n")
+
+    def position(line, column):
+        # ast counts columns in the UTF-8 bytes of the text it decoded; tokenize, and so byte_at, counts characters.
+        return byte_at(line, len(lines[line - 1].encode("utf-8")[:column].decode("utf-8")))
+
+    # Each node in order, with its parent's place in the order and the field holding it. This walks a stack rather
+    # than calling itself, because one long line, such as 1+1+...+1, nests deeper than Python lets a function recurse.
+    order, stack = [], [(tree, None, None)]
+    while stack:
+        node, parent, field = stack.pop()
+        order.append((node, parent, field))
+        children = [(item, len(order) - 1, name) for name, value in _shown_fields(node) for item in _items(value) if _is_box(item)]
+        stack.extend(reversed(children))
+    fact_id = {id(node): f"ast-{at}" for at, (node, _, _) in enumerate(order)}
+
+    facts = []
+    for node, parent, field in order:
+        fact = {"id": fact_id[id(node)], "type": type(node).__name__, "parent": None if parent is None else f"ast-{parent}",
+                "field": field, "span": None, "fields": []}
+        # Some nodes have no place in the code, such as Module and arguments.
+        if "lineno" in node._attributes:
+            fact["span"] = {"start": position(node.lineno, node.col_offset), "end": position(node.end_lineno, node.end_col_offset)}
+        for name, value in _shown_fields(node):
+            ids = [fact_id[id(item)] for item in _items(value) if _is_box(item)]
+            if ids:
+                fact["fields"].append({"name": name, "nodes": ids, "list": isinstance(value, list)})
+            else:
+                fact["fields"].append({"name": name, "value": _shown_value(value)})
+        facts.append(fact)
+    # Python frees a node by freeing the nodes inside it first, one call inside another. For a deep tree that runs
+    # out of the browser's stack and stops Pyodide for good, so each node is emptied first and freed on its own.
+    for node, _, _ in order:
+        for name in node._fields:
+            setattr(node, name, None)
+    return facts
+
+
+def _items(value):
+    return value if isinstance(value, list) else [value]
+
+
+def _is_box(value):
+    """
+    A node that is a box of its own. A marker, such as Load, Store or Add, is a node with no fields and no place in the
+    code: it says what the node around it does, so it is one of that node's values instead.
+    """
+    return isinstance(value, ast.AST) and bool(value._fields or value._attributes)
+
+
+def _shown_fields(node):
+    """A node's fields, in order, leaving out those `python -m ast` leaves out: an empty list, or None where None is the default."""
+    for name in node._fields:
+        value = getattr(node, name, None)
+        if value is None and getattr(type(node), name, ...) is None:
+            continue
+        if value == [] and getattr(type(node)._field_types.get(name), "__origin__", None) is list:
+            continue
+        yield name, value
+
+
+def _shown_value(value):
+    """A field that holds no box, as `python -m ast` writes it: 'print', Load(), 1 or [Lt()]."""
+    if isinstance(value, ast.AST):
+        return ast.dump(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(_shown_value(item) for item in value) + "]"
+    return repr(value)
 
 
 # Running the Program as Python runs a file
