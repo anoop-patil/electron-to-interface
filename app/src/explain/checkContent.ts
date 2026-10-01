@@ -5,6 +5,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { Plugin } from 'vite';
 import schema from '../../schema/analysis.schema.json';
 import type { ConceptCards, HonestyLabels, Subject, Templates } from '../generated/analysis';
+import { MAP_NOTE, PARTS } from '../machine/parts';
 
 /** The schema definition that lists each subject's slots. */
 const SLOT_DEFS: Record<Subject, keyof typeof schema.$defs> = { program: 'ProgramSlot', byte: 'ByteSlot' };
@@ -40,7 +41,7 @@ const slotsIn = (strings: string[]) => strings.flatMap((string) => [...string.ma
 const unclosedBold = (id: string, strings: string[]) =>
   strings.filter((string) => string.split('**').length % 2 === 0).map(() => `${id} has a ** with no closing **`);
 
-/** What is wrong with a Template file: where it breaks the schema, every slot its subject doesn't have, and every card that doesn't exist. */
+/** What is wrong with a Template file: where it breaks the schema, every slot its subject doesn't have, every card that doesn't exist, and every card a Machine map note opens. */
 function templateProblems(file: unknown, cardIds: Set<string>): string[] {
   if (!validTemplates(file)) return schemaProblems(validTemplates, file);
   return Object.entries(file.templates).flatMap(([id, template]) => {
@@ -50,11 +51,15 @@ function templateProblems(file: unknown, cardIds: Set<string>): string[] {
     const unknownSlots = slotsIn(strings)
       .filter((slot) => !slots.has(slot))
       .map((slot) => `${id} refers to {${slot}}, which isn’t a Fact of a ${template.subject}`);
-    return [...unknownSlots, ...unclosedBold(id, strings), ...conceptProblems(id, strings, cardIds)];
+    // A Machine map note sits inside a part, a button that opens the part's own card.
+    const mapNoteCards = id.startsWith(MAP_NOTE)
+      ? strings.flatMap((string) => [...string.matchAll(/\[\[([a-z0-9]+)\|/g)]).map(([, card]) => `${id} is a Machine map note, so it can’t open the Concept card ${card}`)
+      : [];
+    return [...unknownSlots, ...unclosedBold(id, strings), ...conceptProblems(id, strings, cardIds), ...mapNoteCards];
   });
 }
 
-/** What is wrong with the Concept cards: their links, their related cards, the index, and the How we know card. */
+/** What is wrong with the Concept cards: their links, their related cards, the index, the How we know card, and the Machine map's cards. */
 function cardProblems(file: ConceptCards): string[] {
   const ids = new Set(Object.keys(file.cards));
   const inCards = Object.entries(file.cards).flatMap(([id, card]) => {
@@ -74,7 +79,8 @@ function cardProblems(file: ConceptCards): string[] {
   ];
   const honestyCards = Object.values(file.cards).filter((card) => card.visual?.kind === 'honestyLabels').length;
   const honesty = honestyCards === 1 ? [] : [honestyCards === 0 ? 'No Concept card shows the Honesty labels' : 'More than one Concept card shows the Honesty labels'];
-  return [...inCards, ...inIndex, ...honesty];
+  const parts = Object.keys(PARTS).filter((part) => !ids.has(part)).map((part) => `The Machine map’s part ${part} has no Concept card`);
+  return [...inCards, ...inIndex, ...honesty, ...parts];
 }
 
 /** What is wrong with the Honesty labels: a second warning color, and every zoom level or panel that carries a label not in the set. */

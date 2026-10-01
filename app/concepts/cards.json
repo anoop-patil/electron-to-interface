@@ -45,10 +45,82 @@
       "like": "The Enter key, stored as a character.",
       "text": "An invisible character that means “start a new line”. In [[utf8|UTF-8]] it is number 10. Editors don’t show it; they just move down a line. Some Windows editors store it as two bytes, 13 then 10. Some editors don’t add one after the last line. This app always does, so every line of your program ends with one.",
       "related": ["utf8", "byte"]
+    },
+    "code": {
+      "name": "Your steps",
+      "like": "A recipe card: the steps, written down in order.",
+      "text": "Python doesn’t carry out your code as you typed it. First it turns it into small, simple steps, called **bytecode**, and keeps them in [[ram|RAM]]. Your program gets its own list of steps, and so does each function in it. Then [[py|Python itself]] carries out the steps, one at a time.",
+      "related": ["py", "stack"]
+    },
+    "py": {
+      "name": "Python itself",
+      "like": "The cook: knows how to carry out every kind of recipe step.",
+      "text": "Python’s own program, the **interpreter**. The usual one is called CPython. It is copied into [[ram|RAM]] when Python starts; in this app, it runs inside your browser. Python doesn’t turn your code into [[cpu|CPU]] instructions. It turns it into [[code|steps]], and the interpreter reads each step and does what it says.",
+      "related": ["code", "cpu", "ram"]
+    },
+    "disk": {
+      "name": "Disk",
+      "like": "A pantry: lots of room, keeps everything even when the power is off, but slow to fetch from.",
+      "text": "Where files live: your documents, and the programs your computer can run. Nothing runs from the disk directly. Programs and data are copied into [[ram|RAM]] first. This app never saves your program to the disk: it keeps it in RAM.",
+      "related": ["ram", "byte"]
+    },
+    "ram": {
+      "name": "RAM",
+      "like": "The kitchen counter: the workspace. Quick to reach, smaller than the pantry, and wiped clean when the power goes off.",
+      "text": "Everything a running program uses lives here: its instructions, its data and its [[stack|plates]]. Every [[byte|byte]] of RAM has a number, its **address**, so the [[cpu|CPU]] can find it. For a short program, almost all the RAM it uses goes to [[py|Python itself]].",
+      "related": ["disk", "heap", "stack", "cpu"]
+    },
+    "heap": {
+      "name": "Objects",
+      "like": "The shelves where the ingredients sit.",
+      "text": "Every value in Python, such as a number, a piece of text or a function, is an **object**, sitting somewhere in this area of [[ram|RAM]], called the **heap**. An object takes some bytes for its value and some for Python’s bookkeeping. Python makes room for new objects as your program needs them.",
+      "related": ["stack", "ram"]
+    },
+    "stack": {
+      "name": "Plates",
+      "like": "A stack of plates: you add to the top and take from the top.",
+      "text": "What Python is holding right now, in the middle of a step. A plate never holds an [[heap|object]] itself, only a label pointing to it: the object’s address in [[ram|RAM]]. Each piece of code that is running, such as a function call, has its own stack of plates. The [[cpu|CPU]] keeps a separate stack of its own, to remember where to come back to after a jump.",
+      "related": ["heap", "code"]
+    },
+    "cpu": {
+      "name": "CPU",
+      "like": "The stove: where every action actually happens.",
+      "text": "The CPU carries out instructions: move a number, do arithmetic, compare, jump. It reads them from [[ram|RAM]], through its [[cache|cache]]. Modern CPUs run at billions of clock cycles per second, but one instruction doesn’t necessarily take one cycle: a CPU can work on several instructions at once, and some instructions take many cycles.",
+      "related": ["reg", "cache", "ram"]
+    },
+    "reg": {
+      "name": "Registers",
+      "like": "The burners on the stove: only a few pans fit, and those are what’s cooking this instant.",
+      "text": "A handful of storage slots inside the [[cpu|CPU]] itself. Every number the CPU works on passes through them. A common kind of CPU, x86-64, has 16 main registers of 8 bytes each.",
+      "related": ["cpu", "cache"]
+    },
+    "cache": {
+      "name": "Cache",
+      "like": "A tray right next to the stove, with copies of what’s used most.",
+      "text": "Copies of recently used pieces of [[ram|RAM]], kept inside the [[cpu|CPU]] so it doesn’t have to wait for RAM. While a program runs, its busiest parts sit here.",
+      "related": ["cpu", "ram"]
+    },
+    "os": {
+      "name": "Operating system",
+      "like": "The restaurant manager, the only one with keys to the doors: to the screen, the disk and the network.",
+      "text": "Programs aren’t allowed to touch the hardware. To read a file from the [[disk|disk]] or show text on the [[screen|screen]], they ask the operating system. Its core, the **kernel**, also decides which program the [[cpu|CPU]] runs next, and gives each program its share of [[ram|RAM]].",
+      "related": ["disk", "screen", "cpu"]
+    },
+    "screen": {
+      "name": "Screen",
+      "like": "The dining room: where the finished dish is finally seen.",
+      "text": "A grid of tiny dots of light, called **pixels**. Most screens make each pixel’s color from red, green and blue parts. The picture is kept in memory, and the screen redraws it many times a second, often 60.",
+      "related": ["os"]
     }
   },
   "index": [
     { "name": "This page", "cards": ["honesty"] },
-    { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] }
+    { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] },
+    { "name": "How Python reads your code", "cards": ["code"] },
+    { "name": "Running it", "cards": ["py"] },
+    { "name": "Memory", "cards": ["disk", "ram", "heap", "stack"] },
+    { "name": "The CPU", "cards": ["cpu", "reg", "cache"] },
+    { "name": "Talking to the outside world", "cards": ["os"] },
+    { "name": "The screen", "cards": ["screen"] }
   ]
 }

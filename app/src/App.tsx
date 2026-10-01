@@ -3,6 +3,8 @@ import type { Engine } from './engine/engine';
 import type { Analysis } from './generated/analysis';
 import { buttonClass } from './button';
 import { ConceptsButton } from './concepts/ConceptsButton';
+import { MachineMap } from './machine/MachineMap';
+import { mapState } from './machine/mapState';
 import { ThemeToggle } from './ThemeToggle';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
@@ -71,49 +73,53 @@ export function App({ engine }: { engine: Engine }) {
         </header>
 
         <div className="grid grid-cols-[310px_168px_minmax(0,1fr)] mid:grid-cols-[270px_150px_minmax(0,1fr)] narrow:grid-cols-[minmax(0,1fr)]">
-          <aside
-            className={`flex min-w-0 flex-col gap-3 border-r border-rule px-[18px] py-[22px] narrow:border-b narrow:border-r-0 narrow:px-4 narrow:pt-3 ${codeHidden ? 'narrow:pb-3' : 'narrow:pb-4'}`}
-            aria-label="Editor"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <label htmlFor="program" className={`text-[13px] font-semibold text-ink2${codeHidden ? ' narrow:hidden' : ''}`}>Your program</label>
-              {codeHidden && <code className="hidden min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-pre text-[14px] text-ink2 narrow:block">{code.split('\n')[0]}</code>}
-              <button
-                type="button"
-                className={`${buttonClass({ size: 'sm' })} not-narrow:hidden`}
-                aria-expanded={!codeHidden}
-                aria-controls="program-editor"
-                onClick={() => setCodeHidden(!codeHidden)}
-              >
-                {codeHidden ? 'Show code' : 'Hide code'}
-              </button>
-            </div>
-            <div className={`grid gap-3${codeHidden ? ' narrow:hidden' : ''}`} id="program-editor">
-              <p className="text-[14px] text-ink2">Write a short Python program, click Run, and zoom in to see what your computer really does with it.</p>
-              <textarea
-                id="program"
-                className="min-h-[150px] w-full resize-y [tab-size:4] rounded-[10px] border border-rule2 bg-sunk px-3 py-2.5 font-mono text-[14px] leading-[1.6] text-ink focus:border-accent"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                spellCheck={false}
-                autoCapitalize="off"
-                autoComplete="off"
-                autoCorrect="off"
-                wrap="off"
-              />
-              <div className="flex flex-wrap items-center gap-3">
-                <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready'} onClick={run}>
-                  Run
+          {/* The left column: the editor, then the Machine map. */}
+          <div className="min-w-0 border-r border-rule narrow:border-r-0">
+            <aside
+              className={`flex min-w-0 flex-col gap-3 px-[18px] py-[22px] narrow:border-b narrow:border-rule narrow:px-4 narrow:pt-3 ${codeHidden ? 'narrow:pb-3' : 'narrow:pb-4'}`}
+              aria-label="Editor"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor="program" className={`text-[13px] font-semibold text-ink2${codeHidden ? ' narrow:hidden' : ''}`}>Your program</label>
+                {codeHidden && <code className="hidden min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-pre text-[14px] text-ink2 narrow:block">{code.split('\n')[0]}</code>}
+                <button
+                  type="button"
+                  className={`${buttonClass({ size: 'sm' })} not-narrow:hidden`}
+                  aria-expanded={!codeHidden}
+                  aria-controls="program-editor"
+                  onClick={() => setCodeHidden(!codeHidden)}
+                >
+                  {codeHidden ? 'Show code' : 'Hide code'}
                 </button>
-                <p className="text-[14px] text-ink2 empty:hidden" role="status">{STATUS_NOTES[status]}</p>
               </div>
-              {error && <p className="whitespace-pre-wrap font-mono text-[13px] text-warn" role="alert">{error}</p>}
-              <p className="flex flex-wrap gap-x-3 gap-y-1.5 text-[12px] text-ink3 narrow:hidden">
-                <span><kbd className={KBD_CLASSES}>↓</kbd> zoom in</span>
-                <span><kbd className={KBD_CLASSES}>↑</kbd> zoom out</span>
-              </p>
-            </div>
-          </aside>
+              <div className={`grid gap-3${codeHidden ? ' narrow:hidden' : ''}`} id="program-editor">
+                <p className="text-[14px] text-ink2">Write a short Python program, click Run, and zoom in to see what your computer really does with it.</p>
+                <textarea
+                  id="program"
+                  className="min-h-[150px] w-full resize-y [tab-size:4] rounded-[10px] border border-rule2 bg-sunk px-3 py-2.5 font-mono text-[14px] leading-[1.6] text-ink focus:border-accent"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  wrap="off"
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready'} onClick={run}>
+                    Run
+                  </button>
+                  <p className="text-[14px] text-ink2 empty:hidden" role="status">{STATUS_NOTES[status]}</p>
+                </div>
+                {error && <p className="whitespace-pre-wrap font-mono text-[13px] text-warn" role="alert">{error}</p>}
+                <p className="flex flex-wrap gap-x-3 gap-y-1.5 text-[12px] text-ink3 narrow:hidden">
+                  <span><kbd className={KBD_CLASSES}>↓</kbd> zoom in</span>
+                  <span><kbd className={KBD_CLASSES}>↑</kbd> zoom out</span>
+                </p>
+              </div>
+            </aside>
+            <MachineMap state={mapState({ level, analysis, selection: selectedFactId })} />
+          </div>
 
           <DepthGauge level={level} onGo={go} />
 

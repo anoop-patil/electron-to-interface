@@ -115,3 +115,16 @@ test('a different label set is an edit to the labels file alone: three labels in
 
   await expect(run()).resolves.toBeUndefined();
 });
+
+test('the build fails if a Machine map note opens a Concept card: the note sits inside a part that opens its own', async () => {
+  const run = build({ templates: { pythonVersion: '3.14', templates: { 'map.test': { subject: 'program', text: 'your program · {bytes} of [[utf8|UTF-8]]' } } } });
+
+  await expect(run()).rejects.toThrow('map.test is a Machine map note, so it can’t open the Concept card utf8');
+});
+
+test('the build fails unless every part of the Machine map has its Concept card', async () => {
+  const { disk: _, ...cards } = SHIPPED.cards.cards;
+  const index = SHIPPED.cards.index.map((group: { name: string; cards: string[] }) => ({ ...group, cards: group.cards.filter((id) => id !== 'disk') }));
+
+  await expect(build({ cards: { cards, index } })()).rejects.toThrow('The Machine map’s part disk has no Concept card');
+});

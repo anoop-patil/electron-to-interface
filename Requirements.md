@@ -115,6 +115,7 @@ Elegant, pleasing and very simple: the calm of a well-set book with the precisio
 
 - Desktop: editor on the left, zoom view on the right. The editor narrows once zooming starts, but the code stays visible because highlights link back to it.
 - Mobile: code on top (collapsible to one line), zoom view below.
+- The **Machine map** sits under the editor and lights where the thing being viewed lives right now. Each part opens its Concept card. On mobile it is collapsed behind "Your computer: where is everything?".
 - **The only animation is the zoom:** the clicked element grows and fades into the next level in about 250 ms. With the system's reduced-motion setting on, it's a plain crossfade.
 
 **One signature visual per zoom level**, always in the same position, with the Explanation beneath it:

@@ -75,6 +75,14 @@
     "byte.bitsPatternMultiByte": {
       "subject": "byte",
       "text": "So the {placeInChar} byte of **{char}** is stored as the pattern **{bits}**."
+    },
+    "map.level1.ram": {
+      "subject": "program",
+      "text": "your program · {lines}"
+    },
+    "map.level2.ram": {
+      "subject": "program",
+      "text": "your program · {characters}"
     }
   }
 }
