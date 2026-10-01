@@ -113,6 +113,10 @@ _Avoid_: AI explanation, exact explanation, template explanation
 A short, self-contained explanation of a general computing idea (UTF-8, byte, stack, system call) that opens inside the app from a tag in the text, never by sending the learner to another website.
 _Avoid_: glossary entry, tooltip, doc link
 
+**Try it yourself**:
+A zoom level's section that gives a real command the learner can run on their own computer, for their Program saved as a file, and shows what the command prints. Where the browser can observe it, that is the output for the learner's own Program, labeled Observed; otherwise it is a sample captured for an Example, labeled as the Example's.
+_Avoid_: exercise, demo, sample command
+
 **Example**:
 A curated program shipped with the tool (hello world, a for loop, a syntax error, and so on).
 _Avoid_: sample, snippet, demo
