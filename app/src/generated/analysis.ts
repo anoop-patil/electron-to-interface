@@ -249,6 +249,10 @@ export interface HonestyLabels {
      * Zoom level 2's panel How the number N is stored.
      */
     byteBits: string;
+    /**
+     * The Machine map, beside every zoom level.
+     */
+    machineMap: string;
   };
 }
 /**

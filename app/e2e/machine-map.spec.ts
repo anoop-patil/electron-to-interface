@@ -25,6 +25,13 @@ test('the map shows the learner’s computer, and lights where the Program is at
   await expect(lit(page)).toHaveCount(0);
 });
 
+test('the map carries one Honesty label, Typical: it shows how computers usually work, and the learner’s may differ', async ({ page }) => {
+  await page.goto('/zoom/1');
+  await expect(map(page).getByRole('button', { name: /^How we know:/ })).toHaveCount(1);
+  await map(page).getByRole('button', { name: 'How we know: Typical' }).click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('How we know');
+});
+
 test('every part opens its Concept card, in the kitchen metaphor', async ({ page }) => {
   await page.goto('/zoom/1');
   const parts = {

@@ -27,6 +27,7 @@
     "2": "observed"
   },
   "panels": {
-    "byteBits": "derived"
+    "byteBits": "derived",
+    "machineMap": "typical"
   }
 }

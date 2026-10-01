@@ -244,9 +244,10 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits"],
+          "required": ["byteBits", "machineMap"],
           "properties": {
-            "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" }
+            "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
+            "machineMap": { "description": "The Machine map, beside every zoom level.", "type": "string" }
           }
         }
       }

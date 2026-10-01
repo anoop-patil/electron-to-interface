@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
+import { panelLabel } from '../concepts/concepts';
 import { useConcepts } from '../concepts/ConceptsProvider';
+import { HonestyChip } from '../concepts/HonestyChip';
 import type { Span } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
 import type { MapState } from './mapState';
@@ -94,7 +96,11 @@ export function MachineMap({ state }: { state: MapState }) {
       </button>
       <div id="machine-map" className={`grid gap-1.5 ${hidden ? 'narrow:hidden' : 'narrow:pb-2.5 narrow:pt-1'}`}>
         <div>
-          <h2 id="map-title" className="text-[13px] font-semibold text-ink2 narrow:sr-only">Your computer</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="map-title" className="text-[13px] font-semibold text-ink2 narrow:sr-only">Your computer</h2>
+            {/* The map shows how computers usually work; the learner's own may differ. */}
+            <HonestyChip label={panelLabel('machineMap')} size="panel" />
+          </div>
           <p className="mt-1 text-[12px] text-ink3">Lit parts are where things are right now. Each part opens a short explanation.</p>
         </div>
         {part('disk')}

@@ -20,6 +20,7 @@ Built in `app/src/machine/`. Decisions made along the way:
 - Nothing is lit before the first Run, or at a level that isn't built yet.
 - `mapState.ts` holds the state: for each zoom level, a function from the Analysis and the Selection (a Fact ID) to the lit parts and their notes. A level ticket adds its entry there. Levels 1 and 2 don't use the Selection yet.
 - The notes are Templates (`map.level1.ram`, `map.level2.ram`), filled with Facts. A note sits inside a part, which is a button that opens the part's card, so the build fails if a note would open a card itself. It also fails if a part of the map has no Concept card.
+- The map carries one Honesty label, Typical, as a panel in `concepts/honesty-labels.json`. It shows how computers usually work: what goes where, and how big and fast each part is. The learner's computer may differ. The user chose this after the first commit.
 - The map sits under the editor. A lit part is marked `aria-current`, so screen readers hear which part is lit.
 - The eleven cards are ported from prototype v8, in the Concepts index groups v8 uses. Changes from v8:
   - Details only true of greet.py (two recipe cards, nine objects, 4 plates) are gone; the cards are general. So are links to cards that don't exist yet, such as address, frame and system call.

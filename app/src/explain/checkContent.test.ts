@@ -97,7 +97,7 @@ test('the build fails unless exactly one Concept card shows the Honesty labels, 
 });
 
 test('the build fails if a zoom level or panel carries a label that isn’t in the set', async () => {
-  const run = build(withLabels({ levels: { 1: 'observed', 2: 'traced' }, panels: { byteBits: 'computed' } }));
+  const run = build(withLabels({ levels: { 1: 'observed', 2: 'traced' }, panels: { ...SHIPPED.labels.panels, byteBits: 'computed' } }));
 
   await expect(run()).rejects.toThrow(['zoom level 2 carries traced, which isn’t an Honesty label', 'panel byteBits carries computed, which isn’t an Honesty label'].join('\n'));
 });
@@ -111,7 +111,7 @@ test('the build fails if more than one label has the warning color', async () =>
 
 test('a different label set is an edit to the labels file alone: three labels instead of five pass the check', async () => {
   const { observed, reference, typical } = SHIPPED.labels.labels;
-  const run = build(withLabels({ labels: { observed, reference, typical }, panels: { byteBits: 'observed' } }));
+  const run = build(withLabels({ labels: { observed, reference, typical }, panels: { byteBits: 'observed', machineMap: 'typical' } }));
 
   await expect(run()).resolves.toBeUndefined();
 });
