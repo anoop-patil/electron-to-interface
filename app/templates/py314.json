@@ -83,6 +83,95 @@
     "map.level2.ram": {
       "subject": "program",
       "text": "your program · {characters}"
+    },
+    "tryIt.observed": {
+      "subject": "program",
+      "text": "Your browser’s Python did what this command does, on your program, just now."
+    },
+    "tryIt.nothingPrinted": {
+      "subject": "program",
+      "text": "Nothing: your program doesn’t print anything, so the terminal shows nothing either."
+    },
+    "tryIt.level1.printed": {
+      "subject": "program",
+      "text": "Each line here is a line your program printed, in order."
+    },
+    "tryIt.level1.error": {
+      "subject": "program",
+      "text": "Your program stopped with an error. The last line names the error and says what went wrong; the lines above it say where. The path is where your browser’s Python saved {file}. On your computer, you’ll see your own folder."
+    },
+    "tryIt.level2.multiByte": {
+      "subject": "byte",
+      "text": "Numbers from 128 to 255 come in groups of 2 to 4. [[utf8|UTF-8]] stores each character beyond English letters and common symbols that way: **{char}** is {charBytes}."
+    },
+    "tryIt.level2.tab": {
+      "subject": "program",
+      "text": "Each tab is 9."
+    },
+    "tryIt.bytesLine.empty": {
+      "subject": "line",
+      "text": "line {line}: empty, so just the [[newline|newline]], 10"
+    },
+    "tryIt.bytesLine.spaces": {
+      "subject": "line",
+      "text": "line {line}: {indent}, then the newline, 10"
+    },
+    "tryIt.bytesLine.text": {
+      "subject": "line",
+      "text": "line {line}: {text}, then the newline, 10"
+    },
+    "tryIt.bytesLine.indented": {
+      "subject": "line",
+      "text": "line {line}: {indent}, then {text}, then the newline, 10"
+    }
+  },
+  "tryIt": {
+    "1": {
+      "command": "python {file}",
+      "intro": "Save your program in a file called {file}, open a [[terminal|terminal]] in the same folder, and type:",
+      "parts": [
+        {
+          "code": "python",
+          "text": "Start Python. On Windows you can also type py."
+        },
+        {
+          "code": "{file}",
+          "text": "The file for Python to run."
+        }
+      ],
+      "read": [
+        "Type your program exactly as it is here, with the same spaces, and press Enter after the last line before you save. Then your file holds the same {bytes} that zoom level 2 shows."
+      ]
+    },
+    "2": {
+      "command": "python -c \"print(list(open('{file}', 'rb').read()))\"",
+      "intro": "Ask Python to show the numbers stored in your file:",
+      "parts": [
+        {
+          "code": "python -c \"…\"",
+          "text": "Run the small piece of Python inside the quotes, without making a new file."
+        },
+        {
+          "code": "open('{file}', 'rb')",
+          "text": "Open your file. **r** means read it, **b** means as raw bytes, not as text."
+        },
+        {
+          "code": ".read()",
+          "text": "Read the whole file."
+        },
+        {
+          "code": "list(…)",
+          "text": "Turn the bytes into a list of ordinary numbers."
+        },
+        {
+          "code": "print(…)",
+          "text": "Show the list."
+        }
+      ],
+      "read": [
+        "Each space is 32. The [[newline|newline]] is 10.",
+        "Some Windows editors end each line with two bytes, 13 then 10. If yours does, your list has a 13 before every 10."
+      ]
     }
   }
 }

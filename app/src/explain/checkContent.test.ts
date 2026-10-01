@@ -111,7 +111,7 @@ test('the build fails if more than one label has the warning color', async () =>
 
 test('a different label set is an edit to the labels file alone: three labels instead of five pass the check', async () => {
   const { observed, reference, typical } = SHIPPED.labels.labels;
-  const run = build(withLabels({ labels: { observed, reference, typical }, panels: { byteBits: 'observed', machineMap: 'typical' } }));
+  const run = build(withLabels({ labels: { observed, reference, typical }, panels: { byteBits: 'observed', machineMap: 'typical', tryItOutput: 'observed' } }));
 
   await expect(run()).resolves.toBeUndefined();
 });
@@ -127,4 +127,24 @@ test('the build fails unless every part of the Machine map has its Concept card'
   const index = SHIPPED.cards.index.map((group: { name: string; cards: string[] }) => ({ ...group, cards: group.cards.filter((id) => id !== 'disk') }));
 
   await expect(build({ cards: { cards, index } })()).rejects.toThrow('The Machine map’s part disk has no Concept card');
+});
+
+test('the build fails if Try it yourself names a Fact that doesn’t exist, or opens a card that doesn’t exist', async () => {
+  const tryIt = { command: 'python {file}', intro: 'Open a [[shell|shell]].', parts: [{ code: '{file}', text: 'The file, {colour}.' }], read: ['All **{bytes}.'] };
+  const run = build({ templates: { ...SHIPPED.templates, tryIt: { 1: tryIt } } });
+
+  await expect(run()).rejects.toThrow(
+    [
+      'tryIt 1 refers to {colour}, which isn’t a Fact of a program',
+      'tryIt 1 has a ** with no closing **',
+      'tryIt 1 opens the Concept card shell, which doesn’t exist',
+    ].join('\n'),
+  );
+});
+
+test('the build fails if a Try it yourself command uses a Fact other than {file}: the page runs it before the Program has other Facts', async () => {
+  const tryIt = { ...SHIPPED.templates.tryIt[1], command: 'python {file} {lines}' };
+  const run = build({ templates: { ...SHIPPED.templates, tryIt: { 1: tryIt } } });
+
+  await expect(run()).rejects.toThrow('tryIt 1’s command uses {lines}, but a command can only use {file}');
 });

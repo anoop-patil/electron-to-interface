@@ -10,5 +10,5 @@
 - [ ] Stages: program → system call → kernel → terminal, with the bytes shown moving as a packet, as in prototype v8.
 - [ ] Byte counts come from the real stdout: 13 for hello world; 11 and 13 for greet.py's two lines. Each line is one system call.
 - [ ] Hand-written and labeled Typical, and the text carries its own qualifier ("On a typical Linux terminal...").
-- [ ] A panel shows the three numbered doors (file descriptors). Concept cards cover system call, doors and terminal.
+- [ ] A panel shows the three numbered doors (file descriptors). Concept cards cover system call and doors; the terminal card came with ticket 06.
 - [ ] Try it yourself: an `strace` command for the learner's file, with a sample output captured on the stated platform, labeled as the Example's. The bytes `print` handed to `sys.stdout`, piece by piece, are observed live (ticket 06).

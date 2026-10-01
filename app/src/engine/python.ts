@@ -1,9 +1,11 @@
 import { loadPyodide } from 'pyodide';
 import analyzerSource from '../../analyzer/analyze.py?raw';
+import { FILE_NAME, tryItCommands } from '../explain/tryIt';
 import type { Analysis } from '../generated/analysis';
 
 export interface Python {
-  analyze(code: string): Analysis;
+  /** Analyzes the Program, saved as `fileName` for the Try it yourself commands, which run on it. */
+  analyze(code: string, fileName?: string): Analysis;
 }
 
 /**
@@ -15,14 +17,13 @@ export async function startPython(options: { indexURL?: string } = {}): Promise<
   const pyodide = await loadPyodide(options);
   const namespace = pyodide.globals.get('dict')();
   pyodide.runPython(analyzerSource, { globals: namespace });
-  const analyzeToJson = pyodide.runPython(
-    'lambda code: __import__("json").dumps(analyze(code))',
-    { globals: namespace },
-  );
+  // The commands run in Python's working folder, /home/pyodide, so that is the folder a traceback names.
+  pyodide.runPython('import json', { globals: namespace });
+  const analyzeToJson = pyodide.runPython('lambda code, file, commands: json.dumps(analyze(code, file, json.loads(commands)))', { globals: namespace });
 
   return {
-    analyze(code) {
-      return JSON.parse(analyzeToJson(code)) as Analysis;
+    analyze(code, fileName = FILE_NAME) {
+      return JSON.parse(analyzeToJson(code, fileName, JSON.stringify(tryItCommands(fileName)))) as Analysis;
     },
   };
 }

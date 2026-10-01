@@ -6,19 +6,26 @@
  */
 
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot), or byte, one ByteFact (ByteSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); or line, one line of the Program (LineSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte";
+export type Subject = "program" | "byte" | "line";
+/**
+ * A Fact about one line of the Program that a Template can name.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "LineSlot".
+ */
+export type LineSlot = "line" | "indent" | "text";
 /**
  * A Fact about the whole Program that a Template can name.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ProgramSlot".
  */
-export type ProgramSlot = "lines" | "characters" | "bytes";
+export type ProgramSlot = "lines" | "characters" | "bytes" | "file";
 /**
  * A Fact about one byte, and the character it encodes, that a Template can name.
  *
@@ -58,9 +65,17 @@ export interface Analysis {
    */
   program: string;
   /**
+   * The name the Program was saved under for the Try it yourself commands, such as program.py.
+   */
+  fileName: string;
+  /**
    * The Program's bytes in UTF-8, in order: zoom level 2.
    */
   bytes: ByteFact[];
+  /**
+   * Each Try it yourself command the browser's Python ran on the Program, and what it printed.
+   */
+  commands: CommandRun[];
 }
 /**
  * One byte of the Program.
@@ -87,6 +102,26 @@ export interface ByteFact {
   line: number;
 }
 /**
+ * One Try it yourself command, run by the browser's Python on the Program saved as fileName.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "CommandRun".
+ */
+export interface CommandRun {
+  /**
+   * The command, as the learner would type it: python program.py.
+   */
+  command: string;
+  /**
+   * What a terminal shows: everything written to stdout and stderr, in the order it was written.
+   */
+  output: string;
+  /**
+   * The command's exit status: 0 if it ended normally, 1 after an error, or the number passed to sys.exit.
+   */
+  exitStatus: number;
+}
+/**
  * The Templates for one Python version, in one file, such as templates/py314.json.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -102,6 +137,12 @@ export interface Templates {
    */
   templates: {
     [k: string]: Template;
+  };
+  /**
+   * Each zoom level's Try it yourself command, by level number. A level without one has no Try it yourself section.
+   */
+  tryIt?: {
+    [k: string]: TryIt;
   };
 }
 /**
@@ -124,6 +165,46 @@ export interface Template {
    * The technical term, shown once in small print, such as code point U+0070.
    */
   term?: string;
+}
+/**
+ * A zoom level's Try it yourself: a real command the learner can run on their own computer. Its strings are filled in like a Template whose subject is program.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "TryIt".
+ */
+export interface TryIt {
+  /**
+   * The command, such as python {file}. The browser's Python runs it on the Program.
+   */
+  command: string;
+  /**
+   * What to do before typing the command.
+   */
+  intro: string;
+  /**
+   * The What it does tab: each part of the command, and what it does.
+   */
+  parts: TryItPart[];
+  /**
+   * The How to read it tab: notes on reading the output, after anything the page works out from the Program.
+   */
+  read: string[];
+}
+/**
+ * One part of a Try it yourself command.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "TryItPart".
+ */
+export interface TryItPart {
+  /**
+   * The part, as it appears in the command; … stands for what is inside it.
+   */
+  code: string;
+  /**
+   * What the part does.
+   */
+  text: string;
 }
 /**
  * Every Concept card, and the Concepts index that groups them: concepts/cards.json.
@@ -253,6 +334,10 @@ export interface HonestyLabels {
      * The Machine map, beside every zoom level.
      */
     machineMap: string;
+    /**
+     * Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.
+     */
+    tryItOutput: string;
   };
 }
 /**

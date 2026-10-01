@@ -27,7 +27,7 @@ export interface Explanation {
 const MARKUP = /(\*\*|\[\[[a-z0-9]+\|[^\]]+\]\]|\{[A-Za-z]+\})/;
 
 /** Fills in one Template string. Markup is read before the values go in, so a `*` in the Program stays a `*`. */
-function fillString(string: string, facts: Record<string, string> = {}): Span[] {
+export function fillString(string: string, facts: Record<string, string> = {}): Span[] {
   const spans: Span[] = [];
   let strong = false;
   for (const part of string.split(MARKUP)) {
@@ -55,17 +55,18 @@ function fill(template: Template, facts: Record<string, string>): Explanation {
   };
 }
 
-const counted = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+export const counted = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
+export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
   return {
     lines: counted(linesOf(analysis.program).length, 'line', 'lines'),
     characters: counted(Array.from(analysis.program).length, 'character', 'characters'),
     bytes: counted(analysis.bytes.length, 'byte', 'bytes'),
+    file: analysis.fileName,
   };
 }
 
-function template(id: TemplateId, subject: Template['subject']) {
+export function template(id: TemplateId, subject: Template['subject']) {
   const found = TEMPLATES[id];
   if (found.subject !== subject) throw new Error(`Template ${id} explains a ${found.subject}, not a ${subject}`);
   return found;
@@ -91,7 +92,7 @@ function aboutByte(analysis: Analysis, byte: ByteFact) {
   };
 }
 
-function byteFacts(analysis: Analysis, byte: ByteFact): Record<ByteSlot, string> {
+export function byteFacts(analysis: Analysis, byte: ByteFact): Record<ByteSlot, string> {
   const { number, char, charBytes, indent } = aboutByte(analysis, byte);
   return {
     number: String(number),

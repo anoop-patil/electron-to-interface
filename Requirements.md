@@ -76,7 +76,7 @@ Example Analyses (analyzer run ahead of time)  ─┘                           
 | --- | --- | --- |
 | Frontend | React + TypeScript + Vite, as a single-page app | Best-known stack. The zoom view is a self-contained component, so indexable Astro pages per opcode can be added later. |
 | Styling | Tailwind, reading design tokens from CSS variables | One swap of variables switches between light and dark |
-| Components | The browser's own `<dialog>` for Concept cards. shadcn/ui (on Radix) for other pieces when they are needed: tooltip, popover, tabs, toggle | `<dialog>` handles Escape, focus and the backdrop with no dependency. shadcn/ui is accessible, and its code lives in our repo, styled with our design tokens |
+| Components | The browser's own `<dialog>` for Concept cards and `<details>` for Try it yourself, whose tabs are built by hand on the ARIA tabs pattern. shadcn/ui (on Radix) for other pieces when they are needed: tooltip, popover, toggle | `<dialog>` and `<details>` work with no dependency, and three tabs need about 30 lines. shadcn/ui is accessible, and its code lives in our repo, styled with our design tokens |
 | Fonts | IBM Plex Sans + IBM Plex Mono, self-hosted WOFF2, trimmed to needed characters, two weights each | Sans and mono designed as one family; no third-party font requests (ADR 0004) |
 | Editor | CodeMirror 6 | Lighter than Monaco and works on mobile |
 | State | Zustand | — |
@@ -139,7 +139,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 **Engine (Pyodide in a Web Worker)**
 
 - Pin Pyodide 314.0.7, self-hosted; show its Python version in the UI.
-- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
+- Expose `analyze(code)` returning an Analysis: `pythonVersion`, `program` (the Program as analyzed, ending with a newline), `fileName` (the name the Try it yourself commands use), `commands` (what each Try it yourself command printed when run on the Program), `bytes`, `tokens`, `ast`, `bytecode` (every code object), `runs`, `events`, `stdout`, `stderr`, `error`.
 - Every Fact has a stable Fact ID (`byte-0`, `tok-0`, `ast-0`, `bc-0`, `run-0`, `ev-0`, numbered from 0) that Explanations and highlights point at.
 - Events are recorded with `sys.settrace` (line, call, return, exception), with a safe, truncated repr of locals.
 - Step runs, the order the bytecode steps ran in, are recorded with `sys.monitoring` INSTRUCTION events. It doesn't report RESUME, so RESUME's runs are added where each code object starts. Each line of output is tied to the step run that printed it.

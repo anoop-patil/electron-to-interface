@@ -10,8 +10,8 @@ SCHEMA = json.loads(
 )
 
 
-def test_the_analysis_of_a_program_matches_the_schema():
-    analysis = analyze('name = "Zoë"\nfor i in range(2):\n    print(name, i)')
+def test_the_analysis_of_a_program_matches_the_schema(tmp_path):
+    analysis = analyze('name = "Zoë"\nfor i in range(2):\n    print(name, i)', "program.py", ["python program.py"], str(tmp_path))
 
     Draft202012Validator.check_schema(SCHEMA)
     Draft202012Validator(SCHEMA).validate(analysis)

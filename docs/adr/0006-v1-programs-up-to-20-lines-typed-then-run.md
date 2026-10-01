@@ -14,5 +14,5 @@ The site is built around the learner's own Program, not hello world. In v1 a Pro
 - Writing your own code is part of the walking skeleton (ticket 01), not a late add-on. Examples remain as starting points and still load instantly from build-time Analyses.
 - The learner can type while Pyodide loads; Run works once it's ready.
 - Arbitrary code reaches every token type, syntax-tree node and opcode, so the Templates (Phase 2) and the Reference Library (Phase 3) must cover them all, with honest fallbacks until they do.
-- Some questions stay open and block tickets 06, 10, 12 and 14: which step levels 6–7 show, which output levels 8–9 follow, which run of a looped step the plates describe, and what Try it yourself shows for the learner's own Program (Requirements: Open questions).
+- Some questions stay open and block tickets 10, 12 and 14: which step levels 6–7 show, which output levels 8–9 follow, and which run of a looped step the plates describe (Requirements: Open questions). What Try it yourself shows for the learner's own Program was settled for ticket 06 (Requirements: Zoom UI).
 - Raising the limit later means reopening how each zoom level shows a large Program.

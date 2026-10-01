@@ -28,6 +28,7 @@
   },
   "panels": {
     "byteBits": "derived",
-    "machineMap": "typical"
+    "machineMap": "typical",
+    "tryItOutput": "observed"
   }
 }

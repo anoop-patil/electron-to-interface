@@ -13,4 +13,4 @@
 - [ ] When a step's work ran inside another handler (greet.py's second `RESUME`, run as `RESUME_CHECK` code at the end of `CALL_PY_EXACT_ARGS`), the page says so and points to it.
 - [ ] Every value a note states (reference counts, counters, sizes) is backed by the recorded data or a gdb probe. Nothing is guessed.
 - [ ] No network call beyond static files. Steps with no entry fall back to Typical.
-- [ ] Try it yourself: a timing command for the learner's file. The browser's own time and step count are observed live, with the WebAssembly note; native timing is a labeled sample (ticket 06).
+- [ ] Try it yourself: a timing command for the learner's file. The browser's own time and step count are observed live, with the WebAssembly note; native timing is a labeled sample (ticket 06). Ticket 06 found that `time.perf_counter()` moves in steps of 0.1 ms in Chromium and 1 ms in Firefox and Safari, so greet.py's run (about 0.2 ms) measures as 0 in those two.

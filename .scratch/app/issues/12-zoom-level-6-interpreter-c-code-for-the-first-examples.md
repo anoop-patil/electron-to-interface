@@ -13,5 +13,5 @@
 - [ ] The selected step run decides what's shown (ADR 0007). A step that never ran says so.
 - [ ] The Interpreter handoff is explicit: by default, CPython never compiles your code to CPU instructions, with the experimental JIT caveat.
 - [ ] Steps with no Reference Library entry show a hand-written explanation, labeled Typical.
-- [ ] Try it yourself: links to the quoted lines on GitHub, plus the faster forms the learner's steps had become after the run, observed live (ticket 06).
+- [ ] Try it yourself: links to the quoted lines on GitHub, plus the faster forms the learner's steps had become after the run, observed live (ticket 06). Ticket 06 confirmed Pyodide 314.0.7 rewrites steps as native CPython does.
 - [ ] CPython excerpts ship with the PSF License notice.

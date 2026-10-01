@@ -104,7 +104,13 @@
       "name": "Operating system",
       "like": "The restaurant manager, the only one with keys to the doors: to the screen, the disk and the network.",
       "text": "Programs aren’t allowed to touch the hardware. To read a file from the [[disk|disk]] or show text on the [[screen|screen]], they ask the operating system. Its core, the **kernel**, also decides which program the [[cpu|CPU]] runs next, and gives each program its share of [[ram|RAM]].",
-      "related": ["disk", "screen", "cpu"]
+      "related": ["disk", "screen", "cpu", "terminal"]
+    },
+    "terminal": {
+      "name": "Terminal",
+      "like": "The order window: you call in what you want, and whatever the kitchen sends out appears there.",
+      "text": "A window for talking to programs by typing. You type a command, and the program it names starts. What the program prints reaches the terminal as [[byte|bytes]]; the terminal turns them back into characters and draws them on the [[screen|screen]]. On Windows, you type commands in PowerShell or Command Prompt.",
+      "related": ["os", "screen"]
     },
     "screen": {
       "name": "Screen",
@@ -120,7 +126,7 @@
     { "name": "Running it", "cards": ["py"] },
     { "name": "Memory", "cards": ["disk", "ram", "heap", "stack"] },
     { "name": "The CPU", "cards": ["cpu", "reg", "cache"] },
-    { "name": "Talking to the outside world", "cards": ["os"] },
+    { "name": "Talking to the outside world", "cards": ["os", "terminal"] },
     { "name": "The screen", "cards": ["screen"] }
   ]
 }

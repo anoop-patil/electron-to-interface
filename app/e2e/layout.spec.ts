@@ -58,6 +58,22 @@ test.describe('phone, 390px wide', () => {
     }
   });
 
+  test('Try it yourself fits without scrolling sideways, on every tab', async ({ page }) => {
+    const frame = await phone(page, '/zoom/2');
+    await run(frame, 'greeting = "Hello, world! This line is long enough to need wrapping on a phone."\nprint(greeting)');
+    // Level 2's command is long, but the closed row still shows all of it.
+    const summary = frame.locator('summary code');
+    await expect(summary).toHaveText(`python -c "print(list(open('program.py', 'rb').read()))"`);
+    expect(await summary.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+    await frame.getByText('Try it yourself').click();
+
+    for (const tab of ['What it does', 'What you’ll see', 'How to read it']) {
+      await frame.getByRole('tab', { name: tab }).click();
+      const overflow = await page.frames()[1].evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow, tab).toBe(0);
+    }
+  });
+
   test('the bits panel and the Concept cards fit without scrolling sideways', async ({ page }) => {
     const frame = await phone(page, '/zoom/2');
     await run(frame, 'print("Hi")');

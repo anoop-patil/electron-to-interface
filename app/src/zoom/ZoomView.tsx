@@ -1,13 +1,15 @@
-import type { Ref } from 'react';
+import { useState, type Ref } from 'react';
 import { buttonClass } from '../button';
 import { levelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
 import { explainByte, explainProgram, type TemplateId } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
+import { explainTryIt } from '../explain/tryIt';
 import type { Analysis, ByteFact } from '../generated/analysis';
 import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
+import { TryItYourself, type TryItTab } from './TryItYourself';
 
 const ArrowDown = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -24,7 +26,7 @@ const ArrowUp = () => (
 /** The Template that introduces each zoom level that has one. */
 const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro' };
 
-/** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, and the Zoom in and Back buttons. */
+/** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
   level,
   analysis,
@@ -41,6 +43,9 @@ export function ZoomView({
   viewRef: Ref<HTMLDivElement>;
 }) {
   const { title } = levelInfo(level);
+  // Try it yourself stays open, on the same tab, as the learner moves between zoom levels.
+  const [tryItOpen, setTryItOpen] = useState(false);
+  const [tryItTab, setTryItTab] = useState<TryItTab>('does');
 
   let visual;
   if (level > 2) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
@@ -52,6 +57,7 @@ export function ZoomView({
   const explanation = analysis && level === 2 && selectedByte ? explainByte(analysis, selectedByte) : null;
   // A zoom level carries its Honesty label once it shows something.
   const label = analysis ? levelLabel(level) : null;
+  const tryIt = analysis && explainTryIt(level, analysis);
 
   return (
     <div className="origin-top" ref={viewRef}>
@@ -104,6 +110,7 @@ export function ZoomView({
             </button>
           )}
         </div>
+        {tryIt && <TryItYourself tryIt={tryIt} open={tryItOpen} onToggle={setTryItOpen} tab={tryItTab} onTab={setTryItTab} />}
       </section>
     </div>
   );

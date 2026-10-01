@@ -11,7 +11,7 @@ async function expectNoViolations(page: Page) {
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`every zoom level passes an automated accessibility check in the ${scheme} theme`, async ({ page }) => {
-    // It waits for Python to start, then runs 13 checks: alongside the other tests, that can take more than 30 seconds.
+    // It waits for Python to start, then runs 14 checks: alongside the other tests, that can take more than 30 seconds.
     test.slow();
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/zoom/1');
@@ -21,8 +21,15 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(zoomLevel(page, 1, 'Your code')).toContainText('print(s)');
     await expectNoViolations(page);
 
+    // Try it yourself, open on the terminal output, with its Observed chip.
+    await page.getByText('Try it yourself').click();
+    await page.getByRole('tab', { name: 'What you’ll see' }).click();
+    await expectNoViolations(page);
+
+    // Level 2, with the bits panel, and Try it yourself's table of lines and bytes.
     await page.getByRole('button', { name: 'Zoom in: Bytes' }).click();
     await zoomLevel(page, 2, 'Bytes').getByRole('button', { name: /^Byte 7:/ }).click();
+    await page.getByRole('tab', { name: 'How to read it' }).click();
     await expectNoViolations(page);
 
     // A Concept card with a table, and the How we know card with every Honesty label chip.

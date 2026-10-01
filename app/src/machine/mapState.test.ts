@@ -1,17 +1,6 @@
 import { expect, test } from 'vitest';
-import type { Analysis } from '../generated/analysis';
+import { analysisOf } from '../testAnalysis';
 import { mapState } from './mapState';
-
-/** An Analysis as the analyzer makes one: the Program ends with a newline, and every byte knows its character and line. */
-function analysisOf(program: string): Analysis {
-  const bytes: Analysis['bytes'] = [];
-  let line = 1;
-  Array.from(program).forEach((char, charIndex) => {
-    for (const value of new TextEncoder().encode(char)) bytes.push({ id: `byte-${bytes.length}`, value, charIndex, line });
-    if (char === '\n') line++;
-  });
-  return { pythonVersion: '3.14.2', program, bytes };
-}
 
 /** Each lit part, with its note as plain text. */
 const lit = (state: ReturnType<typeof mapState>) =>

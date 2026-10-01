@@ -8,7 +8,7 @@ import type { ConceptCards, HonestyLabels, Subject, Templates } from '../generat
 import { MAP_NOTE, PARTS } from '../machine/parts';
 
 /** The schema definition that lists each subject's slots. */
-const SLOT_DEFS: Record<Subject, keyof typeof schema.$defs> = { program: 'ProgramSlot', byte: 'ByteSlot' };
+const SLOT_DEFS: Record<Subject, keyof typeof schema.$defs> = { program: 'ProgramSlot', byte: 'ByteSlot', line: 'LineSlot' };
 
 const slotsOf = (subject: Subject) => new Set((schema.$defs[SLOT_DEFS[subject]] as { oneOf: { const: string }[] }).oneOf.map((slot) => slot.const));
 
@@ -44,7 +44,7 @@ const unclosedBold = (id: string, strings: string[]) =>
 /** What is wrong with a Template file: where it breaks the schema, every slot its subject doesn't have, every card that doesn't exist, and every card a Machine map note opens. */
 function templateProblems(file: unknown, cardIds: Set<string>): string[] {
   if (!validTemplates(file)) return schemaProblems(validTemplates, file);
-  return Object.entries(file.templates).flatMap(([id, template]) => {
+  const inTemplates = Object.entries(file.templates).flatMap(([id, template]) => {
     const slots = slotsOf(template.subject);
     const strings = [template.title, template.text, template.term].filter((string) => string !== undefined);
     // Any {…}, not just a well-formed one: a slot the check misses would reach the page as text.
@@ -56,6 +56,26 @@ function templateProblems(file: unknown, cardIds: Set<string>): string[] {
       ? strings.flatMap((string) => [...string.matchAll(/\[\[([a-z0-9]+)\|/g)]).map(([, card]) => `${id} is a Machine map note, so it can’t open the Concept card ${card}`)
       : [];
     return [...unknownSlots, ...unclosedBold(id, strings), ...conceptProblems(id, strings, cardIds), ...mapNoteCards];
+  });
+  return [...inTemplates, ...tryItProblems(file.tryIt ?? {}, cardIds)];
+}
+
+/**
+ * What is wrong with each zoom level's Try it yourself. Its strings are filled in with the Program's Facts, but its
+ * command can only use {file}: the page works out the commands to run before the Program has any other Facts.
+ */
+function tryItProblems(tryIt: NonNullable<Templates['tryIt']>, cardIds: Set<string>): string[] {
+  const slots = slotsOf('program');
+  return Object.entries(tryIt).flatMap(([level, { command, intro, parts, read }]) => {
+    const id = `tryIt ${level}`;
+    const text = [intro, ...parts.map((part) => part.text), ...read];
+    const unknownSlots = slotsIn([command, ...parts.map((part) => part.code), ...text])
+      .filter((slot) => !slots.has(slot))
+      .map((slot) => `${id} refers to {${slot}}, which isn’t a Fact of a program`);
+    const commandSlots = slotsIn([command])
+      .filter((slot) => slots.has(slot) && slot !== 'file')
+      .map((slot) => `${id}’s command uses {${slot}}, but a command can only use {file}`);
+    return [...unknownSlots, ...commandSlots, ...unclosedBold(id, text), ...conceptProblems(id, text, cardIds)];
   });
 }
 

@@ -7,7 +7,7 @@
 **Status:** ready-for-agent
 
 - [ ] CodeMirror 6 replaces the skeleton's text box, and works on phones.
-- [ ] File upload loads a `.py` file into the editor. It doesn't Run by itself.
+- [ ] File upload loads a `.py` file into the editor. It doesn't Run by itself. Its name replaces `program.py` in the Try it yourself commands (ticket 06); the schema allows only letters, digits, `_`, `.` and `-` in it, so a name with spaces or quotes needs a rule.
 - [ ] Any Python feature is allowed. Over 20 lines, a clear message appears and Run stays off until the Program fits.
 - [ ] Importing a package outside the standard library gives a friendly message explaining that only the standard library is available.
 - [ ] Nothing is analyzed while the learner types. Editing after a Run marks the zoom view as out of date, with a prompt to Run again.

@@ -13,3 +13,7 @@
 - [ ] Each line of output is tied to the step run that printed it.
 - [ ] Events and step runs are capped at 2,000 each, and the learner is told when a record was cut short.
 - [ ] For greet.py, the step runs match prototype v8's capture (`prototype/data/example-greet-cpython-3.14.2.json`).
+
+## Comments
+
+- Ticket 06 already runs the Program once, for level 1's Try it yourself (`python program.py`, in the Analysis's `commands`). The run this ticket records is separate; both should print the same.
