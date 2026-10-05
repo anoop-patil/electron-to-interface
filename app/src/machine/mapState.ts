@@ -4,7 +4,7 @@ import { explainForStep, level5Selection } from '../explain/steps';
 import type { Analysis } from '../generated/analysis';
 import type { PartId } from './parts';
 
-/** What the learner is viewing: the zoom level, the Analysis once they've clicked Run, and the Fact ID of their Selection. */
+/** What the learner is viewing: the zoom level, the Analysis once they've clicked Run, and the Fact ID of what the level shows selected (`selectionAt`). */
 export interface MapView {
   level: number;
   analysis: Analysis | null;

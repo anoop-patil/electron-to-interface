@@ -12,3 +12,7 @@
 - [ ] Hand-written and labeled Typical, and the text carries its own qualifier ("On a typical Linux terminal...").
 - [ ] A panel shows the three numbered doors (file descriptors). Concept cards cover system call and doors; the terminal card came with ticket 06.
 - [ ] Try it yourself: an `strace` command for the learner's file, with a sample output captured on the stated platform, labeled as the Example's. The bytes `print` handed to `sys.stdout`, piece by piece, are observed live (ticket 06).
+
+## Comments
+
+- Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 8 shows the step run closest to the Selection until this ticket gives it its lines of output: add its Facts to `FACTS` and replace its entry in `LINKS`. The `Anchor` of a step run carries the run, so the entry can find the line it printed.

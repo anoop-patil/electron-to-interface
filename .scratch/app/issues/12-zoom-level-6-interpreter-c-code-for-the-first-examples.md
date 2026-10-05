@@ -19,3 +19,4 @@
 ## Comments
 
 - Ticket 10: each step records `afterRun`, the form it had become after the unwatched `python program.py` run, so Try it yourself can show it without running anything more. The recorded run itself rewrites no steps, because it is watched.
+- Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 6 shows the step run closest to the Selection until this ticket gives it elements of its own: add its Facts to `FACTS` and replace its entry in `LINKS`.

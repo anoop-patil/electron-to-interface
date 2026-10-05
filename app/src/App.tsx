@@ -7,8 +7,10 @@ import { MachineMap } from './machine/MachineMap';
 import { mapState } from './machine/mapState';
 import { Terminal } from './terminal/Terminal';
 import { ThemeToggle } from './ThemeToggle';
+import { ProgramEditor, type Highlight } from './editor/ProgramEditor';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
+import { charsOf, selectionAt } from './zoom/selection';
 import { ZoomView } from './zoom/ZoomView';
 
 type PythonStatus = 'starting' | 'ready' | 'failed';
@@ -29,6 +31,8 @@ export function App({ engine }: { engine: Engine }) {
   const [codeHidden, setCodeHidden] = useState(false);
   const [status, setStatus] = useState<PythonStatus>('starting');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  // The code as it was when the learner clicked Run, which the Analysis describes.
+  const [ranCode, setRanCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
   const view = useRef<HTMLDivElement>(null);
@@ -45,9 +49,16 @@ export function App({ engine }: { engine: Engine }) {
     };
   }, [engine]);
 
+  // What the zoom level on screen shows selected: the learner's Selection, or the closest match to it at this level.
+  const levelSelection = analysis && selectionAt(analysis, selectedFactId, level);
+  // The editor highlights the code the Selection comes from, while the code is still what was run.
+  const chars = analysis && levelSelection && code === ranCode ? charsOf(analysis, levelSelection) : null;
+  const highlight: Highlight | null = analysis && chars ? { program: analysis.program, ...chars } : null;
+
   async function run() {
     try {
       setAnalysis(await engine.analyze(code));
+      setRanCode(code);
       setSelectedFactId(null);
       setError(null);
     } catch (e) {
@@ -94,17 +105,7 @@ export function App({ engine }: { engine: Engine }) {
               </div>
               <div className={`grid gap-3${codeHidden ? ' narrow:hidden' : ''}`} id="program-editor">
                 <p className="text-[14px] text-ink2">Write a short Python program, click Run, and zoom in to see what your computer really does with it.</p>
-                <textarea
-                  id="program"
-                  className="min-h-[150px] w-full resize-y [tab-size:4] rounded-[10px] border border-rule2 bg-sunk px-3 py-2.5 font-mono text-[14px] leading-[1.6] text-ink focus:border-accent"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  spellCheck={false}
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  wrap="off"
-                />
+                <ProgramEditor code={code} onChange={setCode} highlight={highlight} />
                 <div className="flex flex-wrap items-center gap-3">
                   <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready'} onClick={run}>
                     Run
@@ -119,7 +120,7 @@ export function App({ engine }: { engine: Engine }) {
               </div>
             </aside>
             <Terminal analysis={analysis} />
-            <MachineMap state={mapState({ level, analysis, selection: selectedFactId })} />
+            <MachineMap state={mapState({ level, analysis, selection: levelSelection })} />
           </div>
 
           <DepthGauge level={level} onGo={go} />
@@ -129,7 +130,7 @@ export function App({ engine }: { engine: Engine }) {
             <ZoomView
               level={level}
               analysis={analysis}
-              selection={selectedFactId}
+              selection={levelSelection}
               onSelect={setSelectedFactId}
               onGo={go}
               viewRef={view}

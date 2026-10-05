@@ -11,3 +11,7 @@
 - [ ] A space gets its own note: it lights no pixels.
 - [ ] Screen facts use the learner's own device, for example its resolution.
 - [ ] Labeled Typical.
+
+## Comments
+
+- Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 9 shows the step run closest to the Selection until this ticket gives it its lines of output: add its Facts to `FACTS` and replace its entry in `LINKS`. The `Anchor` of a step run carries the run, so the entry can find the line it printed.

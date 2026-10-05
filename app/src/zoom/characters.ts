@@ -31,3 +31,19 @@ export function linesOf(program: string): Line[] {
   if (line.chars.length > 0) lines.push(line);
   return lines;
 }
+
+/** A run of the Program's characters, as positions in characters: from start up to, but not including, end. */
+export interface CharSpan {
+  start: number;
+  end: number;
+}
+
+/** A line's characters either side of a marked run, and those in it. With nothing marked, all of them come before. */
+export function splitLine(line: Line, marked: CharSpan | null) {
+  const { start, end } = marked ?? { start: Infinity, end: Infinity };
+  return {
+    before: line.chars.filter(({ index }) => index < start),
+    marked: line.chars.filter(({ index }) => index >= start && index < end),
+    after: line.chars.filter(({ index }) => index >= end),
+  };
+}

@@ -23,7 +23,7 @@ The always-visible picture of the learner's computer (disk, RAM with its code, o
 _Avoid_: hardware diagram, memory view
 
 **Selection**:
-What the learner has picked at the current zoom level. At level 5 it is a Step run, and it decides what levels 6–9 show.
+What the learner has picked, at any zoom level. It stays picked as they zoom: every zoom level shows its element closest to it, and the editor highlights the code it comes from. At level 5 it is a Step run, and it decides what levels 6–9 show.
 _Avoid_: focus, cursor, current line
 
 **Interpreter handoff**:

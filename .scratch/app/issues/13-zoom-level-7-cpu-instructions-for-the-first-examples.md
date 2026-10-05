@@ -14,3 +14,7 @@
 - [ ] Every value a note states (reference counts, counters, sizes) is backed by the recorded data or a gdb probe. Nothing is guessed.
 - [ ] No network call beyond static files. Steps with no entry fall back to Typical.
 - [ ] Try it yourself: a timing command for the learner's file. The browser's own time and step count are observed live, with the WebAssembly note; native timing is a labeled sample (ticket 06). Ticket 06 found that `time.perf_counter()` moves in steps of 0.1 ms in Chromium and 1 ms in Firefox and Safari, so greet.py's run (about 0.2 ms) measures as 0 in those two.
+
+## Comments
+
+- Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 7 shows the step run closest to the Selection until this ticket gives it elements of its own: add its Facts to `FACTS` and replace its entry in `LINKS`.

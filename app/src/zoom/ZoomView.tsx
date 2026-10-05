@@ -12,6 +12,7 @@ import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
 import { BytecodeZoomLevel } from './BytecodeZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
+import { charsOf } from './selection';
 import { SyntaxTreeZoomLevel } from './SyntaxTreeZoomLevel';
 import { TokensZoomLevel } from './TokensZoomLevel';
 import { TryItYourself, type TryItTab } from './TryItYourself';
@@ -42,7 +43,7 @@ export function ZoomView({
 }: {
   level: number;
   analysis: Analysis | null;
-  /** The Fact ID of the Selection, such as byte-3, tok-0, ast-2 or run-12. */
+  /** The Fact ID of what this zoom level shows selected, such as byte-3, tok-0, ast-2 or run-12 (`selectionAt`). */
   selection: string | null;
   onSelect(factId: string): void;
   onGo(level: number): void;
@@ -60,7 +61,7 @@ export function ZoomView({
   let visual;
   if (level > 5) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
   else if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
-  else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChar={selectedByte?.charIndex ?? null} />;
+  else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChars={selection ? charsOf(analysis, selection) : null} />;
   else if (level === 2) visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={(byte) => onSelect(byte.id)} />;
   else if (level === 3) visual = <TokensZoomLevel analysis={analysis} selectedToken={selectedToken} onSelect={(token) => onSelect(token.id)} />;
   else if (level === 4) visual = <SyntaxTreeZoomLevel analysis={analysis} selectedNode={selectedNode} onSelect={(node) => onSelect(node.id)} />;

@@ -1,5 +1,6 @@
 import type { Analysis, StepSlot } from '../generated/analysis';
-import { allSteps, codeName, framesAfter, objectsIn, runIndex, runsOfStep, stepById, stepOfRun, type FrameAfter, type StepInCode } from './bytecode';
+import { selectionAt } from '../zoom/selection';
+import { codeName, framesAfter, objectsIn, runIndex, runsOfStep, stepById, stepOfRun, type FrameAfter, type StepInCode } from './bytecode';
 import { counted, fill, fillString, hasTemplate, template, type Explanation, type Span, type TemplateId } from './explain';
 
 /** Level 5's Selection: a step, and the run of it that is selected, as a place in the Analysis's runs, or null for a step that never ran. */
@@ -9,17 +10,16 @@ export interface StepSelection {
 }
 
 /**
- * The Selection at level 5, from the page's Selection: a step run (run-N), or a step (bc-N), selected through its first
- * run if it ran. Anything else, such as a box selected at level 4, selects the first step run. Null if the Program has
- * no steps.
+ * The Selection at level 5, from the learner's Selection: a step run, a step selected through its first run if it
+ * ran, or the step run closest to a Selection from another level (`selectionAt`, which gives a step's own Fact ID only
+ * for a step that never ran). Null if the Program has no steps.
  */
 export function level5Selection(analysis: Analysis, selection: string | null): StepSelection | null {
-  const steps = allSteps(analysis);
-  if (steps.length === 0) return null;
-  const run = selection?.startsWith('run-') ? runIndex(selection) : -1;
-  if (run >= 0 && run < analysis.runs.length) return { step: stepOfRun(analysis, analysis.runs[run]), run };
-  const step = (selection && stepById(analysis, selection)) || (analysis.runs.length ? stepOfRun(analysis, analysis.runs[0]) : steps[0]);
-  return { step, run: runsOfStep(analysis, step.step)[0] ?? null };
+  const id = selectionAt(analysis, selection, 5);
+  if (id === null) return null;
+  if (!id.startsWith('run-')) return { step: stepById(analysis, id)!, run: null };
+  const run = runIndex(id);
+  return { step: stepOfRun(analysis, analysis.runs[run]), run };
 }
 
 /** The steps that handle two variables at once, whose argrepr names both: b, a. */

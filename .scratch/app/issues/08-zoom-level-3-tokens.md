@@ -35,4 +35,4 @@ Built in `app/`. Decisions made along the way:
 - The Token Concept card is ported from v8, with print instead of greet. The How we know card now lists Token and Your steps as related cards, as v8's did; ticket 04 waited for both cards to exist.
 - The Machine map note is "your program · read as 6 tokens", in RAM.
 - The token colors are v8's, as the design tokens `--tok-name`, `--tok-op`, `--tok-str` and `--tok-mark`.
-- Level 3 has no Selection until the learner picks a token, like level 2. A selected token isn't highlighted at levels 1 and 2 yet: that is ticket 11.
+- Level 3 has no Selection until the learner picks a token, like level 2. Since ticket 11, a selected token is highlighted at levels 1 and 2 and in the editor.

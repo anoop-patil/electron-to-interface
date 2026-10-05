@@ -11,3 +11,7 @@
 - [ ] Any Python feature is allowed. Over 20 lines, a clear message appears and Run stays off until the Program fits.
 - [ ] Importing a package outside the standard library gives a friendly message explaining that only the standard library is available.
 - [ ] Nothing is analyzed while the learner types. Editing after a Run marks the zoom view as out of date, with a prompt to Run again.
+
+## Comments
+
+- Ticket 11: the editor highlights the code the Selection comes from. The textarea can’t mark its own text, so `src/editor/ProgramEditor.tsx` draws a copy of the code with the mark underneath it. A code editor can mark its own text instead, and should keep the e2e hooks in `e2e/selection.spec.ts` (`.editor-highlight`, `data-line`) or update them. The highlight goes away once the code is edited after Run.

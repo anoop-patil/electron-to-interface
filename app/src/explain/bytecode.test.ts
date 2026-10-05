@@ -60,10 +60,10 @@ test('each of greet.py’s steps has a plain name first, from its Template', () 
   ]);
 });
 
-test('the Selection at level 5 is a step run, or a step that never ran; anything else selects the first step run', () => {
+test('the Selection at level 5 is a step run, or a step that never ran; with no Selection, the first step run', () => {
   expect(level5Selection(greet, 'run-11')).toMatchObject({ step: { step: { opname: 'CALL' }, code: 0 }, run: 11 });
   expect(level5Selection(greet, 'bc-14')).toMatchObject({ step: { step: { opname: 'END_FOR' } }, run: null });
-  expect(level5Selection(greet, 'ast-3')).toMatchObject({ step: { step: { opname: 'RESUME' } }, run: 0 });
+  expect(level5Selection(greet, null)).toMatchObject({ step: { step: { opname: 'RESUME' } }, run: 0 });
   // A step that ran is selected through its first run.
   expect(level5Selection(greet, 'bc-8')).toMatchObject({ step: { step: { opname: 'LOAD_NAME' } }, run: 8 });
 });

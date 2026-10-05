@@ -36,4 +36,4 @@ Built in `app/`. Decisions made along the way:
 - The Structure (syntax tree) Concept card is ported from v8, related to Token and Your steps. The Token card now lists it as related, as v8's did.
 - The Machine map note is "your program · as 5 boxes, temporary", in RAM, after v8's "the boxes: 18 of them, temporary".
 - As in ticket 08, a test runs greet.py in Pyodide and confirms its tree and its `python -m ast` output match v8's capture.
-- Level 4 has no Selection until the learner picks a box. A selected box isn't highlighted at other levels yet: that is ticket 11.
+- Level 4 has no Selection until the learner picks a box. Since ticket 11, a selected box is highlighted at the other levels and in the editor.
