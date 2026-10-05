@@ -110,7 +110,12 @@ export type StepSlot =
   | "next"
   | "plates"
   | "frames"
-  | "objects";
+  | "objects"
+  | "handlers"
+  | "general"
+  | "faster"
+  | "inside"
+  | "example";
 /**
  * A Fact about one node of the syntax tree that a Template can name. A slot that doesn't apply to the node is empty.
  *
@@ -738,6 +743,156 @@ export interface TryItPart {
   text: string;
 }
 /**
+ * The Reference Library for one exact Python version, such as reference/cpython-3.14.2.json: lines of the interpreter's C source, each with a plain-English sentence, for each handler and how it ran; and, for the Examples, which handlers ran on each step run. Zoom level 6 shows it, labeled Reference.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceLibrary".
+ */
+export interface ReferenceLibrary {
+  /**
+   * The exact Python version the C source is from, such as 3.14.2.
+   */
+  pythonVersion: string;
+  source: ReferenceSource;
+  /**
+   * Each entry, by the handler it quotes and, after a slash, how that handler ran when the C shown depends on it: LOAD_NAME, CALL/python, CALL/c, CALL/rewrites.
+   */
+  entries: {
+    [k: string]: ReferenceEntry;
+  };
+  /**
+   * The Examples whose handlers were recorded on every step run.
+   */
+  examples: ReferenceExample[];
+}
+/**
+ * Where the quoted C comes from: one file of CPython's source at one tag, and the copy the build checks every quoted line against.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceSource".
+ */
+export interface ReferenceSource {
+  /**
+   * CPython's repository on GitHub, which the page links to.
+   */
+  repository: string;
+  /**
+   * The release tag: v3.14.2.
+   */
+  tag: string;
+  /**
+   * The file in the repository: Python/bytecodes.c.
+   */
+  file: string;
+  /**
+   * The copy of that file in the repo, from the Reference Library's folder.
+   */
+  copy: string;
+  /**
+   * The copy's SHA-256, so the build knows it is the file at the tag.
+   */
+  sha256: string;
+}
+/**
+ * The C of one handler, as it ran one way: its key lines, each with a plain-English sentence. Its strings are filled in like a Template whose subject is step.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceEntry".
+ */
+export interface ReferenceEntry {
+  /**
+   * What is shown, and what is left out.
+   */
+  note: string;
+  /**
+   * @minItems 1
+   */
+  lines: [ReferenceLine, ...ReferenceLine[]];
+}
+/**
+ * One quoted C statement and its sentence. A statement on several lines of the source is quoted on one; the build ignores spaces when it checks it, and a quote ending in … only has to match the start of those lines.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceLine".
+ */
+export interface ReferenceLine {
+  /**
+   * What the line does, in plain English.
+   */
+  say: string;
+  /**
+   * The C, as it is in the source.
+   */
+  code: string;
+  /**
+   * Its first line in the source, counted from 1.
+   */
+  first: number;
+  /**
+   * Its last line in the source.
+   */
+  last: number;
+}
+/**
+ * An Example whose handlers were recorded with a debugger on every step run. A Program gets them only if it is this Example and its step runs are these, in this order.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceExample".
+ */
+export interface ReferenceExample {
+  /**
+   * The Example's name: hello world, greet.py.
+   */
+  name: string;
+  /**
+   * The Program, ending with a newline, as the Analysis has it.
+   */
+  program: string;
+  /**
+   * How the handlers were recorded, and on which build of Python.
+   */
+  recorded: string;
+  /**
+   * Each step run, in the order the steps ran, as the Analysis records them.
+   */
+  runs: ReferenceRun[];
+}
+/**
+ * One step run of an Example, and the handlers that ran for it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceRun".
+ */
+export interface ReferenceRun {
+  code: CodeIndex;
+  /**
+   * The step's offset in its code object.
+   */
+  offset: number;
+  /**
+   * The handlers that ran, in order. A step that rewrote itself runs two: its general form, then the new one.
+   *
+   * @minItems 1
+   */
+  handlers: [HandlerRun, ...HandlerRun[]];
+}
+/**
+ * One handler that ran for a step run.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "HandlerRun".
+ */
+export interface HandlerRun {
+  /**
+   * Its Reference Library entry: CALL/rewrites.
+   */
+  entry: string;
+  /**
+   * The handler this one's code ran inside, if the compiler copied it there, so no handler of its own ran: CALL_PY_EXACT_ARGS.
+   */
+  inside?: string;
+}
+/**
  * Every Concept card, and the Concepts index that groups them: concepts/cards.json.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -881,6 +1036,10 @@ export interface HonestyLabels {
      * Zoom level 5's note on the form a step had become after the Program ran again, unwatched.
      */
     afterRun: string;
+    /**
+     * Zoom level 6 for a step run the Reference Library has no C code for: a hand-written explanation of what the interpreter does.
+     */
+    noReference: string;
     /**
      * The Machine map, beside every zoom level.
      */

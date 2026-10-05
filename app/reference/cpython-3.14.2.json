@@ -1,0 +1,320 @@
+{
+  "pythonVersion": "3.14.2",
+  "source": {"repository": "https://github.com/python/cpython", "tag": "v3.14.2", "file": "Python/bytecodes.c", "copy": "cpython-3.14.2/Python/bytecodes.c", "sha256": "0a3e2588b04d9e3a6d6bc23d43128a0468f14c58225e4ecd519f8490cd6909b2"},
+  "entries": {
+    "RESUME": {
+      "note": "RESUME is built from 4 parts (see line 224). Shown: 2 lines of _QUICKEN_RESUME, which rewrites the step the first time it runs, and 2 lines of _CHECK_PERIODIC_IF_NOT_YIELD_FROM, which checks for urgent work.",
+      "lines": [
+        {"say": "Is this the plain RESUME, and is Python not busy running a tracing tool?", "code": "if (tstate->tracing == 0 && this_instr->op.code == RESUME) {", "first": 177, "last": 177},
+        {"say": "Then rewrite this step into RESUME_CHECK, a quicker check for next time", "code": "FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);", "first": 178, "last": 178},
+        {"say": "Is anything urgent waiting, like Ctrl+C?", "code": "if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {", "first": 168, "last": 168},
+        {"say": "If so, deal with it before going on", "code": "int err = _Py_HandlePending(tstate);", "first": 169, "last": 169}
+      ]
+    },
+    "RESUME_CHECK": {
+      "note": "The quicker form of RESUME, used from the second time on. Shown: the lines that do the check.",
+      "lines": [
+        {"say": "Read the flags that say something urgent is waiting", "code": "uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);", "first": 235, "last": 235},
+        {"say": "Read the version number this code expects", "code": "uintptr_t version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);", "first": 236, "last": 236},
+        {"say": "Anything different? Then fall back to the full RESUME", "code": "DEOPT_IF(eval_breaker != version);", "first": 238, "last": 238}
+      ]
+    },
+    "LOAD_CONST": {
+      "note": "Shown: the 2 lines that do the work, and the 2 lines that rewrite the step the first time it runs.",
+      "lines": [
+        {"say": "Get the fixed value from this code’s list of fixed values", "code": "PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);", "first": 314, "last": 314},
+        {"say": "Put a new label for it on a plate", "code": "value = PyStackRef_FromPyObjectNew(obj);", "first": 315, "last": 315},
+        {"say": "Is this step still the plain LOAD_CONST?", "code": "if (this_instr->op.code == LOAD_CONST) {", "first": 326, "last": 326},
+        {"say": "Rewrite it for next time: one form for values that live forever, like None, one for the rest", "code": "this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;", "first": 327, "last": 327}
+      ]
+    },
+    "LOAD_CONST_MORTAL": {
+      "note": "Shown: the whole handler. It no longer checks whether to rewrite itself.",
+      "lines": [
+        {"say": "Get the fixed value from this code’s list of fixed values", "code": "PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);", "first": 334, "last": 334},
+        {"say": "Put a new label for it on a plate, counting one more label on it", "code": "value = PyStackRef_FromPyObjectNewMortal(obj);", "first": 335, "last": 335}
+      ]
+    },
+    "LOAD_CONST_IMMORTAL": {
+      "note": "Shown: the 2 lines that do the work.",
+      "lines": [
+        {"say": "Get the fixed value from this code’s list of fixed values", "code": "PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);", "first": 339, "last": 339},
+        {"say": "Put a label for it on a plate. It lives forever, like None, so there are no labels to count", "code": "value = PyStackRef_FromPyObjectImmortal(obj);", "first": 341, "last": 341}
+      ]
+    },
+    "MAKE_FUNCTION": {
+      "note": "Shown: the key lines.",
+      "lines": [
+        {"say": "Take the function’s recipe card from the plate", "code": "PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);", "first": 4965, "last": 4965},
+        {"say": "Make a new function from the card and your program’s global names", "code": "PyFunctionObject *func_obj = (PyFunctionObject *) PyFunction_New(codeobj, GLOBALS());", "first": 4967, "last": 4968},
+        {"say": "Give the function the card’s version number, used later to check nothing changed", "code": "_PyFunction_SetVersion( func_obj, ((PyCodeObject *)codeobj)->co_version);", "first": 4973, "last": 4974},
+        {"say": "Put a label for the function on the plate", "code": "func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);", "first": 4975, "last": 4975}
+      ]
+    },
+    "STORE_NAME": {
+      "note": "Shown: the key lines.",
+      "lines": [
+        {"say": "Get the name to store: {name}", "code": "PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);", "first": 1506, "last": 1506},
+        {"say": "Find the dictionary of names. At the top level of a file, that’s the global names", "code": "PyObject *ns = LOCALS();", "first": 1507, "last": 1507},
+        {"say": "Store the name, pointing to the object on the top plate", "code": "err = PyDict_SetItem(ns, name, PyStackRef_AsPyObjectBorrow(v));", "first": 1516, "last": 1516},
+        {"say": "Take the plate off", "code": "PyStackRef_CLOSE(v);", "first": 1521, "last": 1521}
+      ]
+    },
+    "GET_ITER": {
+      "note": "Shown: the key lines.",
+      "lines": [
+        {"say": "Ask the object on the top plate for a walker that goes through it", "code": "PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));", "first": 3101, "last": 3101},
+        {"say": "Take that object’s plate off", "code": "PyStackRef_CLOSE(iterable);", "first": 3102, "last": 3102},
+        {"say": "Put a label for the walker on a plate", "code": "iter = PyStackRef_FromPyObjectSteal(iter_o);", "first": 3104, "last": 3104}
+      ]
+    },
+    "FOR_ITER": {
+      "note": "FOR_ITER is built from 2 parts (see line 3222). Shown: key lines of _FOR_ITER, the general way to take the next item from any walker.",
+      "lines": [
+        {"say": "Find the walker’s own “next” function", "code": "iternextfunc func = Py_TYPE(iter_o)->tp_iternext;", "first": 3166, "last": 3166},
+        {"say": "Ask it for the next item", "code": "PyObject *next_o = func(iter_o);", "first": 3173, "last": 3173},
+        {"say": "Put a label for the item on a plate", "code": "next = PyStackRef_FromPyObjectSteal(next_o);", "first": 3190, "last": 3190}
+      ]
+    },
+    "FOR_ITER/rewrites": {
+      "note": "Shown: the first part, _SPECIALIZE_FOR_ITER. On this run it rewrote the step and handed over at once.",
+      "lines": [
+        {"say": "Has this step run often enough to be worth making faster? Yes, now", "code": "if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {", "first": 3153, "last": 3153},
+        {"say": "Go back to the start of this step", "code": "next_instr = this_instr;", "first": 3154, "last": 3154},
+        {"say": "Look at the walker, and rewrite the step into a form made for that kind of walker", "code": "_Py_Specialize_ForIter(iter, next_instr, oparg);", "first": 3155, "last": 3155},
+        {"say": "Run the step again, in its new form", "code": "DISPATCH_SAME_OPARG();", "first": 3156, "last": 3156}
+      ]
+    },
+    "FOR_ITER_TUPLE": {
+      "note": "FOR_ITER_TUPLE is built from 3 parts (see line 3429). Shown: one key line from each.",
+      "lines": [
+        {"say": "Is the walker still a walker through a tuple? If not, go back to the general FOR_ITER", "code": "EXIT_IF(Py_TYPE(iter_o) != &PyTupleIter_Type);", "first": 3374, "last": 3374},
+        {"say": "Has it reached the end of the tuple? Not yet", "code": "if (seq == NULL || (size_t)it->it_index >= (size_t)PyTuple_GET_SIZE(seq)) {", "first": 3390, "last": 3390},
+        {"say": "Take the next item straight out of the tuple, move the walker on, and put a label for the item on a plate", "code": "next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));", "first": 3426, "last": 3426}
+      ]
+    },
+    "FOR_ITER_TUPLE/ends": {
+      "note": "Shown: the lines that end the loop.",
+      "lines": [
+        {"say": "Has it reached the end of the tuple? Yes", "code": "if (seq == NULL || (size_t)it->it_index >= (size_t)PyTuple_GET_SIZE(seq)) {", "first": 3390, "last": 3390},
+        {"say": "Jump past the loop, and past the End of the loop step too", "code": "JUMPBY(oparg + 1);", "first": 3398, "last": 3398},
+        {"say": "Go straight to the next step: put the walker away", "code": "DISPATCH();", "first": 3399, "last": 3399}
+      ]
+    },
+    "END_FOR": {
+      "note": "Shown: its only line.",
+      "lines": [{"say": "Take the item’s plate off", "code": "PyStackRef_CLOSE(value);", "first": 414, "last": 414}]
+    },
+    "LOAD_NAME": {
+      "note": "Shown: the whole handler.",
+      "lines": [
+        {"say": "Get the name {name} from the code’s list of names", "code": "PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);", "first": 1741, "last": 1741},
+        {"say": "Search for it: your variables, then global names, then built-ins", "code": "PyObject *v_o = _PyEval_LoadName(tstate, frame, name);", "first": 1742, "last": 1742},
+        {"say": "Not found anywhere? Stop with a NameError", "code": "ERROR_IF(v_o == NULL);", "first": 1743, "last": 1743},
+        {"say": "Found it: put a label for it on a plate", "code": "v = PyStackRef_FromPyObjectSteal(v_o);", "first": 1744, "last": 1744}
+      ]
+    },
+    "PUSH_NULL": {
+      "note": "Shown: the whole handler.",
+      "lines": [{"say": "Put an empty plate on the stack", "code": "res = PyStackRef_NULL;", "first": 405, "last": 405}]
+    },
+    "CALL/python": {
+      "note": "CALL is built from 4 parts (see line 3853). Shown: the counter check of _SPECIALIZE_CALL, and the route _DO_CALL takes for a function written in Python.",
+      "lines": [
+        {"say": "Has this step run often enough to be worth making faster? Not yet", "code": "if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {", "first": 3741, "last": 3741},
+        {"say": "Count down towards rewriting it", "code": "ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);", "first": 3747, "last": 3747},
+        {"say": "Is this a function written in Python? Yes", "code": "if (Py_TYPE(callable_o) == &PyFunction_Type && …", "first": 3775, "last": 3775},
+        {"say": "Set up a new frame for the function, and move what it is given onto it as its variables", "code": "_PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit( tstate, callable, locals, arguments, total_args, NULL, frame );", "first": 3781, "last": 3784},
+        {"say": "Remember where to come back to: just after this step", "code": "frame->return_offset = INSTRUCTION_SIZE;", "first": 3795, "last": 3795},
+        {"say": "Carry straight on with the function’s first step, without leaving the interpreter", "code": "DISPATCH_INLINED(new_frame);", "first": 3796, "last": 3796}
+      ]
+    },
+    "CALL/c": {
+      "note": "CALL is built from 4 parts (see line 3853). Shown: the counter check of _SPECIALIZE_CALL, and 5 key lines of _DO_CALL, the part that runs what is called.",
+      "lines": [
+        {"say": "Has this step run often enough to be worth making faster? Not yet", "code": "if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {", "first": 3741, "last": 3741},
+        {"say": "Count down towards rewriting it", "code": "ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);", "first": 3747, "last": 3747},
+        {"say": "Is this a function written in Python? No", "code": "if (Py_TYPE(callable_o) == &PyFunction_Type && …", "first": 3775, "last": 3775},
+        {"say": "Collect what to give it: {count}", "code": "STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);", "first": 3799, "last": 3799},
+        {"say": "Run it. For print, this is where the line gets written", "code": "PyObject *res_o = PyObject_Vectorcall(callable_o, args_o, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);", "first": 3804, "last": 3807},
+        {"say": "Something went wrong? Stop with the error", "code": "ERROR_IF(res_o == NULL);", "first": 3828, "last": 3828},
+        {"say": "Put its answer on a plate", "code": "res = PyStackRef_FromPyObjectSteal(res_o);", "first": 3829, "last": 3829}
+      ]
+    },
+    "CALL/rewrites": {
+      "note": "Shown: _SPECIALIZE_CALL, the first of CALL’s 4 parts. On this run it rewrote the step and handed over at once, so the rest of CALL didn’t run.",
+      "lines": [
+        {"say": "Has this step run often enough to be worth making faster? Yes, now", "code": "if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {", "first": 3741, "last": 3741},
+        {"say": "Go back to the start of this step", "code": "next_instr = this_instr;", "first": 3742, "last": 3742},
+        {"say": "Look at what is being called, and rewrite the step into a form made for it", "code": "_Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));", "first": 3743, "last": 3743},
+        {"say": "Run the step again, in its new form", "code": "DISPATCH_SAME_OPARG();", "first": 3744, "last": 3744}
+      ]
+    },
+    "CALL_PY_EXACT_ARGS": {
+      "note": "CALL_PY_EXACT_ARGS is built from 8 parts (see line 4058). Shown: one or two key lines from the parts that check and set up the call.",
+      "lines": [
+        {"say": "Does the function take exactly this many things? If not, fall back to the general CALL", "code": "EXIT_IF(code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null)));", "first": 4001, "last": 4001},
+        {"say": "Is there room for another frame? If not, fall back", "code": "DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));", "first": 4008, "last": 4008},
+        {"say": "Are calls nested too deeply? If so, fall back", "code": "DEOPT_IF(tstate->py_recursion_remaining <= 1);", "first": 4012, "last": 4012},
+        {"say": "Set up the function’s new frame, with no further checks", "code": "new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);", "first": 4018, "last": 4018},
+        {"say": "Move what it is given onto it as its variables", "code": "first_non_self_local[i] = args[i];", "first": 4022, "last": 4022},
+        {"say": "Make the function’s frame the one being run", "code": "frame = tstate->current_frame = temp;", "first": 4037, "last": 4037}
+      ]
+    },
+    "LOAD_GLOBAL": {
+      "note": "LOAD_GLOBAL is built from 3 parts (see line 1778). Shown: the counter check, the lookup and the empty plate.",
+      "lines": [
+        {"say": "Has this step run often enough to be worth making faster? Not yet", "code": "if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {", "first": 1754, "last": 1754},
+        {"say": "Get the name: {name}", "code": "PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);", "first": 1767, "last": 1767},
+        {"say": "Search the global names, then the built-ins, and put what it finds on a plate", "code": "_PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);", "first": 1768, "last": 1768},
+        {"say": "Asked to add an empty plate as well?", "code": "if (oparg & 1) {", "first": 1773, "last": 1773},
+        {"say": "If so, put an empty plate on the stack", "code": "null[0] = PyStackRef_NULL;", "first": 1774, "last": 1774}
+      ]
+    },
+    "LOAD_GLOBAL/rewrites": {
+      "note": "Shown: the first part, _SPECIALIZE_LOAD_GLOBAL. On this run it rewrote the step and handed over at once.",
+      "lines": [
+        {"say": "Has this step run often enough to be worth making faster? Yes, now", "code": "if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {", "first": 1754, "last": 1754},
+        {"say": "Get the name: {name}", "code": "PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);", "first": 1755, "last": 1755},
+        {"say": "Look it up once, remember where it was found, and rewrite the step into a form that goes straight there", "code": "_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);", "first": 1757, "last": 1757},
+        {"say": "Run the step again, in its new form", "code": "DISPATCH_SAME_OPARG();", "first": 1758, "last": 1758}
+      ]
+    },
+    "LOAD_GLOBAL_BUILTIN": {
+      "note": "Shown: key lines. It doesn’t search by name any more: it checks nothing has changed, then goes straight to the remembered place.",
+      "lines": [
+        {"say": "Get the global names", "code": "PyDictObject *dict = (PyDictObject *)GLOBALS();", "first": 1787, "last": 1787},
+        {"say": "Have the global names changed since the step was rewritten? If so, fall back to LOAD_GLOBAL", "code": "DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version);", "first": 1790, "last": 1790},
+        {"say": "Get the built-in names", "code": "PyDictObject *dict = (PyDictObject *)BUILTINS();", "first": 1816, "last": 1816},
+        {"say": "Read {name} straight from the remembered position", "code": "PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);", "first": 1822, "last": 1822},
+        {"say": "Put a label for it on a plate", "code": "res = PyStackRef_FromPyObjectNew(res_o);", "first": 1828, "last": 1828},
+        {"say": "If asked to, put an empty plate on the stack as well", "code": "null[0] = PyStackRef_NULL;", "first": 1774, "last": 1774}
+      ]
+    },
+    "LOAD_FAST_BORROW": {
+      "note": "Shown: the line that does the work.",
+      "lines": [
+        {"say": "Borrow the label of the variable {name}, and put it on a plate", "code": "value = PyStackRef_Borrow(GETLOCAL(oparg));", "first": 284, "last": 284}
+      ]
+    },
+    "CALL_BUILTIN_FAST_WITH_KEYWORDS": {
+      "note": "Shown: key lines of _CALL_BUILTIN_FAST_WITH_KEYWORDS.",
+      "lines": [
+        {"say": "Is it still a built-in function? If not, fall back to the general CALL", "code": "DEOPT_IF(!PyCFunction_CheckExact(callable_o));", "first": 4332, "last": 4332},
+        {"say": "Does it still take its inputs the fast way? If not, fall back", "code": "DEOPT_IF(PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS));", "first": 4333, "last": 4333},
+        {"say": "Get the address of the function’s C code", "code": "PyCFunctionFastWithKeywords cfunc = _PyCFunctionFastWithKeywords_CAST(PyCFunction_GET_FUNCTION(callable_o));", "first": 4336, "last": 4337},
+        {"say": "Run it, directly. For print, this is where the line gets written", "code": "PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);", "first": 4344, "last": 4344},
+        {"say": "Put its answer on a plate", "code": "res = PyStackRef_FromPyObjectSteal(res_o);", "first": 4349, "last": 4349}
+      ]
+    },
+    "POP_TOP": {
+      "note": "Shown: the whole handler.",
+      "lines": [
+        {"say": "Take the top plate off and let go of what it pointed to", "code": "PyStackRef_CLOSE(value);", "first": 401, "last": 401}
+      ]
+    },
+    "POP_ITER": {
+      "note": "POP_ITER is POP_TOP under another name (line 417).",
+      "lines": [
+        {"say": "The same code as POP_TOP", "code": "macro(POP_ITER) = POP_TOP;", "first": 417, "last": 417},
+        {"say": "Take the walker’s plate off and let it go", "code": "PyStackRef_CLOSE(value);", "first": 401, "last": 401}
+      ]
+    },
+    "JUMP_BACKWARD/rewrites": {
+      "note": "JUMP_BACKWARD is built from 3 parts (see line 2944). Shown: the first, _SPECIALIZE_JUMP_BACKWARD. On this run it rewrote the step and handed over at once.",
+      "lines": [
+        {"say": "Is this step still the plain JUMP_BACKWARD?", "code": "if (this_instr->op.code == JUMP_BACKWARD) {", "first": 2907, "last": 2907},
+        {"say": "Rewrite it: is the JIT compiler switched on? By default it isn’t, so JUMP_BACKWARD_NO_JIT", "code": "this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;", "first": 2908, "last": 2908},
+        {"say": "Go back to the start of this step", "code": "next_instr = this_instr;", "first": 2910, "last": 2910},
+        {"say": "Run it again, in its new form", "code": "DISPATCH_SAME_OPARG();", "first": 2911, "last": 2911}
+      ]
+    },
+    "JUMP_BACKWARD_NO_JIT": {
+      "note": "JUMP_BACKWARD_NO_JIT is built from 2 parts (see line 2950): a check for urgent work, and the jump.",
+      "lines": [
+        {"say": "Is anything urgent waiting, like Ctrl+C?", "code": "if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {", "first": 158, "last": 158},
+        {"say": "If so, deal with it before going on", "code": "int err = _Py_HandlePending(tstate);", "first": 159, "last": 159},
+        {"say": "Jump back to the top of the loop", "code": "JUMPBY(-oparg);", "first": 3047, "last": 3047}
+      ]
+    },
+    "RETURN_VALUE": {
+      "note": "Shown: 4 key lines. The rest keeps Python’s bookkeeping correct.",
+      "lines": [
+        {"say": "Take the answer off the last plate", "code": "_PyStackRef temp = PyStackRef_MakeHeapSafe(retval);", "first": 1200, "last": 1200},
+        {"say": "Go back to the frame that called this code", "code": "frame = tstate->current_frame = dying->previous;", "first": 1207, "last": 1207},
+        {"say": "Throw away this frame", "code": "_PyEval_FrameClearAndPop(tstate, dying);", "first": 1208, "last": 1208},
+        {"say": "Put the answer on the caller’s plates", "code": "res = temp;", "first": 1211, "last": 1211}
+      ]
+    }
+  },
+  "examples": [
+    {
+      "name": "hello world",
+      "program": "print(\"Hello World!\")\n",
+      "recorded": "gdb stepi through each handler, 3 identical runs, stdout to a pty, on python-build-standalone 20251205, cpython-3.14.2, x86_64-unknown-linux-gnu",
+      "runs": [
+        {"code": 0, "offset": 0, "handlers": [{"entry": "RESUME"}]},
+        {"code": 0, "offset": 2, "handlers": [{"entry": "LOAD_NAME"}]},
+        {"code": 0, "offset": 4, "handlers": [{"entry": "PUSH_NULL"}]},
+        {"code": 0, "offset": 6, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 0, "offset": 8, "handlers": [{"entry": "CALL/c"}]},
+        {"code": 0, "offset": 16, "handlers": [{"entry": "POP_TOP"}]},
+        {"code": 0, "offset": 18, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 0, "offset": 20, "handlers": [{"entry": "RETURN_VALUE"}]}
+      ]
+    },
+    {
+      "name": "greet.py",
+      "program": "def greet(name):\n    print(\"Hello,\", name)\n\nfor person in [\"Ada\", \"Grace\"]:\n    greet(person)\n",
+      "recorded": "gdb stepi through each handler, 3 identical runs, stdout to a pty, on python-build-standalone 20251205, cpython-3.14.2, x86_64-unknown-linux-gnu",
+      "runs": [
+        {"code": 0, "offset": 0, "handlers": [{"entry": "RESUME"}]},
+        {"code": 0, "offset": 2, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 0, "offset": 4, "handlers": [{"entry": "MAKE_FUNCTION"}]},
+        {"code": 0, "offset": 6, "handlers": [{"entry": "STORE_NAME"}]},
+        {"code": 0, "offset": 8, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 0, "offset": 10, "handlers": [{"entry": "GET_ITER"}]},
+        {"code": 0, "offset": 12, "handlers": [{"entry": "FOR_ITER"}]},
+        {"code": 0, "offset": 16, "handlers": [{"entry": "STORE_NAME"}]},
+        {"code": 0, "offset": 18, "handlers": [{"entry": "LOAD_NAME"}]},
+        {"code": 0, "offset": 20, "handlers": [{"entry": "PUSH_NULL"}]},
+        {"code": 0, "offset": 22, "handlers": [{"entry": "LOAD_NAME"}]},
+        {"code": 0, "offset": 24, "handlers": [{"entry": "CALL/python"}]},
+        {"code": 1, "offset": 0, "handlers": [{"entry": "RESUME"}]},
+        {"code": 1, "offset": 2, "handlers": [{"entry": "LOAD_GLOBAL"}]},
+        {"code": 1, "offset": 12, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 1, "offset": 14, "handlers": [{"entry": "LOAD_FAST_BORROW"}]},
+        {"code": 1, "offset": 16, "handlers": [{"entry": "CALL/c"}]},
+        {"code": 1, "offset": 24, "handlers": [{"entry": "POP_TOP"}]},
+        {"code": 1, "offset": 26, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 1, "offset": 28, "handlers": [{"entry": "RETURN_VALUE"}]},
+        {"code": 0, "offset": 32, "handlers": [{"entry": "POP_TOP"}]},
+        {"code": 0, "offset": 34, "handlers": [{"entry": "JUMP_BACKWARD/rewrites"}, {"entry": "JUMP_BACKWARD_NO_JIT"}]},
+        {"code": 0, "offset": 12, "handlers": [{"entry": "FOR_ITER/rewrites"}, {"entry": "FOR_ITER_TUPLE"}]},
+        {"code": 0, "offset": 16, "handlers": [{"entry": "STORE_NAME"}]},
+        {"code": 0, "offset": 18, "handlers": [{"entry": "LOAD_NAME"}]},
+        {"code": 0, "offset": 20, "handlers": [{"entry": "PUSH_NULL"}]},
+        {"code": 0, "offset": 22, "handlers": [{"entry": "LOAD_NAME"}]},
+        {"code": 0, "offset": 24, "handlers": [{"entry": "CALL/rewrites"}, {"entry": "CALL_PY_EXACT_ARGS"}]},
+        {"code": 1, "offset": 0, "handlers": [{"entry": "RESUME_CHECK", "inside": "CALL_PY_EXACT_ARGS"}]},
+        {"code": 1, "offset": 2, "handlers": [{"entry": "LOAD_GLOBAL/rewrites"}, {"entry": "LOAD_GLOBAL_BUILTIN"}]},
+        {"code": 1, "offset": 12, "handlers": [{"entry": "LOAD_CONST_MORTAL"}]},
+        {"code": 1, "offset": 14, "handlers": [{"entry": "LOAD_FAST_BORROW"}]},
+        {
+          "code": 1,
+          "offset": 16,
+          "handlers": [{"entry": "CALL/rewrites"}, {"entry": "CALL_BUILTIN_FAST_WITH_KEYWORDS"}]
+        },
+        {"code": 1, "offset": 24, "handlers": [{"entry": "POP_TOP"}]},
+        {"code": 1, "offset": 26, "handlers": [{"entry": "LOAD_CONST_IMMORTAL"}]},
+        {"code": 1, "offset": 28, "handlers": [{"entry": "RETURN_VALUE"}]},
+        {"code": 0, "offset": 32, "handlers": [{"entry": "POP_TOP"}]},
+        {"code": 0, "offset": 34, "handlers": [{"entry": "JUMP_BACKWARD_NO_JIT"}]},
+        {"code": 0, "offset": 12, "handlers": [{"entry": "FOR_ITER_TUPLE/ends"}]},
+        {"code": 0, "offset": 40, "handlers": [{"entry": "POP_ITER"}]},
+        {"code": 0, "offset": 42, "handlers": [{"entry": "LOAD_CONST"}]},
+        {"code": 0, "offset": 44, "handlers": [{"entry": "RETURN_VALUE"}]}
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ const BYTES = `python -c "print(list(open('program.py', 'rb').read()))"`;
 const TOKENIZE = 'python -m tokenize program.py';
 const AST = 'python -m ast program.py';
 const DIS = 'python -m dis program.py';
+const ADAPTIVE = `python -c "import dis; c = compile(open('program.py').read(), 'program.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`;
 
 /** An Analysis of the Program, with what each command printed: nothing, unless `printed` says otherwise. */
 const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'command'>> = {}) =>
@@ -16,16 +17,17 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 to 5 have a command for the learner’s file; the others aren’t built yet', () => {
-  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS]);
+test('levels 1 to 6 have a command for the learner’s file; the others aren’t built yet', () => {
+  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS, ADAPTIVE]);
   expect(tryItCommands('greet.py')).toEqual([
     'python greet.py',
     `python -c "print(list(open('greet.py', 'rb').read()))"`,
     'python -m tokenize greet.py',
     'python -m ast greet.py',
     'python -m dis greet.py',
+    `python -c "import dis; c = compile(open('greet.py').read(), 'greet.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`,
   ]);
-  expect(explainTryIt(6, analysisOf('x = 1\n'))).toBeNull();
+  expect(explainTryIt(7, analysisOf('x = 1\n'))).toBeNull();
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {
@@ -215,6 +217,76 @@ test('level 5 runs python -m dis and explains its columns and the first step of 
 test('when dis stops with an error, level 5 shows what it printed and explains no lines', () => {
   const error = "Traceback (most recent call last):\n  …\nSyntaxError: '(' was never closed\n";
   const tryIt = explainTryIt(5, analysisOf('print("Hi"\n', { [DIS]: { output: error, exitStatus: 1 } }))!;
+
+  expect(tryIt.output).toBe(error);
+  expect(tryIt.rows).toEqual([]);
+});
+
+/** What the level 6 command printed for greet.py, with CPython 3.14: its output, then the steps in the forms they had become. */
+const GREET_ADAPTIVE = `Hello, Ada
+Hello, Grace
+  0           RESUME_CHECK             0
+
+  1           LOAD_CONST_MORTAL        0 (<code object greet at 0x000001CEE43C25B0, file "program.py", line 1>)
+              MAKE_FUNCTION
+              STORE_NAME               0 (greet)
+
+  4           LOAD_CONST_MORTAL        2 (('Ada', 'Grace'))
+              GET_ITER
+      L1:     FOR_ITER_TUPLE          11 (to L2)
+              STORE_NAME               1 (person)
+
+  5           LOAD_NAME                0 (greet)
+              PUSH_NULL
+              LOAD_NAME                1 (person)
+              CALL_PY_EXACT_ARGS       1
+              POP_TOP
+              JUMP_BACKWARD_NO_JIT    13 (to L1)
+
+  4   L2:     END_FOR
+              POP_ITER
+              LOAD_CONST_IMMORTAL      1 (None)
+              RETURN_VALUE
+
+Disassembly of <code object greet at 0x000001CEE43C25B0, file "program.py", line 1>:
+  1           RESUME_CHECK             0
+
+  2           LOAD_GLOBAL_BUILTIN      1 (print + NULL)
+              LOAD_CONST_MORTAL        0 ('Hello,')
+              LOAD_FAST_BORROW         0 (name)
+              CALL_BUILTIN_FAST_WITH_KEYWORDS 2
+              POP_TOP
+              LOAD_CONST_IMMORTAL      1 (None)
+              RETURN_VALUE
+`;
+
+test('level 6 runs the file, then shows the forms its steps had become, explaining each rewrite once', () => {
+  const tryIt = explainTryIt(6, greetAnalysis([{ command: ADAPTIVE, output: GREET_ADAPTIVE, exitStatus: 0 }]), null)!;
+
+  expect(tryIt.command).toBe(ADAPTIVE);
+  expect(plain(tryIt.intro)).toBe('Run your file, then ask Python which forms its steps had become:');
+  expect(tryIt.parts.map((part) => part.code)).toEqual([
+    'import dis',
+    "c = compile(open('program.py').read(), 'program.py', 'exec')",
+    "exec(c, dict(__name__='__main__'))",
+    'dis.dis(c, adaptive=True)',
+  ]);
+  expect(tryIt.output).toBe(GREET_ADAPTIVE);
+  expect(tryIt.rows.map((row) => [row.printed, plain(row.text)])).toEqual([
+    ['RESUME_CHECK 0', 'Step 1 of your program: RESUME before the run, this form after it.'],
+    ['LOAD_CONST_MORTAL 0 (<code object greet at 0x…>)', 'Step 2 of your program: LOAD_CONST before the run, this form after it.'],
+    ['FOR_ITER_TUPLE 11 (to L2)', 'Step 7 of your program: FOR_ITER before the run, this form after it.'],
+    ['CALL_PY_EXACT_ARGS 1', 'Step 12 of your program: CALL before the run, this form after it.'],
+    ['JUMP_BACKWARD_NO_JIT 13 (to L1)', 'Step 14 of your program: JUMP_BACKWARD before the run, this form after it.'],
+    ['LOAD_CONST_IMMORTAL 1 (None)', 'Step 17 of your program: LOAD_CONST before the run, this form after it.'],
+    ['LOAD_GLOBAL_BUILTIN 1 (print + NULL)', 'Step 2 of greet: LOAD_GLOBAL before the run, this form after it.'],
+    ['CALL_BUILTIN_FAST_WITH_KEYWORDS 2', 'Step 5 of greet: CALL before the run, this form after it.'],
+  ]);
+});
+
+test('when the Program stops with an error before dis runs, level 6 shows the traceback and explains no lines', () => {
+  const error = 'Traceback (most recent call last):\n  …\nZeroDivisionError: division by zero\n';
+  const tryIt = explainTryIt(6, analysisOf('1 / 0\n', { [ADAPTIVE]: { output: error, exitStatus: 1 } }), null)!;
 
   expect(tryIt.output).toBe(error);
   expect(tryIt.rows).toEqual([]);

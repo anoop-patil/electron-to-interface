@@ -141,6 +141,22 @@ export function TryItYourself({
           <ExplanationText spans={tryIt.intro} />
         </p>
         <CommandBox command={tryIt.command} />
+        {tryIt.links.length > 0 && (
+          <div className={TEXT_CLASSES}>
+            <p>
+              <ExplanationText spans={tryIt.linksIntro} />
+            </p>
+            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              {tryIt.links.map((link) => (
+                <li key={link.href + link.text}>
+                  <a className="text-accent underline underline-offset-2" href={link.href} target="_blank" rel="noopener noreferrer">
+                    {link.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="flex gap-1 overflow-x-auto border-b border-rule" role="tablist" aria-label="About this command" ref={tabs} onKeyDown={onKeyDown}>
           {TABS.map(({ id, name }) => (
             <button

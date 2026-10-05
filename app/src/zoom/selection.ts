@@ -104,8 +104,9 @@ const STEP_RUN: LevelLinks = {
 };
 
 /**
- * Each zoom level's links. A level with no entry, level 1, keeps the Selection as it is. Levels 6 to 9 show a step run
- * until their tickets give them elements of their own: levels 8 and 9 then follow the line of output it printed.
+ * Each zoom level's links. A level with no entry, level 1, keeps the Selection as it is. Level 6's elements are step
+ * runs, as level 5's are: it shows the C that ran for one. Levels 7 to 9 show a step run until their tickets give them
+ * elements of their own: levels 8 and 9 then follow the line of output it printed.
  */
 const LINKS: Record<number, LevelLinks> = {
   2: {

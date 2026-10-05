@@ -4,13 +4,15 @@ import { levelLabel, panelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
 import { explainByte, explainProgram, explainToken, type TemplateId } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
-import { explainAfterRun, explainStep, level5Selection } from '../explain/steps';
+import { explainLevel6, level6, level6AfterRun } from '../explain/interpreter';
+import { explainAfterRun, explainStep, stepSelectionAt } from '../explain/steps';
 import { explainNode } from '../explain/syntaxTree';
 import { explainTryIt } from '../explain/tryIt';
 import type { Analysis } from '../generated/analysis';
 import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
 import { BytecodeZoomLevel } from './BytecodeZoomLevel';
 import { CodeZoomLevel } from './CodeZoomLevel';
+import { InterpreterZoomLevel } from './InterpreterZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
 import { charsOf } from './selection';
 import { SyntaxTreeZoomLevel } from './SyntaxTreeZoomLevel';
@@ -30,7 +32,7 @@ const ArrowUp = () => (
 );
 
 /** The Template that introduces each zoom level that has one. */
-const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro' };
+const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro', 6: 'level6.intro' };
 
 /** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
@@ -56,17 +58,20 @@ export function ZoomView({
   const selectedByte = analysis?.bytes.find((byte) => byte.id === selection) ?? null;
   const selectedToken = analysis?.tokens.find((token) => token.id === selection) ?? null;
   const selectedNode = analysis?.ast.find((node) => node.id === selection) ?? null;
-  const selectedStep = analysis && level === 5 ? level5Selection(analysis, selection) : null;
+  const selectedStep = analysis && level === 5 ? stepSelectionAt(analysis, selection, 5) : null;
+  const interpreter = analysis && level === 6 ? level6(analysis, selection) : null;
 
   let visual;
-  if (level > 5) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
+  if (level > 6) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
   else if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
   else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChars={selection ? charsOf(analysis, selection) : null} />;
   else if (level === 2) visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={(byte) => onSelect(byte.id)} />;
   else if (level === 3) visual = <TokensZoomLevel analysis={analysis} selectedToken={selectedToken} onSelect={(token) => onSelect(token.id)} />;
   else if (level === 4) visual = <SyntaxTreeZoomLevel analysis={analysis} selectedNode={selectedNode} onSelect={(node) => onSelect(node.id)} />;
-  else if (!selectedStep) visual = <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram('level5.noBytecode', analysis).text} /></p>;
-  else visual = <BytecodeZoomLevel analysis={analysis} selected={selectedStep} onSelect={onSelect} onGo={onGo} />;
+  else if (selectedStep) visual = <BytecodeZoomLevel analysis={analysis} selected={selectedStep} onSelect={onSelect} onGo={onGo} />;
+  else if (interpreter) visual = <InterpreterZoomLevel analysis={analysis} view={interpreter} onSelect={onSelect} onGo={onGo} />;
+  // Levels 5 and 6 have no steps to show when the Program has a syntax error.
+  else visual = <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram('level5.noBytecode', analysis).text} /></p>;
 
   const intro = analysis && INTROS[level] ? explainProgram(INTROS[level], analysis) : null;
   let explanation = null;
@@ -74,10 +79,11 @@ export function ZoomView({
   if (analysis && level === 3 && selectedToken) explanation = explainToken(analysis, selectedToken);
   if (analysis && level === 4 && selectedNode) explanation = explainNode(analysis, selectedNode);
   if (analysis && selectedStep) explanation = explainStep(analysis, selectedStep.step, selectedStep.run);
-  const afterRun = analysis && selectedStep && explainAfterRun(analysis, selectedStep.step);
-  // A zoom level carries its Honesty label once it shows something.
-  const label = analysis ? levelLabel(level) : null;
-  const tryIt = analysis && explainTryIt(level, analysis);
+  if (analysis && interpreter) explanation = explainLevel6(analysis, interpreter);
+  const afterRun = analysis && (selectedStep ? explainAfterRun(analysis, selectedStep.step) : interpreter && level6AfterRun(analysis, interpreter));
+  // A zoom level carries its Honesty label once it shows something. Level 6 with no C to show explains how it usually works.
+  const label = analysis ? (interpreter?.handlers.length === 0 ? panelLabel('noReference') : levelLabel(level)) : null;
+  const tryIt = analysis && explainTryIt(level, analysis, selection);
 
   return (
     <div className="origin-top" ref={viewRef}>

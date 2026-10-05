@@ -12,7 +12,7 @@ const LABELS = {
 };
 
 test.describe('Honesty labels', () => {
-  test('zoom levels 1 to 5 each carry one for the level, level 5’s panels carry their own, and levels not built yet carry none', async ({ page }) => {
+  test('zoom levels 1 to 6 each carry one for the level, level 5’s panels carry their own, and levels not built yet carry none', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
 
@@ -41,7 +41,15 @@ test.describe('Honesty labels', () => {
     await expect(bytecode.getByRole('region', { name: 'Objects, so far' }).getByRole('button', { name: 'How we know: Derived' })).toBeVisible();
     await expect(bytecode.getByRole('region', { name: 'Every step that ran, in order' }).getByRole('button', { name: 'How we know: Observed' })).toBeVisible();
 
-    for (let level = 6; level <= 9; level++) {
+    // print("Hi") isn't an Example, so level 6 has no C to show, and explains how it usually works. Its first step,
+    // RESUME, says the form Python rewrote it into, which is Observed.
+    await gauge(page).getByRole('button', { name: '6 Interpreter' }).click();
+    const chips = zoomLevel(page, 6, 'The interpreter').getByRole('button', { name: /^How we know:/ });
+    await expect(chips).toHaveCount(2);
+    await expect(chips.first()).toHaveAccessibleName('How we know: Typical');
+    await expect(chips.last()).toHaveAccessibleName('How we know: Observed');
+
+    for (let level = 7; level <= 9; level++) {
       await gauge(page).getByRole('button').nth(level - 1).click();
       await expect(anyZoomLevel(page, level)).toBeVisible();
       await expect(anyZoomLevel(page, level).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);

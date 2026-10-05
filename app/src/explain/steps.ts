@@ -2,20 +2,21 @@ import type { Analysis, StepSlot } from '../generated/analysis';
 import { selectionAt } from '../zoom/selection';
 import { codeName, framesAfter, objectsIn, runIndex, runsOfStep, stepById, stepOfRun, type FrameAfter, type StepInCode } from './bytecode';
 import { counted, fill, fillString, hasTemplate, template, type Explanation, type Span, type TemplateId } from './explain';
+import { exampleOf, handlerOf, handlersRun } from './reference';
 
-/** Level 5's Selection: a step, and the run of it that is selected, as a place in the Analysis's runs, or null for a step that never ran. */
+/** The Selection at levels 5 and 6: a step, and the run of it that is selected, as a place in the Analysis's runs, or null for a step that never ran. */
 export interface StepSelection {
   step: StepInCode;
   run: number | null;
 }
 
 /**
- * The Selection at level 5, from the learner's Selection: a step run, a step selected through its first run if it
- * ran, or the step run closest to a Selection from another level (`selectionAt`, which gives a step's own Fact ID only
- * for a step that never ran). Null if the Program has no steps.
+ * The Selection at a level that shows step runs, from the learner's Selection: a step run, a step selected through its
+ * first run if it ran, or the step run closest to a Selection from another level (`selectionAt`, which gives a step's
+ * own Fact ID only for a step that never ran). Null if the Program has no steps.
  */
-export function level5Selection(analysis: Analysis, selection: string | null): StepSelection | null {
-  const id = selectionAt(analysis, selection, 5);
+export function stepSelectionAt(analysis: Analysis, selection: string | null, level: 5 | 6): StepSelection | null {
+  const id = selectionAt(analysis, selection, level);
   if (id === null) return null;
   if (!id.startsWith('run-')) return { step: stepById(analysis, id)!, run: null };
   const run = runIndex(id);
@@ -119,6 +120,20 @@ export function stepFacts(analysis: Analysis, found: StepInCode, at: number | nu
     trip: at !== null && step.opname === 'FOR_ITER' ? tripOf(analysis, at) : '',
     next: next ? numberAt(analysis, next.code, next.offset) : '',
     ...holdings(frames),
+    ...handlerFacts(analysis, found, at),
+  };
+}
+
+/** The handlers that ran for a step run, if the Reference Library recorded them: the general form and the new one, if it rewrote itself. */
+function handlerFacts(analysis: Analysis, found: StepInCode, at: number | null) {
+  const handlers = handlersRun(analysis, found.step, at);
+  const names = handlers.map(({ entry }) => handlerOf(entry));
+  return {
+    handlers: names.join(', then '),
+    general: names.length > 1 ? names[0] : '',
+    faster: names.length > 1 ? names[1] : '',
+    inside: handlers[0]?.inside ?? '',
+    example: exampleOf(analysis)?.name ?? '',
   };
 }
 

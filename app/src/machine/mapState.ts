@@ -1,6 +1,7 @@
 import { framesAfter } from '../explain/bytecode';
 import { explainProgram, type Span, type TemplateId } from '../explain/explain';
-import { explainForStep, level5Selection } from '../explain/steps';
+import { level6 } from '../explain/interpreter';
+import { explainForStep, stepSelectionAt } from '../explain/steps';
 import type { Analysis } from '../generated/analysis';
 import type { PartId } from './parts';
 
@@ -27,7 +28,7 @@ const LEVELS: Record<number, (analysis: Analysis, selection: string | null) => M
   4: (analysis) => ({ lit: [{ part: 'ram', note: explainProgram('map.level4.ram', analysis).text }] }),
   // Level 5 lights the steps, the objects and the plates, each with how much it holds after the selected step run.
   5: (analysis, selection) => {
-    const selected = level5Selection(analysis, selection);
+    const selected = stepSelectionAt(analysis, selection, 5);
     if (!selected) return { lit: [{ part: 'ram' }] };
     const note = (id: TemplateId) => explainForStep(id, analysis, selected.step, selected.run).text;
     const frames = selected.run === null ? 0 : framesAfter(analysis, selected.run).length;
@@ -40,6 +41,16 @@ const LEVELS: Record<number, (analysis: Analysis, selection: string | null) => M
           { part: 'heap' as const, note: note('map.level5.heap') },
         ]),
       ],
+    };
+  },
+  // Level 6 lights Python itself, which runs the C for the selected step run, beside your steps, in RAM, and the CPU running it.
+  6: (analysis, selection) => {
+    const view = level6(analysis, selection);
+    if (!view) return { lit: [{ part: 'ram' }, { part: 'py' }, { part: 'cpu' }] };
+    const { selected, handlers } = view;
+    const id: TemplateId = selected.run === null ? 'map.level6.pyNeverRan' : handlers.length > 0 ? 'map.level6.py' : 'map.level6.pyTypical';
+    return {
+      lit: [{ part: 'ram' }, { part: 'py', note: explainForStep(id, analysis, selected.step, selected.run).text }, { part: 'code' }, { part: 'cpu' }],
     };
   },
 };

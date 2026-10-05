@@ -483,6 +483,103 @@
         }
       }
     },
+    "ReferenceLibrary": {
+      "title": "ReferenceLibrary",
+      "description": "The Reference Library for one exact Python version, such as reference/cpython-3.14.2.json: lines of the interpreter's C source, each with a plain-English sentence, for each handler and how it ran; and, for the Examples, which handlers ran on each step run. Zoom level 6 shows it, labeled Reference.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pythonVersion", "source", "entries", "examples"],
+      "properties": {
+        "pythonVersion": { "description": "The exact Python version the C source is from, such as 3.14.2.", "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "source": { "$ref": "#/$defs/ReferenceSource" },
+        "entries": {
+          "description": "Each entry, by the handler it quotes and, after a slash, how that handler ran when the C shown depends on it: LOAD_NAME, CALL/python, CALL/c, CALL/rewrites.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]*(/[a-z]+)?$" },
+          "additionalProperties": { "$ref": "#/$defs/ReferenceEntry" }
+        },
+        "examples": { "description": "The Examples whose handlers were recorded on every step run.", "type": "array", "items": { "$ref": "#/$defs/ReferenceExample" } }
+      }
+    },
+    "ReferenceSource": {
+      "title": "ReferenceSource",
+      "description": "Where the quoted C comes from: one file of CPython's source at one tag, and the copy the build checks every quoted line against.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "tag", "file", "copy", "sha256"],
+      "properties": {
+        "repository": { "description": "CPython's repository on GitHub, which the page links to.", "type": "string", "pattern": "^https://github\\.com/[^/]+/[^/]+$" },
+        "tag": { "description": "The release tag: v3.14.2.", "type": "string", "minLength": 1 },
+        "file": { "description": "The file in the repository: Python/bytecodes.c.", "type": "string", "minLength": 1 },
+        "copy": { "description": "The copy of that file in the repo, from the Reference Library's folder.", "type": "string", "minLength": 1 },
+        "sha256": { "description": "The copy's SHA-256, so the build knows it is the file at the tag.", "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "ReferenceEntry": {
+      "title": "ReferenceEntry",
+      "description": "The C of one handler, as it ran one way: its key lines, each with a plain-English sentence. Its strings are filled in like a Template whose subject is step.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note", "lines"],
+      "properties": {
+        "note": { "description": "What is shown, and what is left out.", "type": "string", "minLength": 1 },
+        "lines": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ReferenceLine" } }
+      }
+    },
+    "ReferenceLine": {
+      "title": "ReferenceLine",
+      "description": "One quoted C statement and its sentence. A statement on several lines of the source is quoted on one; the build ignores spaces when it checks it, and a quote ending in … only has to match the start of those lines.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["say", "code", "first", "last"],
+      "properties": {
+        "say": { "description": "What the line does, in plain English.", "type": "string", "minLength": 1 },
+        "code": { "description": "The C, as it is in the source.", "type": "string", "minLength": 1 },
+        "first": { "description": "Its first line in the source, counted from 1.", "type": "integer", "minimum": 1 },
+        "last": { "description": "Its last line in the source.", "type": "integer", "minimum": 1 }
+      }
+    },
+    "ReferenceExample": {
+      "title": "ReferenceExample",
+      "description": "An Example whose handlers were recorded with a debugger on every step run. A Program gets them only if it is this Example and its step runs are these, in this order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "program", "recorded", "runs"],
+      "properties": {
+        "name": { "description": "The Example's name: hello world, greet.py.", "type": "string", "minLength": 1 },
+        "program": { "description": "The Program, ending with a newline, as the Analysis has it.", "type": "string", "minLength": 1 },
+        "recorded": { "description": "How the handlers were recorded, and on which build of Python.", "type": "string", "minLength": 1 },
+        "runs": { "description": "Each step run, in the order the steps ran, as the Analysis records them.", "type": "array", "items": { "$ref": "#/$defs/ReferenceRun" } }
+      }
+    },
+    "ReferenceRun": {
+      "title": "ReferenceRun",
+      "description": "One step run of an Example, and the handlers that ran for it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "offset", "handlers"],
+      "properties": {
+        "code": { "$ref": "#/$defs/CodeIndex" },
+        "offset": { "description": "The step's offset in its code object.", "type": "integer", "minimum": 0 },
+        "handlers": {
+          "description": "The handlers that ran, in order. A step that rewrote itself runs two: its general form, then the new one.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/HandlerRun" }
+        }
+      }
+    },
+    "HandlerRun": {
+      "title": "HandlerRun",
+      "description": "One handler that ran for a step run.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry"],
+      "properties": {
+        "entry": { "description": "Its Reference Library entry: CALL/rewrites.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*(/[a-z]+)?$" },
+        "inside": { "description": "The handler this one's code ran inside, if the compiler copied it there, so no handler of its own ran: CALL_PY_EXACT_ARGS.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+      }
+    },
     "TryIt": {
       "title": "TryIt",
       "description": "A zoom level's Try it yourself: a real command the learner can run on their own computer. Its strings are filled in like a Template whose subject is program.",
@@ -572,7 +669,12 @@
         { "const": "next", "description": "The step its frame ran next, counted from 1 in its code object." },
         { "const": "plates", "description": "How many plates all frames hold after the selected step run, with the word: 4 plates." },
         { "const": "frames", "description": "How many frames there are after the selected step run, with the word: 2 frames." },
-        { "const": "objects", "description": "How many objects the plates and variables point to after the selected step run, with the word: 6 objects." }
+        { "const": "objects", "description": "How many objects the plates and variables point to after the selected step run, with the word: 6 objects." },
+        { "const": "handlers", "description": "For the selected step run, the handlers that ran for it, in order, as the Reference Library records them for the Examples: CALL, then CALL_PY_EXACT_ARGS. Empty if it doesn't record them." },
+        { "const": "general", "description": "For a step run that rewrote its step, the general form that rewrote it: CALL." },
+        { "const": "faster", "description": "For a step run that rewrote its step, the new form it then ran: CALL_PY_EXACT_ARGS." },
+        { "const": "inside", "description": "For a step run whose work ran inside the handler before it, that handler: CALL_PY_EXACT_ARGS." },
+        { "const": "example", "description": "The Example the Reference Library recorded the handlers of, if the Program is one: greet.py." }
       ]
     },
     "NodeSlot": {
@@ -769,7 +871,7 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "stepRuns", "plates", "objects", "recipeCard", "afterRun"],
+          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference"],
           "properties": {
             "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
             "stepRuns": { "description": "Zoom level 5's strip of every step that ran, in order.", "type": "string" },
@@ -777,6 +879,7 @@
             "objects": { "description": "Zoom level 5's objects the plates and variables point to.", "type": "string" },
             "recipeCard": { "description": "Zoom level 5's recipe card: a code object's names, fixed values and variables.", "type": "string" },
             "afterRun": { "description": "Zoom level 5's note on the form a step had become after the Program ran again, unwatched.", "type": "string" },
+            "noReference": { "description": "Zoom level 6 for a step run the Reference Library has no C code for: a hand-written explanation of what the interpreter does.", "type": "string" },
             "machineMap": { "description": "The Machine map, beside every zoom level.", "type": "string" },
             "terminal": { "description": "The Terminal, beside every zoom level: what the Program printed when it ran.", "type": "string" },
             "tryItOutput": { "description": "Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.", "type": "string" }

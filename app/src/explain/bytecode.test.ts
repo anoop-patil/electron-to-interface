@@ -5,7 +5,7 @@ import { startPython, type Python } from '../engine/python';
 import type { Analysis } from '../generated/analysis';
 import { mapState } from '../machine/mapState';
 import { allSteps } from './bytecode';
-import { explainAfterRun, explainStep, level5Selection, stepTitle } from './steps';
+import { explainAfterRun, explainStep, stepSelectionAt, stepTitle } from './steps';
 import { programFacts, type Span } from './explain';
 
 let python: Python;
@@ -20,7 +20,7 @@ beforeAll(async () => {
 }, 60_000);
 
 /** The Selection at level 5, for a Program that has steps. */
-const selected = (analysis: Analysis, id: string) => level5Selection(analysis, id)!;
+const selected = (analysis: Analysis, id: string) => stepSelectionAt(analysis, id, 5)!;
 
 /** The step run of a step, counted from 1, by its code object and offset. */
 function runOf(analysis: Analysis, code: number, offset: number, nth = 1) {
@@ -61,11 +61,11 @@ test('each of greet.py’s steps has a plain name first, from its Template', () 
 });
 
 test('the Selection at level 5 is a step run, or a step that never ran; with no Selection, the first step run', () => {
-  expect(level5Selection(greet, 'run-11')).toMatchObject({ step: { step: { opname: 'CALL' }, code: 0 }, run: 11 });
-  expect(level5Selection(greet, 'bc-14')).toMatchObject({ step: { step: { opname: 'END_FOR' } }, run: null });
-  expect(level5Selection(greet, null)).toMatchObject({ step: { step: { opname: 'RESUME' } }, run: 0 });
+  expect(stepSelectionAt(greet, 'run-11', 5)).toMatchObject({ step: { step: { opname: 'CALL' }, code: 0 }, run: 11 });
+  expect(stepSelectionAt(greet, 'bc-14', 5)).toMatchObject({ step: { step: { opname: 'END_FOR' } }, run: null });
+  expect(stepSelectionAt(greet, null, 5)).toMatchObject({ step: { step: { opname: 'RESUME' } }, run: 0 });
   // A step that ran is selected through its first run.
-  expect(level5Selection(greet, 'bc-8')).toMatchObject({ step: { step: { opname: 'LOAD_NAME' } }, run: 8 });
+  expect(stepSelectionAt(greet, 'bc-8', 5)).toMatchObject({ step: { step: { opname: 'LOAD_NAME' } }, run: 8 });
 });
 
 test('a run of FOR_ITER says which trip round the loop it is, and what it took from the walker', () => {

@@ -67,7 +67,7 @@
     "py": {
       "name": "Python itself",
       "like": "The cook: knows how to carry out every kind of recipe step.",
-      "text": "Python’s own program, the **interpreter**. The usual one is called CPython. It is copied into [[ram|RAM]] when Python starts; in this app, it runs inside your browser. Python doesn’t turn your code into [[cpu|CPU]] instructions. It turns it into [[code|steps]], and the interpreter reads each step and does what it says.",
+      "text": "Python’s own program, the **interpreter**. The usual one is called CPython. It is copied into [[ram|RAM]] when Python starts; in this app, it runs inside your browser. By default, Python doesn’t turn your code into [[cpu|CPU]] instructions. It turns it into [[code|steps]], and the interpreter reads each step and does what it says.",
       "related": ["code", "cpu", "ram"]
     },
     "frame": {
@@ -75,6 +75,30 @@
       "like": "A desk set up for one job.",
       "text": "The workspace Python sets up each time a piece of code runs: its [[stack|plates]], its bookmark saying which step it is on, and its variables. When a function calls another, the caller’s frame waits under the new one. When the code finishes, its frame is cleared away.",
       "related": ["stack", "code", "py"]
+    },
+    "cpython": {
+      "name": "CPython",
+      "like": "The original, standard Python.",
+      "text": "The program most people mean when they say “Python”. It is written in [[clang|C]]. When you type python, you start CPython. Other versions of Python exist, but CPython is the reference.",
+      "related": ["py", "clang"]
+    },
+    "clang": {
+      "name": "The C language",
+      "like": "An older language that sits closer to the machine.",
+      "text": "A programming language from the 1970s. Unlike Python, C code is translated into [[machine|machine code]] ahead of time, by a [[compiler|compiler]]. Operating systems, and Python itself, are largely written in C.",
+      "related": ["compiler", "machine", "cpython"]
+    },
+    "compiler": {
+      "name": "Compiler",
+      "like": "A translator who translates a whole book before anyone reads it.",
+      "text": "A program that translates code into another form ahead of time. Python compiles your code into [[code|bytecode]], and stops there. Long before you ran anything, a C compiler turned Python itself into [[machine|machine code]].",
+      "related": ["code", "machine", "clang"]
+    },
+    "debugger": {
+      "name": "Debugger (gdb)",
+      "like": "A pause button and a magnifying glass for a running program.",
+      "text": "A tool that can stop a program at any machine instruction, look inside the CPU’s [[reg|registers]] and the program’s memory, then let it take exactly one more step. We used one called gdb to run Python one instruction at a time on the Examples, and wrote down which handler ran on every step run. That makes the program enormously slower, but in each of our 3 runs exactly the same instructions ran.",
+      "related": ["machine", "reg", "cpu"]
     },
     "disk": {
       "name": "Disk",
@@ -112,6 +136,12 @@
       "text": "The CPU carries out instructions: move a number, do arithmetic, compare, jump. It reads them from [[ram|RAM]], through its [[cache|cache]]. Modern CPUs run at billions of clock cycles per second, but one instruction doesn’t necessarily take one cycle: a CPU can work on several instructions at once, and some instructions take many cycles.",
       "related": ["reg", "cache", "ram"]
     },
+    "machine": {
+      "name": "Machine code",
+      "like": "The only language the CPU speaks.",
+      "text": "Instructions that the [[cpu|CPU]] can run directly: move this number, add these two, compare, jump. Machine code is stored as [[byte|bytes]], just like your file: the CPU reads the numbers and knows what to do. By default, your Python code never becomes machine code: it stays as bytecode, and the [[py|interpreter]], which is machine code, follows it.",
+      "related": ["cpu", "clang", "compiler"]
+    },
     "reg": {
       "name": "Registers",
       "like": "The burners on the stove: only a few pans fit, and those are what’s cooking this instant.",
@@ -147,9 +177,9 @@
     { "name": "This page", "cards": ["honesty"] },
     { "name": "Storing text", "cards": ["bit", "byte", "binary", "utf8", "encoding", "newline"] },
     { "name": "How Python reads your code", "cards": ["token", "structure", "code"] },
-    { "name": "Running it", "cards": ["py", "frame"] },
+    { "name": "Running it", "cards": ["py", "frame", "cpython", "clang", "compiler", "debugger"] },
     { "name": "Memory", "cards": ["disk", "ram", "heap", "stack", "none"] },
-    { "name": "The CPU", "cards": ["cpu", "reg", "cache"] },
+    { "name": "The CPU", "cards": ["cpu", "machine", "reg", "cache"] },
     { "name": "Talking to the outside world", "cards": ["os", "terminal"] },
     { "name": "The screen", "cards": ["screen"] }
   ]

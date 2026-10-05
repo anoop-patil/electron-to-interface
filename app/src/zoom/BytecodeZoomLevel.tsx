@@ -57,7 +57,7 @@ const selectionOf = (analysis: Analysis, step: StepInCode) => {
 };
 
 /** Each code object's steps, under its name: the step's number, its plain name, its opname and how often it ran. */
-function StepLists({ analysis, selected, onSelect }: LevelProps) {
+export function StepLists({ analysis, selected, onSelect }: LevelProps) {
   const running = selected.run === null ? null : stepOfRun(analysis, analysis.runs[selected.run]).step.id;
   return (
     <div className="grid min-w-0 content-start gap-4">
@@ -103,7 +103,7 @@ function StepLists({ analysis, selected, onSelect }: LevelProps) {
 }
 
 /** Which run of the selected step is shown, with a button for each run, and its place among all the step runs. */
-function RunBar({ analysis, selected, onSelect }: LevelProps) {
+export function RunBar({ analysis, selected, onSelect }: LevelProps) {
   const runs = runsOfStep(analysis, selected.step.step);
   if (selected.run === null) {
     return (

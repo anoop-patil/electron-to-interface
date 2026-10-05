@@ -72,6 +72,22 @@ test('the Try it yourself commands run on the Program, saved as program.py', () 
       ].map((line) => `${line}\n`).join(''),
       exitStatus: 0,
     },
+    {
+      command: `python -c "import dis; c = compile(open('program.py').read(), 'program.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`,
+      output: [
+        'Hi',
+        '  0           RESUME_CHECK             0',
+        '',
+        '  1           LOAD_NAME                0 (print)',
+        '              PUSH_NULL',
+        "              LOAD_CONST_MORTAL        0 ('Hi')",
+        '              CALL                     1',
+        '              POP_TOP',
+        '              LOAD_CONST_IMMORTAL      1 (None)',
+        '              RETURN_VALUE',
+      ].map((line) => `${line}\n`).join(''),
+      exitStatus: 0,
+    },
   ]);
 });
 
@@ -183,7 +199,19 @@ test('for greet.py, the output of every command matches the output captured with
     'python -m tokenize greet.py': captured.commands.tokenize,
     'python -m ast greet.py': captured.commands.ast,
     'python -m dis greet.py': anywhere(captured.commands.dis),
+    // Level 6's command has no capture: its forms are checked against the capture's forms after the run, below.
+    [`python -c "import dis; c = compile(open('greet.py').read(), 'greet.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`]: expect.any(String),
   });
+});
+
+test('for greet.py, level 6’s command prints greet.py’s output, then its steps in the forms prototype v8 captured after the run', async () => {
+  const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
+  const { commands } = python.analyze(captured.source, captured.file);
+  const { output } = commands.at(-1)!;
+
+  expect(output.startsWith(captured.commands.run)).toBe(true);
+  const forms = [...output.slice(captured.commands.run.length).matchAll(/^\s*(?:\d+)?\s+(?:L\d+:)?\s*([A-Z][A-Z0-9_]+)/gm)].map((match) => match[1]);
+  expect(forms).toEqual(Object.values(captured.after_run).flatMap((code) => Object.values(code as Record<string, string>)));
 });
 
 test('for greet.py, the bytecode and the forms its steps had become after the unwatched run match the capture of prototype v8', async () => {

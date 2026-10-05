@@ -24,8 +24,24 @@ function selfHostedPyodide(): Plugin {
   };
 }
 
+/**
+ * Zoom level 6 quotes CPython's C source, whose PSF License must ship with it.
+ * This copies the license from the repo's licenses/ folder into public/licenses/, so the site serves it.
+ */
+function cpythonLicense(): Plugin {
+  const from = fileURLToPath(new URL('../licenses/CPython-LICENSE.txt', import.meta.url));
+  const to = fileURLToPath(new URL('public/licenses/', import.meta.url));
+  return {
+    name: 'cpython-license',
+    async buildStart() {
+      await mkdir(to, { recursive: true });
+      await cp(from, to + 'CPython-LICENSE.txt');
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), selfHostedPyodide(), checkedContent()],
+  plugins: [react(), tailwindcss(), selfHostedPyodide(), cpythonLicense(), checkedContent()],
   optimizeDeps: { exclude: ['pyodide'] },
   worker: { format: 'es' },
   test: { include: ['src/**/*.test.ts'] },

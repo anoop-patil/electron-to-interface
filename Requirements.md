@@ -159,7 +159,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
   - **Level 8:** the exact bytes `print` handed to `sys.stdout`, piece by piece and line by line. Observed. The system call itself can't happen in a browser, so it stays Typical.
   - **Level 9:** the pixel grid above is already drawn live; Try it yourself shows how to see real subpixels on a screen.
   Commands a browser can't run for the learner (native timing, `strace`) come with a sample output captured on one Linux x86-64 machine with the pinned CPython, labeled as the Example's, with the platform stated. For the Examples, every output is captured that way in advance.
-- A build-time check (`prototype/tools/check-c-refs.mjs`) confirms that every quoted line of CPython C source appears at the linked line of `Python/bytecodes.c` at the pinned tag; the build fails otherwise.
+- A build-time check confirms that every quoted line of CPython C source appears at the linked line of `Python/bytecodes.c` at the pinned tag, using a copy of that file kept in the repo with its SHA-256; the build fails otherwise. It started as the prototype's `prototype/tools/check-c-refs.mjs`.
 - Words with a Concept card are highlighted, and open a self-contained explanation inside the app; nothing links out for explanations.
 - Selecting anything highlights the related source line and related Facts at every other zoom level, via Fact IDs. At level 5, Next and Back follow the order the steps ran in, moving between code objects, and the selected step run decides what levels 6–9 show ([ADR 0007](docs/adr/0007-selection-decides-what-the-deeper-levels-show.md)).
 - Dark and light mode; usable on mobile.

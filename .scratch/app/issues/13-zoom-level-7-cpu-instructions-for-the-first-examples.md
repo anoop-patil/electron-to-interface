@@ -18,3 +18,4 @@
 ## Comments
 
 - Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 7 shows the step run closest to the Selection until this ticket gives it elements of its own: add its Facts to `FACTS` and replace its entry in `LINKS`.
+- Ticket 12: the Reference Library (`app/reference/cpython-3.14.2.json`) records, for each Example, the entries of the handlers that ran on every step run, derived from the gdb captures by `app/reference/example_runs.py`; `src/explain/reference.ts` reads them. Machine code can join each entry, or sit beside it keyed by handler. greet.py's second RESUME is recorded as `RESUME_CHECK` inside `CALL_PY_EXACT_ARGS`.

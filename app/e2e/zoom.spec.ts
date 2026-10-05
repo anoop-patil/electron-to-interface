@@ -106,7 +106,7 @@ test.describe('moving between zoom levels', () => {
   });
 
   test('a deep link opens its zoom level, and zoom levels not built yet say so', async ({ page }) => {
-    for (const [number, title] of [[6, 'The interpreter'], [9, 'Pixels']] as const) {
+    for (const [number, title] of [[7, 'CPU instructions'], [9, 'Pixels']] as const) {
       await page.goto(`/zoom/${number}`);
       await expect(zoomLevel(page, number, title)).toContainText('isn’t built yet');
     }

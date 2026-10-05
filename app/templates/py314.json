@@ -667,6 +667,98 @@
       "subject": "step",
       "text": "Step {number} of {code} never ran."
     },
+    "level6.intro": {
+      "subject": "program",
+      "text": "Here the zoom stops following your code and starts showing the program that reads it. By default, CPython never compiles your code to CPU instructions. It keeps your steps as bytecode, and its [[py|interpreter]], a program written in [[clang|C]] and compiled long before you ran anything, reads them one at a time and runs a piece of its own C code for each. Python 3.13 and later also come with an experimental JIT compiler that can turn busy steps into machine code, but it is off unless you switch it on."
+    },
+    "level6.yourProgram": {
+      "subject": "program",
+      "title": "Your program",
+      "text": "{file} → tokens → structure → bytecode. Translated as far as bytecode, then followed step by step."
+    },
+    "level6.pythonItself": {
+      "subject": "program",
+      "title": "Python itself",
+      "text": "C source → machine code → CPU. Translated long before you ran anything: to machine code, or in your browser, to WebAssembly."
+    },
+    "level6.loop": {
+      "subject": "program",
+      "text": "The interpreter repeats the same 4 moves for every step."
+    },
+    "level6.read": {
+      "subject": "step",
+      "text": "**1 · Read** the next step: step {number} of {code}."
+    },
+    "level6.lookUp": {
+      "subject": "step",
+      "text": "**2 · Look up** the C code for it: {handlers}."
+    },
+    "level6.lookUpTypical": {
+      "subject": "step",
+      "text": "**2 · Look up** the C code for it: {opname}, or the faster form Python rewrote it into."
+    },
+    "level6.run": {
+      "subject": "program",
+      "text": "**3 · Run** that C code, shown below."
+    },
+    "level6.runTypical": {
+      "subject": "program",
+      "text": "**3 · Run** that C code."
+    },
+    "level6.moveOn": {
+      "subject": "program",
+      "text": "**4 · Move on** to the next step that runs."
+    },
+    "level6.moveOnDone": {
+      "subject": "program",
+      "text": "**4 · Move on**: no steps are left, so your program has finished."
+    },
+    "level6.runNeverRan": {
+      "subject": "program",
+      "text": "**3 · Run** that C code. This step never got that far: it never ran."
+    },
+    "level6.step": {
+      "subject": "step",
+      "title": "How the interpreter does step {number} of {code}",
+      "text": "Each sentence matches the real line of [[clang|C]] under it, copied from CPython’s source. If this step ran more than once, pick another run: a busy step can run different C code the second time."
+    },
+    "level6.stepTypical": {
+      "subject": "step",
+      "title": "How the interpreter does step {number} of {code}",
+      "text": "To run a step like this one, the interpreter looks up its handler: the piece of its own C code for {opname}, which does what the step says. So far this zoom level has the real C code only for two Examples, hello world and greet.py, whose handlers we recorded on every step run. For your program, this is how it usually works."
+    },
+    "level6.afterRun": {
+      "subject": "step",
+      "text": "When your program ran without being watched, Python had rewritten this step into **{afterRun}**, a faster form, by the time it finished. A run of the step after the rewrite starts with {afterRun}’s C code."
+    },
+    "level6.twice": {
+      "subject": "step",
+      "text": "On this run the step ran twice over: first in its general form, {general}, which rewrote the step into the faster {faster}, and then in that new form."
+    },
+    "level6.generalForm": {
+      "subject": "step",
+      "text": "First, the general form: **{general}**"
+    },
+    "level6.newForm": {
+      "subject": "step",
+      "text": "Then the new form: **{faster}**"
+    },
+    "level6.ranInside": {
+      "subject": "step",
+      "text": "**No handler of its own ran for this step.** By this run, Python had rewritten it into {handlers}. When Python was built, the compiler copied {handlers}’s code onto the end of {inside}, the handler of the step before, so this check ran there. The [[debugger|debugger]] recorded {handlers}’s code running inside {inside}."
+    },
+    "level6.neverRan": {
+      "subject": "step",
+      "text": "This step never ran for your program. Here is the C code of its general form, {opname}, anyway."
+    },
+    "level6.recorded": {
+      "subject": "step",
+      "text": "Which handlers ran, on each step run, was recorded with a [[debugger|debugger]] on our test machine, running {example} with CPython 3.14.2 on Linux (x86-64), compiled to machine code. In your browser, Python is the same C code compiled to WebAssembly, and the run this page recorded was watched, which stops Python rewriting steps. The C is the same for every Python program that runs these handlers."
+    },
+    "level6.license": {
+      "subject": "program",
+      "text": "The C code is quoted from CPython: Copyright (c) 2001 Python Software Foundation; All Rights Reserved. It is used under the PSF License."
+    },
     "step.term": {
       "subject": "step",
       "text": "{opname}{argument} · step {number} of {code}"
@@ -1128,6 +1220,18 @@
       "subject": "step",
       "text": "{objects} in use"
     },
+    "map.level6.py": {
+      "subject": "step",
+      "text": "the C code for {handlers}"
+    },
+    "map.level6.pyTypical": {
+      "subject": "step",
+      "text": "the C code for {opname}"
+    },
+    "map.level6.pyNeverRan": {
+      "subject": "step",
+      "text": "step {number} of {code} never ran"
+    },
     "tryIt.disRow.lines": {
       "subject": "program",
       "text": "The line of your file each group of steps comes from. 0 is Python’s own setup step, before line 1."
@@ -1155,6 +1259,14 @@
     "tryIt.disRow.loadConst": {
       "subject": "step",
       "text": "A fixed value from the recipe card: the number says which, counting from 0, and dis shows it in brackets."
+    },
+    "tryIt.level6.links": {
+      "subject": "program",
+      "text": "The C on this zoom level, on GitHub at CPython’s v3.14.2 tag. These links open GitHub, outside this app:"
+    },
+    "tryIt.adaptiveRow": {
+      "subject": "step",
+      "text": "Step {number} of {code}: {opname} before the run, this form after it."
     },
     "step.printedText": {
       "subject": "step",
@@ -1254,6 +1366,32 @@
       ],
       "read": [
         "dis shows the steps as the compiler made them, before the program runs. It doesn’t show how Python rewrites them while it runs."
+      ]
+    },
+    "6": {
+      "command": "python -c \"import dis; c = compile(open('{file}').read(), '{file}', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)\"",
+      "intro": "Run your file, then ask Python which forms its steps had become:",
+      "parts": [
+        {
+          "code": "import dis",
+          "text": "Load **dis**, which shows bytecode in a readable form."
+        },
+        {
+          "code": "c = compile(open('{file}').read(), '{file}', 'exec')",
+          "text": "Read your file and compile it into bytecode, as python {file} does."
+        },
+        {
+          "code": "exec(c, dict(__name__='__main__'))",
+          "text": "Run it, as your program itself. While it runs, Python rewrites steps into faster forms."
+        },
+        {
+          "code": "dis.dis(c, adaptive=True)",
+          "text": "Show the steps as they are now: **adaptive=True** asks for the forms Python rewrote them into."
+        }
+      ],
+      "read": [
+        "First comes what your program printed. Then the steps, as python -m dis shows them at the zoom level before this one, but in the forms they had become.",
+        "Python rewrites some steps the first time they run, and others only once they have run a few times. A step that never ran keeps its general form."
       ]
     }
   }

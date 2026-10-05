@@ -3,6 +3,7 @@ import type { Analysis, AstFact, CommandRun, LineSlot, Templates, TokenFact } fr
 import { linesOf } from '../zoom/characters';
 import { byteFacts, counted, fillString, isAfterLastLine, programFacts, template, tokenFacts, type Span, type TemplateId } from './explain';
 import { allSteps, stepsOf, type StepInCode } from './bytecode';
+import { level6 } from './interpreter';
 import { stepFacts } from './steps';
 import { nodeFacts, nodeKind } from './syntaxTree';
 
@@ -28,6 +29,9 @@ export interface TryItExplanation {
   rows: { printed: string; text: Span[] }[];
   /** How to read the output. */
   read: Span[][];
+  /** Level 6: the lines of C its zoom level shows for the selected step run, on GitHub. */
+  links: { text: string; href: string }[];
+  linksIntro: Span[];
 }
 
 const plain = (spans: Span[]) => spans.map((span) => span.text).join('');
@@ -210,14 +214,39 @@ function disRows(analysis: Analysis, result: CommandRun) {
   return rows.sort((one, other) => one.at - other.at).map(({ printed, text }) => ({ printed, text }));
 }
 
+/**
+ * Level 6's rows: the first step of each kind that Python rewrote, as dis printed it after the run. dis prints the
+ * Program's own output first, so its last lines are the steps; each must be the step's opname or a form of it.
+ */
+function adaptiveRows(analysis: Analysis, { output, exitStatus }: CommandRun) {
+  const steps = allSteps(analysis);
+  const lines = output.split('\n').map((line) => DIS_LINE.exec(line)).filter((match) => match !== null).slice(-steps.length);
+  const forms = (match: RegExpExecArray, { step }: StepInCode) => match[3] === step.opname || match[3].startsWith(`${step.opname}_`);
+  if (exitStatus !== 0 || steps.length === 0 || lines.length !== steps.length || !lines.every((match, at) => forms(match, steps[at]))) return [];
+  const explained = new Set<string>();
+  return lines.flatMap((match, at) => {
+    const [, , , form, arg, argrepr] = match;
+    const found = steps[at];
+    const rewrite = `${found.step.opname} ${form}`;
+    if (form === found.step.opname || explained.has(rewrite)) return [];
+    explained.add(rewrite);
+    const shown = argrepr?.replace(/^<code object (\S+) at 0x[0-9a-fA-F]+, .*>$/, '<code object $1 at 0x…>');
+    return [{ printed: `${form}${arg ? ` ${arg}` : ''}${shown ? ` (${shown})` : ''}`, text: fillString(template('tryIt.adaptiveRow', 'step').text, stepFacts(analysis, found, null)) }];
+  });
+}
+
 /** The notes on reading a level's output that the page works out from the Program and what its command printed. */
 const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes, 4: level4Notes };
 
 /** The rows of a level's reading tab, worked out from the Program and what its command printed. */
-const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows, 5: disRows };
+const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows, 5: disRows, 6: adaptiveRows };
 
-/** The Try it yourself of a zoom level, or null if the level has none yet. */
-export function explainTryIt(level: number, analysis: Analysis): TryItExplanation | null {
+/** Level 6's links: each handler's lines of C that the zoom level shows for the selected step run, on GitHub. */
+const linksOf = (analysis: Analysis, selection: string | null) =>
+  (level6(analysis, selection)?.handlers ?? []).flatMap(({ handler, links }) => links.map(({ where, href }) => ({ text: `${handler}: ${where}`, href })));
+
+/** The Try it yourself of a zoom level, for what it shows selected, or null if the level has none yet. */
+export function explainTryIt(level: number, analysis: Analysis, selection: string | null = null): TryItExplanation | null {
   const tryIt = TRY_IT[level];
   if (!tryIt) return null;
   const facts = programFacts(analysis);
@@ -235,5 +264,7 @@ export function explainTryIt(level: number, analysis: Analysis): TryItExplanatio
     nothingPrinted: fill(template('tryIt.nothingPrinted', 'program').text),
     rows: ROWS[level]?.(analysis, result) ?? [],
     read: [...notes, ...tryIt.read.map(fill)],
+    links: level === 6 ? linksOf(analysis, selection) : [],
+    linksIntro: fill(template('tryIt.level6.links', 'program').text),
   };
 }

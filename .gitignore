@@ -31,5 +31,6 @@ __pycache__/
 Thumbs.db
 desktop.ini
 
-# Pyodide runtime, copied from node_modules by app/vite.config.ts
+# Pyodide runtime and CPython's license, copied by app/vite.config.ts
 app/public/pyodide/
+app/public/licenses/

@@ -14,3 +14,4 @@
 ## Comments
 
 - Ticket 10 records each step's `afterRun`. The recorded run can't show any form, because Python rewrites no steps while `sys.monitoring` reports every one, so the forms come from the unwatched `python program.py` run. Level 5 shows a rewritten step's form in its Explanation, labeled Observed, not yet next to the opname in the step list.
+- Ticket 12: the Reference Library records, for hello world and greet.py, which handlers ran on every step run, from the gdb captures in `prototype/data/` (`app/reference/example_runs.py`). Level 6 shows them, labeled Reference. The capture still runs by hand; ticket 13 makes the capture tools run in CI.

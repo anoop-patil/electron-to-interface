@@ -1,10 +1,11 @@
+import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { Plugin } from 'vite';
 import schema from '../../schema/analysis.schema.json';
-import type { ConceptCards, HonestyLabels, Subject, Templates } from '../generated/analysis';
+import type { ConceptCards, HonestyLabels, ReferenceLibrary, Subject, Templates } from '../generated/analysis';
 import { MAP_NOTE, PARTS } from '../machine/parts';
 
 /** The schema definition that lists each subject's slots. */
@@ -17,6 +18,7 @@ const validator = <T>(def: keyof typeof schema.$defs) => ajv.compile<T>({ $ref: 
 const validTemplates = validator<Templates>('Templates');
 const validCards = validator<ConceptCards>('ConceptCards');
 const validLabels = validator<HonestyLabels>('HonestyLabels');
+const validReference = validator<ReferenceLibrary>('ReferenceLibrary');
 
 /** Where a file breaks the schema, if it does. */
 function schemaProblems(validate: ReturnType<typeof validator>, file: unknown) {
@@ -115,11 +117,57 @@ function labelProblems(file: HonestyLabels): string[] {
   ];
 }
 
+const withoutSpaces = (code: string) => code.replace(/\s+/g, '');
+
+/**
+ * Every quoted line of C that isn't at the line numbers its entry gives in the source. Spaces don't count, since a
+ * statement on several lines is quoted on one, and a quote ending in … only has to match the start of its lines.
+ */
+function quoteProblems(file: ReferenceLibrary, source: string[]): string[] {
+  const name = basename(file.source.file);
+  return Object.entries(file.entries).flatMap(([key, entry]) =>
+    entry.lines.flatMap(({ code, first, last }) => {
+      const actual = source.slice(first - 1, last);
+      const quoted = withoutSpaces(code.replace(/\s*…\s*$/, ''));
+      const matches = code.trimEnd().endsWith('…') ? withoutSpaces(actual.join('')).startsWith(quoted) : withoutSpaces(actual.join('')) === quoted;
+      if (matches) return [];
+      const where = first === last ? `line ${first}` : `lines ${first}–${last}`;
+      return [`${key} quotes ${where} as ${code} but ${name} has: ${actual.map((line) => line.trim()).join(' ')}`];
+    }),
+  );
+}
+
+/**
+ * What is wrong with a Reference Library: a copy of the C source that isn't the file at the tag, a quoted line that
+ * isn't where it says, a sentence with a slot a step doesn't have or a card that doesn't exist, and an Example's step
+ * run that names an entry that doesn't exist.
+ */
+function referenceProblems(file: ReferenceLibrary, copy: Buffer, cardIds: Set<string>): string[] {
+  const { source } = file;
+  const sha256 = createHash('sha256').update(copy).digest('hex');
+  if (sha256 !== source.sha256) return [`${source.copy} isn’t ${source.file} at ${source.tag}: its SHA-256 is ${sha256}`];
+  const slots = slotsOf('step');
+  const inEntries = Object.entries(file.entries).flatMap(([key, entry]) => {
+    const strings = [entry.note, ...entry.lines.map((line) => line.say)];
+    const unknownSlots = slotsIn(strings)
+      .filter((slot) => !slots.has(slot))
+      .map((slot) => `${key} refers to {${slot}}, which isn’t a Fact of a step`);
+    return [...unknownSlots, ...unclosedBold(key, strings), ...conceptProblems(key, strings, cardIds)];
+  });
+  const inExamples = file.examples.flatMap(({ name, runs }) =>
+    runs.flatMap((run, at) =>
+      run.handlers.filter(({ entry }) => !(entry in file.entries)).map(({ entry }) => `${name}’s step run ${at + 1} ran ${entry}, which has no entry`),
+    ),
+  );
+  return [...quoteProblems(file, copy.toString('utf-8').split(/\r?\n/)), ...inEntries, ...inExamples];
+}
+
 const readJson = async (path: string): Promise<unknown> => JSON.parse(await readFile(path, 'utf-8'));
 
 /**
  * Fails the build, and the dev server's start, when the content in `root` has a problem: a Template file in
- * `templates/`, the Concept cards in `concepts/cards.json` or the Honesty labels in `concepts/honesty-labels.json`.
+ * `templates/`, the Concept cards in `concepts/cards.json`, the Honesty labels in `concepts/honesty-labels.json`, or a
+ * Reference Library in `reference/`, whose every quoted line of C is checked against its copy of the source.
  */
 export function checkedContent(root = fileURLToPath(new URL('../../', import.meta.url))): Plugin {
   return {
@@ -140,6 +188,13 @@ export function checkedContent(root = fileURLToPath(new URL('../../', import.met
       const cardIds = new Set(Object.keys(cards.cards));
       for (const name of await readdir(join(root, 'templates'))) {
         if (name.endsWith('.json')) fail(`templates/${name}`, templateProblems(await readJson(join(root, 'templates', name)), cardIds));
+      }
+
+      for (const name of await readdir(join(root, 'reference'))) {
+        if (!name.endsWith('.json')) continue;
+        const library = await readJson(join(root, 'reference', name));
+        if (!validReference(library)) return fail(`reference/${name}`, schemaProblems(validReference, library));
+        fail(`reference/${name}`, referenceProblems(library, await readFile(join(root, 'reference', library.source.copy)), cardIds));
       }
     },
   };

@@ -27,7 +27,8 @@
     "2": "observed",
     "3": "observed",
     "4": "observed",
-    "5": "observed"
+    "5": "observed",
+    "6": "reference"
   },
   "panels": {
     "byteBits": "derived",
@@ -38,6 +39,7 @@
     "plates": "derived",
     "objects": "derived",
     "recipeCard": "observed",
-    "afterRun": "observed"
+    "afterRun": "observed",
+    "noReference": "typical"
   }
 }

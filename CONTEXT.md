@@ -57,7 +57,7 @@ The panel under the editor that shows what the Program printed when it ran, as a
 _Avoid_: console, output panel
 
 **Handler**:
-The interpreter's machine code for one kind of Step, or for one of its specialized variants. On one Step run, a Step can run two Handlers: its general form, which rewrites the Step, then the specialized one.
+The interpreter's code for one kind of Step, or for one of its specialized variants: its C source at zoom level 6, its machine code at level 7. On one Step run, a Step can run two Handlers: its general form, which rewrites the Step, then the specialized one.
 _Avoid_: opcode function, case
 
 ## Facts
