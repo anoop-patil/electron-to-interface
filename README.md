@@ -68,7 +68,7 @@ Everything the prototype labels Observed or Reference was captured on Linux x86-
 - `build-hello-zoom-v8.py` builds `hello-zoom-v8.html` from its template and that data.
 - `check-c-refs.mjs` confirms that every quoted line of CPython C source sits at the line number shown.
 
-The shell scripts run on Linux or WSL. They download what they need into `/tmp` and install nothing. GitHub Actions reruns them in Ubuntu 26.04 whenever they or their data change, and `compare-data.py` fails the run if they don't reproduce the committed data.
+The shell scripts run on Linux or WSL. They download what they need into `/tmp` and install nothing, but gdb needs libraries a desktop Ubuntu has, such as libpython3.14; on a bare system, install the `gdb` package first. GitHub Actions reruns them in Ubuntu 26.04 whenever they or their data change, and `compare-data.py` fails the run if they don't reproduce the committed data.
 
 ## License
 

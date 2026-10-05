@@ -22,7 +22,9 @@ jobs:
       image: ubuntu:26.04
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
-      - run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl binutils
+      # The tools unpack and run their own gdb and strace. Installing those here brings the libraries they need, such as
+      # libpython3.14, which a desktop Ubuntu has but this container doesn't.
+      - run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl binutils gdb strace
       - uses: actions/checkout@v7
       - run: cp -r prototype/data /tmp/committed
       - run: bash prototype/tools/extract-machine-code.sh
