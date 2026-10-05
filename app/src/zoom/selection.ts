@@ -1,5 +1,5 @@
 import { allSteps, runIndex, runsOfStep, stepById, stepOfRun, type StepInCode } from '../explain/bytecode';
-import { closestLine, lineById, outputLines, STAGE_ID, stageId } from '../explain/output';
+import { closestLine, firstCharacter, lineById, outputLines, PIXEL_ID, pixelId, pixelOf, STAGE_ID, stageId, type OutputLine } from '../explain/output';
 import { nodeById } from '../explain/syntaxTree';
 import type { Analysis, ByteSpan } from '../generated/analysis';
 import type { CharSpan } from './characters';
@@ -13,6 +13,8 @@ export interface Anchor {
   step?: StepInCode;
   /** The step run, as a place in the Analysis's runs. */
   run?: number;
+  /** For a line of output, or a character in one, the line, as a place in `outputLines`: levels 8 and 9 keep it. */
+  line?: number;
 }
 
 /** Each kind of Fact, by its Fact ID's prefix, and where one sits. A zoom level with Facts of its own adds them here. */
@@ -35,15 +37,28 @@ const FACTS: Record<string, (analysis: Analysis, id: string) => Anchor | null> =
     return step ? { span: step.step.span, step } : null;
   },
   run: (analysis, id) => runAnchor(analysis, runIndex(id)),
-  // out-N is the Nth line of output, and out-N-S that line at stage S of level 8. A line sits where the step run that
-  // wrote its last piece does; a line of Python's own report, where the last step run, which raised the error, does.
-  out: (analysis, id) => {
-    const line = lineById(analysis, id);
-    if (!line) return null;
-    const run = line.run ?? (line.report && !analysis.runsCutShort ? analysis.runs.length - 1 : -1);
-    return runAnchor(analysis, run) ?? { span: null };
-  },
+  // out-N is the Nth line of output, and out-N-S that line at stage S of level 8.
+  out: (analysis, id) => lineAnchor(analysis, lineById(analysis, id)),
+  // px-N-C is character C of line N, at level 9.
+  px: (analysis, id) => lineAnchor(analysis, pixelOf(analysis, id)?.line ?? null),
 };
+
+/**
+ * A line of output sits where the step run that wrote its last piece does; a line of Python's own report, where the
+ * last step run, which raised the error, does.
+ */
+function lineAnchor(analysis: Analysis, line: OutputLine | null): Anchor | null {
+  if (!line) return null;
+  const run = line.run ?? (line.report && !analysis.runsCutShort ? analysis.runs.length - 1 : -1);
+  return { ...(runAnchor(analysis, run) ?? { span: null }), line: outputLines(analysis).indexOf(line) };
+}
+
+/** The line of output closest to a Selection: the line it is on, else the line the closest step run printed. */
+function lineFor(analysis: Analysis, anchor: Anchor) {
+  if (anchor.line !== undefined) return outputLines(analysis)[anchor.line];
+  const run = STEP_RUN.closest(analysis, anchor);
+  return run?.startsWith('run-') ? closestLine(analysis, runIndex(run)) : null;
+}
 
 function runAnchor(analysis: Analysis, run: number): Anchor | null {
   if (!analysis.runs[run]) return null;
@@ -116,7 +131,7 @@ const STEP_RUN: LevelLinks = {
 /**
  * Each zoom level's links. A level with no entry, level 1, keeps the Selection as it is. Levels 6 and 7's elements are
  * step runs, as level 5's are: they show the C, and the machine code, that ran for one. Level 8 follows the line of
- * output the step run printed (ADR 0007). Level 9 shows a step run until its ticket gives it elements of its own.
+ * output the step run printed (ADR 0007), and level 9 a character of that line.
  */
 const LINKS: Record<number, LevelLinks> = {
   2: {
@@ -144,13 +159,12 @@ const LINKS: Record<number, LevelLinks> = {
   5: STEP_RUN,
   6: STEP_RUN,
   7: STEP_RUN,
-  // A line of output at one stage: the line the closest step run printed, else the next one printed after it, at its
-  // first stage. A Program that printed nothing has nothing to select.
+  // A line of output at one stage: the line selected at level 9, else the line the closest step run printed, else the
+  // next one printed after it, at its first stage. A Program that printed nothing has nothing to select.
   8: {
     owns: STAGE_ID,
     closest: (analysis, anchor) => {
-      const run = STEP_RUN.closest(analysis, anchor);
-      const line = run?.startsWith('run-') ? closestLine(analysis, runIndex(run)) : null;
+      const line = lineFor(analysis, anchor);
       return line && stageId(line, 1);
     },
     fallback: (analysis) => {
@@ -159,7 +173,19 @@ const LINKS: Record<number, LevelLinks> = {
     },
     always: true,
   },
-  9: STEP_RUN,
+  // A character of a line of output: the line as level 8 picks it, at its first character that isn't a space.
+  9: {
+    owns: PIXEL_ID,
+    closest: (analysis, anchor) => {
+      const line = lineFor(analysis, anchor);
+      return line && pixelId(line, firstCharacter(line));
+    },
+    fallback: (analysis) => {
+      const [first] = outputLines(analysis);
+      return first ? pixelId(first, firstCharacter(first)) : null;
+    },
+    always: true,
+  },
 };
 
 /**

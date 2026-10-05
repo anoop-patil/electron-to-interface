@@ -12,7 +12,7 @@ const LABELS = {
 };
 
 test.describe('Honesty labels', () => {
-  test('zoom levels 1 to 7 each carry one for the level, level 5’s and 7’s panels carry their own, and levels not built yet carry none', async ({ page }) => {
+  test('every zoom level carries one for the level, and panels that differ from their level carry their own', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
 
@@ -64,9 +64,11 @@ test.describe('Honesty labels', () => {
     await expect(osChips.nth(0)).toHaveAccessibleName('How we know: Typical');
     await expect(osChips.nth(1)).toHaveAccessibleName('How we know: Observed');
 
+    // Level 9 is Typical throughout: the browser draws the character, not Python.
     await gauge(page).getByRole('button', { name: '9 Pixels' }).click();
-    await expect(anyZoomLevel(page, 9)).toBeVisible();
-    await expect(anyZoomLevel(page, 9).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);
+    const pixelChips = anyZoomLevel(page, 9).getByRole('button', { name: /^How we know:/ });
+    await expect(pixelChips).toHaveCount(1);
+    await expect(pixelChips).toHaveAccessibleName('How we know: Typical');
   });
 
   test('every chip opens the How we know card, which defines every label', async ({ page }) => {

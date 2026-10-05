@@ -1,6 +1,8 @@
-import { textSpans } from '../explain/explain';
+import { fillString, template, textSpans } from '../explain/explain';
+import { pixelsFacts } from '../explain/pixels';
 import { ExplanationText } from '../explain/ExplanationText';
 import type { ConceptVisual } from '../generated/analysis';
+import { useScreen } from '../screen';
 import { bitsOf, utf8Rows } from './bits';
 import { HONESTY_LABELS } from './concepts';
 import { HonestyChipText } from './HonestyChip';
@@ -85,6 +87,16 @@ export function Doors({ doors, used }: { doors: string[]; used?: number }) {
   );
 }
 
+/** The learner's own screen: how many pixels their browser reports it has. */
+function YourScreen() {
+  const { pixels } = useScreen();
+  return (
+    <p className="rounded-[10px] border border-rule bg-sunk px-3.5 py-2.5 text-[14px] text-ink2 [&_b]:text-ink">
+      <ExplanationText spans={fillString(template('screen.yours', 'pixels').text, pixelsFacts(pixels))} />
+    </p>
+  );
+}
+
 /** The picture under a Concept card's text. */
 export function ConceptVisualView({ visual }: { visual: ConceptVisual }) {
   switch (visual.kind) {
@@ -105,5 +117,7 @@ export function ConceptVisualView({ visual }: { visual: ConceptVisual }) {
       return <HonestyLabelList />;
     case 'doors':
       return <Doors doors={visual.doors} />;
+    case 'screen':
+      return <YourScreen />;
   }
 }

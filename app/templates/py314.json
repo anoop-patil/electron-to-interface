@@ -1073,6 +1073,86 @@
       "subject": "output",
       "text": "It doesn’t draw the color codes: it uses them to color the letters."
     },
+    "level9.intro": {
+      "subject": "program",
+      "text": "Bytes still aren’t something you can see. Your [[terminal|terminal]] turns them back into characters, looks up each one’s shape in a [[font|font]], and lights up [[pixel|pixels]] on your [[screen|screen]]."
+    },
+    "level9.caption": {
+      "subject": "program",
+      "text": "Follow one character from its bytes to pixels"
+    },
+    "level9.pick": {
+      "subject": "program",
+      "text": "Pick a line, then a character"
+    },
+    "level9.nothingPrinted": {
+      "subject": "program",
+      "text": "Your program printed nothing, so your terminal has no characters to draw. Add a print and click Run to see one drawn here, pixel by pixel."
+    },
+    "level9.nothingFollowed": {
+      "subject": "program",
+      "text": "Your program handed over more than 2,000 pieces without finishing a line, so there is no whole line here to draw."
+    },
+    "level9.drawn": {
+      "subject": "program",
+      "text": "Each square is one pixel, as your browser drew this character on this screen just now, in the font this page uses for code. Your terminal draws with its own font and size, so its pixels differ."
+    },
+    "level9.actualSize": {
+      "subject": "pixels",
+      "text": "Actual size"
+    },
+    "level9.outline": {
+      "subject": "pixels",
+      "text": "the font’s outline"
+    },
+    "level9.cell": {
+      "subject": "pixels",
+      "text": "One character cell: **{cellWidth} × {cellHeight}** pixels"
+    },
+    "level9.lit": {
+      "subject": "pixels",
+      "text": "**{lit}** fully lit"
+    },
+    "level9.partly": {
+      "subject": "pixels",
+      "text": "**{partly}** partly lit"
+    },
+    "level9.dark": {
+      "subject": "pixels",
+      "text": "**{dark}** dark"
+    },
+    "level9.screen": {
+      "subject": "pixels",
+      "text": "From what your browser reports, your screen has **{screenWidth} × {screenHeight}** pixels: about **{millions} million**. If you have zoomed this page in or out, some browsers change what they report, and this number with it. Most displays make each pixel’s color from red, green and blue subpixels. The screen redraws the whole picture many times a second, often 60."
+    },
+    "level9.character": {
+      "subject": "character",
+      "title": "How **{character}** becomes pixels",
+      "text": "Your terminal looks up **{character}** in its [[font|font]]. The font stores each character as an outline, the blue line. The outline is laid over a grid of [[pixel|pixels]]: pixels fully inside it are lit, and pixels it only partly covers get a shade of gray. That softening is called [[aa|anti-aliasing]]."
+    },
+    "level9.characterBytes": {
+      "subject": "character",
+      "text": "In [[utf8|UTF-8]] it takes {byteCount}, {bytes}. The terminal reads them together, as one character."
+    },
+    "level9.space": {
+      "subject": "character",
+      "title": "A space lights no pixels",
+      "text": "The terminal still gives the space a full cell, as wide as every other character, but leaves it dark."
+    },
+    "level9.tab": {
+      "subject": "character",
+      "title": "A tab lights no pixels",
+      "text": "A tab moves the terminal on to its next tab stop, usually every 8 columns, and leaves the cells it passes dark. Here it is drawn as one space."
+    },
+    "level9.empty": {
+      "subject": "character",
+      "title": "This line is empty",
+      "text": "Your program printed an empty line: just a [[newline|newline]]. The terminal moves down a line and lights no pixels. Pick another line to see its characters drawn."
+    },
+    "level9.colored": {
+      "subject": "character",
+      "text": "In a terminal, this line is in color: the color codes sent with it tell the terminal which. Here it is drawn in this page’s ink."
+    },
     "step.term": {
       "subject": "step",
       "text": "{opname}{argument} · step {number} of {code}"
@@ -1586,6 +1666,14 @@
       "subject": "program",
       "text": "too much output to follow a whole line"
     },
+    "map.level9.screen": {
+      "subject": "pixels",
+      "text": "{screenWidth} × {screenHeight} pixels"
+    },
+    "screen.yours": {
+      "subject": "pixels",
+      "text": "Your screen, from what your browser reports: **{screenWidth} × {screenHeight}** pixels, about {millions} million. Zooming this page can change what it reports."
+    },
     "tryIt.disRow.lines": {
       "subject": "program",
       "text": "The line of your file each group of steps comes from. 0 is Python’s own setup step, before line 1."
@@ -1856,6 +1944,12 @@
         "Your program’s own lines may appear in the middle of strace’s, because both go to the same terminal at the same moment. We took them out of the sample.",
         "strace works on Linux only."
       ]
+    },
+    "9": {
+      "summary": "see the subpixels",
+      "intro": "Put a small drop of water on your phone screen, or zoom in on your computer screen with your phone’s camera. On most displays you’ll see each [[pixel|pixel]] is made of red, green and blue subpixels.",
+      "parts": [],
+      "read": []
     }
   }
 }

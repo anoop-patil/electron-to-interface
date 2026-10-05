@@ -7,6 +7,7 @@ import { ExplanationText } from '../explain/ExplanationText';
 import { explainLevel6, level6, level6AfterRun } from '../explain/interpreter';
 import { explainLevel7, level7, level7AfterRun, level7IsReference } from '../explain/machine';
 import { explainLevel8, level8 } from '../explain/operatingSystem';
+import { explainLevel9, level9 } from '../explain/pixels';
 import { explainAfterRun, explainStep, stepSelectionAt } from '../explain/steps';
 import { explainNode } from '../explain/syntaxTree';
 import { explainTryIt } from '../explain/tryIt';
@@ -18,6 +19,7 @@ import { CpuZoomLevel } from './CpuZoomLevel';
 import { InterpreterZoomLevel } from './InterpreterZoomLevel';
 import { LAST_LEVEL, levelInfo } from './levels';
 import { OperatingSystemZoomLevel } from './OperatingSystemZoomLevel';
+import { PixelsZoomLevel } from './PixelsZoomLevel';
 import { charsOf } from './selection';
 import { SyntaxTreeZoomLevel } from './SyntaxTreeZoomLevel';
 import { TokensZoomLevel } from './TokensZoomLevel';
@@ -36,7 +38,7 @@ const ArrowUp = () => (
 );
 
 /** The Template that introduces each zoom level that has one. */
-const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro', 6: 'level6.intro', 7: 'level7.intro', 8: 'level8.intro' };
+const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro', 6: 'level6.intro', 7: 'level7.intro', 8: 'level8.intro', 9: 'level9.intro' };
 
 /** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
@@ -66,10 +68,10 @@ export function ZoomView({
   const interpreter = analysis && level === 6 ? level6(analysis, selection) : null;
   const cpu = analysis && level === 7 ? level7(analysis, selection) : null;
   const os = analysis && level === 8 ? level8(analysis, selection) : null;
+  const pixels = analysis && level === 9 ? level9(analysis, selection) : null;
 
   let visual;
-  if (level > 8) visual = <p className="text-ink2">This zoom level isn’t built yet.</p>;
-  else if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
+  if (!analysis) visual = <p className="text-ink2">Write a program and click Run to see it here.</p>;
   else if (level === 1) visual = <CodeZoomLevel analysis={analysis} selectedChars={selection ? charsOf(analysis, selection) : null} />;
   else if (level === 2) visual = <BytesZoomLevel analysis={analysis} selectedByte={selectedByte} onSelect={(byte) => onSelect(byte.id)} />;
   else if (level === 3) visual = <TokensZoomLevel analysis={analysis} selectedToken={selectedToken} onSelect={(token) => onSelect(token.id)} />;
@@ -79,6 +81,13 @@ export function ZoomView({
       <OperatingSystemZoomLevel analysis={analysis} view={os} onSelect={onSelect} />
     ) : (
       <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram(analysis.writesCutShort ? 'level8.nothingFollowed' : 'level8.nothingPrinted', analysis).text} /></p>
+    );
+  }
+  else if (level === 9) {
+    visual = pixels ? (
+      <PixelsZoomLevel analysis={analysis} view={pixels} onSelect={onSelect} />
+    ) : (
+      <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram(analysis.writesCutShort ? 'level9.nothingFollowed' : 'level9.nothingPrinted', analysis).text} /></p>
     );
   }
   else if (selectedStep) visual = <BytecodeZoomLevel analysis={analysis} selected={selectedStep} onSelect={onSelect} onGo={onGo} />;
@@ -96,6 +105,7 @@ export function ZoomView({
   if (analysis && interpreter) explanation = explainLevel6(analysis, interpreter);
   if (analysis && cpu) explanation = explainLevel7(analysis, cpu);
   if (analysis && os) explanation = explainLevel8(analysis, os);
+  if (analysis && pixels) explanation = explainLevel9(pixels);
   let afterRun = null;
   if (analysis && selectedStep) afterRun = explainAfterRun(analysis, selectedStep.step);
   if (analysis && interpreter) afterRun = level6AfterRun(analysis, interpreter);

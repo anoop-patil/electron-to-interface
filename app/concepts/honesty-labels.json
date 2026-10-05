@@ -30,7 +30,8 @@
     "5": "observed",
     "6": "reference",
     "7": "reference",
-    "8": "typical"
+    "8": "typical",
+    "9": "typical"
   },
   "panels": {
     "byteBits": "derived",

@@ -75,12 +75,13 @@ export type VariableChange =
  */
 export type CodeIndex1 = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); or output, one line of the Program's output, at zoom level 8 (OutputSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); output, one line of the Program's output, at zoom level 8 (OutputSlot); character, one character of a line of output, at zoom level 9 (CharacterSlot); or pixels, what the browser drew for that character and reports about the learner's screen (PixelsSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte" | "line" | "token" | "node" | "step" | "handler" | "output";
+export type Subject =
+  "program" | "byte" | "line" | "token" | "node" | "step" | "handler" | "output" | "character" | "pixels";
 /**
  * A Fact about one line of the Program's output, and how it reaches the terminal, that a Template can name. A slot that doesn't apply is empty.
  *
@@ -100,6 +101,21 @@ export type OutputSlot =
   | "lineCalls"
   | "calls"
   | "lines";
+/**
+ * A Fact about one character of a line of the Program's output, at zoom level 9, that a Template can name. A slot that doesn't apply is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "CharacterSlot".
+ */
+export type CharacterSlot = "character" | "bytes" | "byteCount";
+/**
+ * What the learner's browser drew for the selected character at zoom level 9, and what it reports about the learner's screen, that a Template can name. A slot that doesn't apply is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "PixelsSlot".
+ */
+export type PixelsSlot =
+  "cellWidth" | "cellHeight" | "lit" | "partly" | "dark" | "screenWidth" | "screenHeight" | "millions";
 /**
  * A Fact about one step, or one step run of it, that a Template can name. A slot that doesn't apply is empty.
  *
@@ -240,7 +256,7 @@ export type ByteSlot =
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ConceptVisual".
  */
-export type ConceptVisual = BitsVisual | Utf8Visual | HonestyLabelsVisual | DoorsVisual;
+export type ConceptVisual = BitsVisual | Utf8Visual | HonestyLabelsVisual | DoorsVisual | ScreenVisual;
 
 /**
  * The complete set of Facts produced from one Program on one Python version.
@@ -807,16 +823,20 @@ export interface Template {
   term?: string;
 }
 /**
- * A zoom level's Try it yourself: a real command the learner can run on their own computer. Its strings are filled in like a Template whose subject is program.
+ * A zoom level's Try it yourself: a real command the learner can run on their own computer, or, with a summary instead, something to do with no command, such as level 9's look at the subpixels. Its strings are filled in like a Template whose subject is program.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "TryIt".
  */
 export interface TryIt {
   /**
-   * The command, such as python {file}. The browser's Python runs it on the Program, unless inBrowser is false.
+   * The command, such as python {file}. The browser's Python runs it on the Program, unless inBrowser is false. A Try it yourself has a command or a summary, not both.
    */
-  command: string;
+  command?: string;
+  /**
+   * For a Try it yourself with no command: what its collapsed row says, such as see the subpixels. It then has no parts, no reading notes and no tabs.
+   */
+  summary?: string;
   /**
    * False for a command the browser's Python can't run, such as strace. The page then shows what the browser did observe, and a sample from the test machine.
    */
@@ -1291,6 +1311,15 @@ export interface DoorsVisual {
   doors: [string, string, string];
 }
 /**
+ * The learner's own screen: how many pixels the browser reports it has.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ScreenVisual".
+ */
+export interface ScreenVisual {
+  kind: "screen";
+}
+/**
  * One group in the Concepts index.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -1322,7 +1351,7 @@ export interface HonestyLabels {
     [k: string]: HonestyLabel;
   };
   /**
-   * The label each built zoom level carries, by level number. A level that isn't built yet has none.
+   * The label each zoom level carries, by level number.
    */
   levels: {
     [k: string]: string;

@@ -253,6 +253,31 @@ export function lineById(analysis: Analysis, id: string) {
   return (match && outputLines(analysis)[Number(match[1])]) ?? null;
 }
 
+/** Zoom level 9's elements: px-N-C, character C of line N, counted from 0. An empty line's only element is px-N-0. */
+export const PIXEL_ID = /^px-(\d+)-(\d+)$/;
+
+const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' });
+
+/** A line's characters, as a reader counts them: an accented letter or an emoji made of several code points is one. */
+export const charactersOf = (line: OutputLine) => Array.from(graphemes.segment(line.text), ({ segment }) => segment);
+
+export const pixelId = (line: OutputLine, character: number) => `px-${line.id.slice('out-'.length)}-${character}`;
+
+/** The line and character of a level 9 element, or null if the Analysis has no such line or character. */
+export function pixelOf(analysis: Analysis, id: string) {
+  const match = PIXEL_ID.exec(id);
+  const line = match && outputLines(analysis)[Number(match[1])];
+  if (!line) return null;
+  const character = Number(match[2]);
+  return character < Math.max(1, charactersOf(line).length) ? { line, character } : null;
+}
+
+/** The character level 9 picks on a line: the first that isn't a space, else the first. */
+export function firstCharacter(line: OutputLine) {
+  const at = charactersOf(line).findIndex((character) => /\S/.test(character));
+  return Math.max(0, at);
+}
+
 /**
  * The line of output closest to a step run (ADR 0007): the first it wrote a piece of, else the first finished after
  * it, else the last. Null if there is no line to follow.

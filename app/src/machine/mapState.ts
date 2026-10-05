@@ -3,6 +3,7 @@ import { explainProgram, fillString, template, type Span, type TemplateId } from
 import { level6 } from '../explain/interpreter';
 import { level7, level7IsReference } from '../explain/machine';
 import { level8, outputFacts } from '../explain/operatingSystem';
+import { pixelsFacts, type ScreenPixels } from '../explain/pixels';
 import { explainForStep, stepSelectionAt } from '../explain/steps';
 import type { Analysis } from '../generated/analysis';
 import type { PartId } from './parts';
@@ -12,6 +13,8 @@ export interface MapView {
   level: number;
   analysis: Analysis | null;
   selection: string | null;
+  /** The learner's screen, as the browser reports it, where it can. */
+  screen?: ScreenPixels | null;
 }
 
 /** The lit parts, each with a short note about what is there right now. */
@@ -23,7 +26,7 @@ export interface MapState {
  * What each built zoom level lights. A zoom level's ticket adds its own entry here; the map itself doesn't change.
  * The app keeps the Program in the browser's memory and never saves it as a file, so levels 1 to 4 light RAM, not the disk.
  */
-const LEVELS: Record<number, (analysis: Analysis, selection: string | null) => MapState> = {
+const LEVELS: Record<number, (analysis: Analysis, selection: string | null, screen: ScreenPixels | null) => MapState> = {
   1: (analysis) => ({ lit: [{ part: 'ram', note: explainProgram('map.level1.ram', analysis).text }] }),
   2: (analysis) => ({ lit: [{ part: 'ram', note: explainProgram('map.level2.ram', analysis).text }] }),
   3: (analysis) => ({ lit: [{ part: 'ram', note: explainProgram('map.level3.ram', analysis).text }] }),
@@ -79,10 +82,14 @@ const LEVELS: Record<number, (analysis: Analysis, selection: string | null) => M
     if (view.zone === 0) return { lit: [{ part: 'os', note: note('map.level8.osWaiting') }, { part: 'ram', note: note('map.level8.ram') }] };
     return { lit: [{ part: 'os', note: note('map.level8.os') }] };
   },
+  // Level 9 lights the screen, with how many pixels it has.
+  9: (_analysis, _selection, screen) => ({
+    lit: [{ part: 'screen', note: screen ? fillString(template('map.level9.screen', 'pixels').text, pixelsFacts(screen)) : undefined }],
+  }),
 };
 
-/** Where the thing being viewed lives right now. Nothing is lit before the first Run, or at a level that isn't built yet. */
-export function mapState({ level, analysis, selection }: MapView): MapState {
+/** Where the thing being viewed lives right now. Nothing is lit before the first Run. */
+export function mapState({ level, analysis, selection, screen = null }: MapView): MapState {
   const lightsFor = LEVELS[level];
-  return analysis && lightsFor ? lightsFor(analysis, selection) : { lit: [] };
+  return analysis && lightsFor ? lightsFor(analysis, selection, screen) : { lit: [] };
 }

@@ -5,6 +5,7 @@ import { buttonClass } from './button';
 import { ConceptsButton } from './concepts/ConceptsButton';
 import { MachineMap } from './machine/MachineMap';
 import { mapState } from './machine/mapState';
+import { useScreen } from './screen';
 import { Terminal } from './terminal/Terminal';
 import { ThemeToggle } from './ThemeToggle';
 import { ProgramEditor, type Highlight } from './editor/ProgramEditor';
@@ -31,6 +32,7 @@ export function App({ engine }: { engine: Engine }) {
   const [codeHidden, setCodeHidden] = useState(false);
   const [status, setStatus] = useState<PythonStatus>('starting');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const screen = useScreen();
   // The code as it was when the learner clicked Run, which the Analysis describes.
   const [ranCode, setRanCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +122,7 @@ export function App({ engine }: { engine: Engine }) {
               </div>
             </aside>
             <Terminal analysis={analysis} />
-            <MachineMap state={mapState({ level, analysis, selection: levelSelection })} />
+            <MachineMap state={mapState({ level, analysis, selection: levelSelection, screen: screen.pixels })} />
           </div>
 
           <DepthGauge level={level} onGo={go} />

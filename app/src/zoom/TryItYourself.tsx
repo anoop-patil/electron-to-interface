@@ -120,7 +120,8 @@ function HowToRead({ tryIt }: { tryIt: TryItExplanation }) {
 }
 
 /**
- * Try it yourself: a real command the learner can run on their own computer, collapsed by default to one row that shows it.
+ * Try it yourself: a real command the learner can run on their own computer, collapsed by default to one row that shows it,
+ * or, at level 9, something to do with no command, with its summary in that row.
  * Whether it is open, and which tab shows, belongs to the caller, so both stay the same from one zoom level to the next.
  */
 export function TryItYourself({
@@ -136,6 +137,30 @@ export function TryItYourself({
   tab: TryItTab;
   onTab(tab: TryItTab): void;
 }) {
+  return (
+    <details className="group max-w-[860px] rounded-xl border border-rule bg-surface" open={open} onToggle={(event) => onToggle(event.currentTarget.open)}>
+      <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-2.5 px-4 py-2 text-[14px] font-semibold before:w-2.5 before:flex-none before:text-ink3 before:content-['▸'] group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">
+        Try it yourself
+        {tryIt.command !== null ? (
+          <code className="min-w-0 rounded-md border border-rule bg-sunk px-2 py-0.5 text-[13px] font-normal text-ink2 [overflow-wrap:anywhere]">{tryIt.command}</code>
+        ) : (
+          <span className="font-normal text-ink2">
+            <ExplanationText spans={tryIt.summary ?? []} />
+          </span>
+        )}
+      </summary>
+      <div className="grid gap-3 px-4 pb-4">
+        <p className={TEXT_CLASSES}>
+          <ExplanationText spans={tryIt.intro} />
+        </p>
+        {tryIt.command !== null && <CommandDetails command={tryIt.command} tryIt={tryIt} tab={tab} onTab={onTab} />}
+      </div>
+    </details>
+  );
+}
+
+/** The command, its links, and the three tabs about it. */
+function CommandDetails({ command, tryIt, tab, onTab }: { command: string; tryIt: TryItExplanation; tab: TryItTab; onTab(tab: TryItTab): void }) {
   const tabs = useRef<HTMLDivElement>(null);
 
   // Left and right move between the tabs, wrapping round; Home and End go to the first and last.
@@ -150,69 +175,60 @@ export function TryItYourself({
   };
 
   return (
-    <details className="group max-w-[860px] rounded-xl border border-rule bg-surface" open={open} onToggle={(event) => onToggle(event.currentTarget.open)}>
-      <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-2.5 px-4 py-2 text-[14px] font-semibold before:w-2.5 before:flex-none before:text-ink3 before:content-['▸'] group-open:before:rotate-90 [&::-webkit-details-marker]:hidden">
-        Try it yourself
-        <code className="min-w-0 rounded-md border border-rule bg-sunk px-2 py-0.5 text-[13px] font-normal text-ink2 [overflow-wrap:anywhere]">{tryIt.command}</code>
-      </summary>
-      <div className="grid gap-3 px-4 pb-4">
-        <p className={TEXT_CLASSES}>
-          <ExplanationText spans={tryIt.intro} />
-        </p>
-        <CommandBox command={tryIt.command} />
-        {tryIt.links.length > 0 && (
-          <div className={TEXT_CLASSES}>
-            <p>
-              <ExplanationText spans={tryIt.linksIntro} />
-            </p>
-            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-              {tryIt.links.map((link) => (
-                <li key={link.href + link.text}>
-                  <a className="text-accent underline underline-offset-2" href={link.href} target="_blank" rel="noopener noreferrer">
-                    {link.text}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div className="flex gap-1 overflow-x-auto border-b border-rule" role="tablist" aria-label="About this command" ref={tabs} onKeyDown={onKeyDown}>
-          {TABS.map(({ id, name }) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              id={`try-tab-${id}`}
-              data-tab={id}
-              aria-controls="try-panel"
-              aria-selected={tab === id}
-              tabIndex={tab === id ? 0 : -1}
-              className={TAB_CLASSES}
-              onClick={() => onTab(id)}
-            >
-              {name}
-            </button>
-          ))}
+    <>
+      <CommandBox command={command} />
+      {tryIt.links.length > 0 && (
+        <div className={TEXT_CLASSES}>
+          <p>
+            <ExplanationText spans={tryIt.linksIntro} />
+          </p>
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {tryIt.links.map((link) => (
+              <li key={link.href + link.text}>
+                <a className="text-accent underline underline-offset-2" href={link.href} target="_blank" rel="noopener noreferrer">
+                  {link.text}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div id="try-panel" role="tabpanel" aria-labelledby={`try-tab-${tab}`} className="pt-1">
-          {tab === 'does' && (
-            <dl className="grid gap-2">
-              {tryIt.parts.map((part) => (
-                <div key={part.code} className="grid gap-0.5">
-                  <dt>
-                    <code className={CODE_CHIP_CLASSES}>{part.code}</code>
-                  </dt>
-                  <dd className="text-[13.5px] text-ink2">
-                    <ExplanationText spans={part.text} />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {tab === 'see' && <Output tryIt={tryIt} />}
-          {tab === 'read' && <HowToRead tryIt={tryIt} />}
-        </div>
+      )}
+      <div className="flex gap-1 overflow-x-auto border-b border-rule" role="tablist" aria-label="About this command" ref={tabs} onKeyDown={onKeyDown}>
+        {TABS.map(({ id, name }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`try-tab-${id}`}
+            data-tab={id}
+            aria-controls="try-panel"
+            aria-selected={tab === id}
+            tabIndex={tab === id ? 0 : -1}
+            className={TAB_CLASSES}
+            onClick={() => onTab(id)}
+          >
+            {name}
+          </button>
+        ))}
       </div>
-    </details>
+      <div id="try-panel" role="tabpanel" aria-labelledby={`try-tab-${tab}`} className="pt-1">
+        {tab === 'does' && (
+          <dl className="grid gap-2">
+            {tryIt.parts.map((part) => (
+              <div key={part.code} className="grid gap-0.5">
+                <dt>
+                  <code className={CODE_CHIP_CLASSES}>{part.code}</code>
+                </dt>
+                <dd className="text-[13.5px] text-ink2">
+                  <ExplanationText spans={part.text} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {tab === 'see' && <Output tryIt={tryIt} />}
+        {tab === 'read' && <HowToRead tryIt={tryIt} />}
+      </div>
+    </>
   );
 }

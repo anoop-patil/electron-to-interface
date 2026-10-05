@@ -177,13 +177,32 @@
       "name": "Terminal",
       "like": "The order window: you call in what you want, and whatever the kitchen sends out appears there.",
       "text": "A window for talking to programs by typing. You type a command, and the program it names starts. What the program prints reaches the terminal as [[byte|bytes]]; the terminal turns them back into characters and draws them on the [[screen|screen]]. On Windows, you type commands in PowerShell or Command Prompt.",
-      "related": ["os", "fd", "screen"]
+      "related": ["os", "fd", "screen", "font"]
     },
     "screen": {
       "name": "Screen",
       "like": "The dining room: where the finished dish is finally seen.",
-      "text": "A grid of tiny dots of light, called **pixels**. Most screens make each pixel’s color from red, green and blue parts. The picture is kept in memory, and the screen redraws it many times a second, often 60.",
-      "related": ["os"]
+      "text": "A grid of tiny dots of light, called [[pixel|pixels]]. Most screens make each pixel’s color from red, green and blue parts. The picture is kept in memory, and the screen redraws it many times a second, often 60.",
+      "visual": {"kind": "screen"},
+      "related": ["pixel", "font", "os"]
+    },
+    "pixel": {
+      "name": "Pixel",
+      "like": "One tile in a huge mosaic.",
+      "text": "The smallest dot your [[screen|screen]] can light. Most displays make each pixel’s color from red, green and blue subpixels, mixing their brightness; the exact layout varies between kinds of display. Your screen is a grid of millions of pixels.",
+      "related": ["screen", "font", "aa"]
+    },
+    "font": {
+      "name": "Font and glyph",
+      "like": "A set of stencils, one for each character.",
+      "text": "A font stores the shape of each character, called a glyph, as an outline made of lines and curves. To draw text, the computer lays the outline over the grid of [[pixel|pixels]] and lights the pixels inside it.",
+      "related": ["pixel", "aa", "terminal"]
+    },
+    "aa": {
+      "name": "Anti-aliasing",
+      "like": "Softening the edges so they look smooth.",
+      "text": "A curve can’t line up perfectly with square [[pixel|pixels]]. Pixels the outline only partly covers are lit partway, in gray. From a normal distance your eye blends them into a smooth edge.",
+      "related": ["font", "pixel"]
     }
   },
   "index": [
@@ -194,6 +213,6 @@
     { "name": "Memory", "cards": ["disk", "ram", "heap", "stack", "none"] },
     { "name": "The CPU", "cards": ["cpu", "machine", "reg", "cache"] },
     { "name": "Talking to the outside world", "cards": ["os", "syscall", "fd", "terminal"] },
-    { "name": "The screen", "cards": ["screen"] }
+    { "name": "The screen", "cards": ["screen", "pixel", "font", "aa"] }
   ]
 }

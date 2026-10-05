@@ -19,6 +19,8 @@ const SLOT_DEFS: Record<Subject, (keyof typeof schema.$defs)[]> = {
   // A handler's Templates can also name any Fact of the step run it ran for.
   handler: ['HandlerSlot', 'StepSlot'],
   output: ['OutputSlot'],
+  character: ['CharacterSlot'],
+  pixels: ['PixelsSlot'],
 };
 
 const slotsOf = (subject: Subject) =>
@@ -81,16 +83,18 @@ function templateProblems(file: unknown, cardIds: Set<string>): string[] {
  */
 function tryItProblems(tryIt: NonNullable<Templates['tryIt']>, cardIds: Set<string>): string[] {
   const slots = slotsOf('program');
-  return Object.entries(tryIt).flatMap(([level, { command, intro, parts, read }]) => {
+  return Object.entries(tryIt).flatMap(([level, { command = '', summary, intro, parts, read }]) => {
     const id = `tryIt ${level}`;
     const text = [intro, ...parts.map((part) => part.text), ...read];
-    const unknownSlots = slotsIn([command, ...parts.map((part) => part.code), ...text])
+    // Without a command there is nothing for parts or reading notes to explain.
+    const shape = !command === !summary || (summary && (parts.length > 0 || read.length > 0)) ? [`${id} needs a command, or a summary and no parts or reading notes`] : [];
+    const unknownSlots = slotsIn([command, summary ?? '', ...parts.map((part) => part.code), ...text])
       .filter((slot) => !slots.has(slot))
       .map((slot) => `${id} refers to {${slot}}, which isn’t a Fact of a program`);
     const commandSlots = slotsIn([command])
       .filter((slot) => slots.has(slot) && slot !== 'file')
       .map((slot) => `${id}’s command uses {${slot}}, but a command can only use {file}`);
-    return [...unknownSlots, ...commandSlots, ...unclosedBold(id, text), ...conceptProblems(id, text, cardIds)];
+    return [...shape, ...unknownSlots, ...commandSlots, ...unclosedBold(id, text), ...conceptProblems(id, text, cardIds)];
   });
 }
 

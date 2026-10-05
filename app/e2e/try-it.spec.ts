@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gauge, run, zoomLevel } from './helpers';
+import { run, zoomLevel } from './helpers';
 
 const BYTES_COMMAND = `python -c "print(list(open('program.py', 'rb').read()))"`;
 
@@ -97,15 +97,11 @@ test('a Program that stops with an error shows Python’s traceback, and how to 
   await expect(tryIt(page).getByRole('tabpanel')).toContainText('Your program stopped with an error.');
 });
 
-test('a Program that prints nothing says so, and a zoom level that isn’t built yet has no Try it yourself', async ({ page }) => {
+test('a Program that prints nothing says so', async ({ page }) => {
   await page.goto('/');
   await run(page, 'x = 1');
   await tryIt(page).locator('summary').click();
   await tryIt(page).getByRole('tab', { name: 'What you’ll see' }).click();
   await expect(tryIt(page).getByRole('tabpanel')).toContainText('Nothing: your program doesn’t print anything');
   await expect(tryIt(page).locator('pre')).toHaveCount(0);
-
-  await gauge(page).getByRole('button', { name: '9 Pixels' }).click();
-  await expect(zoomLevel(page, 9, 'Pixels')).toBeVisible();
-  await expect(tryIt(page)).toHaveCount(0);
 });

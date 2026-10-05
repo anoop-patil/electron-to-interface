@@ -15,7 +15,10 @@ const TRY_IT = (templateFile as Templates).tryIt ?? {};
 
 /** A zoom level's Try it yourself, filled in with the Program's Facts and what its command printed. */
 export interface TryItExplanation {
-  command: string;
+  /** The command, or null for a Try it yourself with none, such as level 9's, which has only its intro. */
+  command: string | null;
+  /** What the collapsed row says in place of a command. */
+  summary: Span[] | null;
   intro: Span[];
   /** What each part of the command does. */
   parts: { code: string; text: Span[] }[];
@@ -288,7 +291,7 @@ function ranInBrowser(level: number, analysis: Analysis, command: string): Shown
 
 /** The exit status of `python FILE`, level 1's command, or what an error would give, if the Analysis has no record of it. */
 function exitStatusOf(analysis: Analysis) {
-  const run = analysis.commands.find((other) => other.command === commandFor(TRY_IT[1].command, analysis.fileName));
+  const run = analysis.commands.find((other) => other.command === commandFor(TRY_IT[1].command!, analysis.fileName));
   return run?.exitStatus ?? (analysis.error ? 1 : 0);
 }
 
@@ -313,10 +316,15 @@ export function explainTryIt(level: number, analysis: Analysis, selection: strin
   if (!tryIt) return null;
   const facts = programFacts(analysis);
   const fill = (string: string) => fillString(string, facts);
+  if (!tryIt.command) {
+    const none = { output: '', observed: [], nothingPrinted: [], rows: [], read: [], links: [], linksIntro: [], sample: null };
+    return { ...none, command: null, summary: fill(tryIt.summary!), intro: fill(tryIt.intro), parts: [] };
+  }
   const command = commandFor(tryIt.command, analysis.fileName);
   const shown = tryIt.inBrowser === false ? OBSERVED_INSTEAD[level](analysis) : ranInBrowser(level, analysis, command);
   return {
     command,
+    summary: null,
     intro: fill(tryIt.intro),
     parts: tryIt.parts.map((part) => ({ code: plain(fill(part.code)), text: fill(part.text) })),
     output: shown.output,

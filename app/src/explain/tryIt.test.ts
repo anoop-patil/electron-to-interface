@@ -19,7 +19,7 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 to 8 have a command for the learner’s file, and the browser runs all but level 8’s strace; level 9 isn’t built yet', () => {
+test('levels 1 to 8 have a command for the learner’s file, and the browser runs all but level 8’s strace', () => {
   expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS, ADAPTIVE, TIME]);
   expect(tryItCommands('greet.py')).toEqual([
     'python greet.py',
@@ -31,7 +31,17 @@ test('levels 1 to 8 have a command for the learner’s file, and the browser run
     `python -c "import time; t = time.perf_counter(); exec(open('greet.py').read()); print(time.perf_counter() - t)"`,
   ]);
   expect(explainTryIt(8, analysisOf('x = 1\n'))!.command).toBe('strace -e trace=write python program.py');
-  expect(explainTryIt(9, analysisOf('x = 1\n'))).toBeNull();
+});
+
+test('level 9 has no command: it says how to see the subpixels on a real screen', () => {
+  const tryIt = explainTryIt(9, analysisOf('x = 1\n'))!;
+
+  expect(tryIt.command).toBeNull();
+  expect(plain(tryIt.summary!)).toBe('see the subpixels');
+  expect(plain(tryIt.intro)).toBe(
+    'Put a small drop of water on your phone screen, or zoom in on your computer screen with your phone’s camera. On most displays you’ll see each pixel is made of red, green and blue subpixels.',
+  );
+  expect(tryIt.parts).toEqual([]);
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {

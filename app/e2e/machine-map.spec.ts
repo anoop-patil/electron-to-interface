@@ -26,9 +26,10 @@ test('the map shows the learner’s computer, and lights where the Program is at
   await page.getByRole('button', { name: 'Zoom in: Structure' }).click();
   await expect(lit(page)).toHaveAccessibleName(/^RAM .*your program · as 5 boxes, temporary$/);
 
-  // A zoom level that isn't built yet lights nothing.
+  // Level 9 lights the screen.
   await gauge(page).getByRole('button', { name: '9 Pixels' }).click();
-  await expect(lit(page)).toHaveCount(0);
+  await expect(lit(page)).toHaveCount(1);
+  await expect(lit(page)).toHaveAccessibleName(/^Screen .*\d+ × \d+ pixels$/);
 });
 
 test('the map carries one Honesty label, Typical: it shows how computers usually work, and the learner’s may differ', async ({ page }) => {

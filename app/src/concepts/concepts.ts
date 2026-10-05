@@ -18,7 +18,7 @@ const LABELS = labelsFile as HonestyLabels;
 /** Every Honesty label, in the order the How we know card lists them. The set is data, so changing it is a data edit. */
 export const HONESTY_LABELS: HonestyLabel[] = Object.values(LABELS.labels);
 
-/** The label a zoom level carries, or null for a level that isn't built yet. */
+/** The label a zoom level carries, or null if honesty-labels.json gives it none. */
 export const levelLabel = (level: number): HonestyLabel | null => {
   const id = LABELS.levels[level];
   return id ? LABELS.labels[id] : null;

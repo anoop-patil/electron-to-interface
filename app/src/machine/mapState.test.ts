@@ -26,7 +26,13 @@ test('at zoom level 4, RAM is lit: the Program, now as boxes, which Python keeps
   expect(lit(mapState({ level: 4, analysis: hello, selection: 'ast-0' }))).toEqual({ ram: 'your program · as 5 boxes, temporary' });
 });
 
-test('nothing is lit before the first Run, or at a zoom level that isn’t built yet', () => {
+test('nothing is lit before the first Run', () => {
   expect(mapState({ level: 1, analysis: null, selection: null }).lit).toEqual([]);
-  expect(mapState({ level: 9, analysis: hello, selection: null }).lit).toEqual([]);
+});
+
+test('at zoom level 9, the screen is lit, with its size in pixels as the browser reports it', () => {
+  const screen = { width: 2560, height: 1600, millions: '4.1' };
+
+  expect(lit(mapState({ level: 9, analysis: hello, selection: null, screen }))).toEqual({ screen: '2560 × 1600 pixels' });
+  expect(lit(mapState({ level: 9, analysis: hello, selection: null }))).toEqual({ screen: '' });
 });

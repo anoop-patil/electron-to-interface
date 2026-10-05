@@ -764,12 +764,13 @@
     },
     "TryIt": {
       "title": "TryIt",
-      "description": "A zoom level's Try it yourself: a real command the learner can run on their own computer. Its strings are filled in like a Template whose subject is program.",
+      "description": "A zoom level's Try it yourself: a real command the learner can run on their own computer, or, with a summary instead, something to do with no command, such as level 9's look at the subpixels. Its strings are filled in like a Template whose subject is program.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["command", "intro", "parts", "read"],
+      "required": ["intro", "parts", "read"],
       "properties": {
-        "command": { "description": "The command, such as python {file}. The browser's Python runs it on the Program, unless inBrowser is false.", "type": "string", "minLength": 1 },
+        "command": { "description": "The command, such as python {file}. The browser's Python runs it on the Program, unless inBrowser is false. A Try it yourself has a command or a summary, not both.", "type": "string", "minLength": 1 },
+        "summary": { "description": "For a Try it yourself with no command: what its collapsed row says, such as see the subpixels. It then has no parts, no reading notes and no tabs.", "type": "string", "minLength": 1 },
         "inBrowser": { "description": "False for a command the browser's Python can't run, such as strace. The page then shows what the browser did observe, and a sample from the test machine.", "const": false },
         "intro": { "description": "What to do before typing the command.", "type": "string", "minLength": 1 },
         "parts": {
@@ -822,9 +823,9 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); or output, one line of the Program's output, at zoom level 8 (OutputSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); output, one line of the Program's output, at zoom level 8 (OutputSlot); character, one character of a line of output, at zoom level 9 (CharacterSlot); or pixels, what the browser drew for that character and reports about the learner's screen (PixelsSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line", "token", "node", "step", "handler", "output"]
+      "enum": ["program", "byte", "line", "token", "node", "step", "handler", "output", "character", "pixels"]
     },
     "OutputSlot": {
       "title": "OutputSlot",
@@ -842,6 +843,29 @@
         { "const": "lineCalls", "description": "How many system calls carried its bytes, with the word: 2 calls." },
         { "const": "calls", "description": "How many write system calls Python makes for the Program in all, with the word: 2 calls." },
         { "const": "lines", "description": "How many lines of output there are, with the word: 2 lines." }
+      ]
+    },
+    "CharacterSlot": {
+      "title": "CharacterSlot",
+      "description": "A Fact about one character of a line of the Program's output, at zoom level 9, that a Template can name. A slot that doesn't apply is empty.",
+      "oneOf": [
+        { "const": "character", "description": "The character: H. A character made of several code points, such as 👍🏽, is one." },
+        { "const": "bytes", "description": "Its bytes in UTF-8, as numbers: 72, or 195 169 for é." },
+        { "const": "byteCount", "description": "How many bytes it takes in UTF-8, with the word: 2 bytes." }
+      ]
+    },
+    "PixelsSlot": {
+      "title": "PixelsSlot",
+      "description": "What the learner's browser drew for the selected character at zoom level 9, and what it reports about the learner's screen, that a Template can name. A slot that doesn't apply is empty.",
+      "oneOf": [
+        { "const": "cellWidth", "description": "How many pixels wide the character's cell is." },
+        { "const": "cellHeight", "description": "How many pixels tall the character's cell is." },
+        { "const": "lit", "description": "How many of the cell's pixels are fully lit, with the word: 31 pixels." },
+        { "const": "partly", "description": "How many are partly lit, with the word: 40 pixels." },
+        { "const": "dark", "description": "How many are dark, with the word: 265 pixels." },
+        { "const": "screenWidth", "description": "How many pixels wide the screen is, in its own pixels: the width the browser reports, times its device pixel ratio." },
+        { "const": "screenHeight", "description": "How many pixels tall the screen is, worked out the same way." },
+        { "const": "millions", "description": "How many million pixels that makes, to one decimal place: 4.1." }
       ]
     },
     "StepSlot": {
@@ -1028,8 +1052,19 @@
         { "$ref": "#/$defs/BitsVisual" },
         { "$ref": "#/$defs/Utf8Visual" },
         { "$ref": "#/$defs/HonestyLabelsVisual" },
-        { "$ref": "#/$defs/DoorsVisual" }
+        { "$ref": "#/$defs/DoorsVisual" },
+        { "$ref": "#/$defs/ScreenVisual" }
       ]
+    },
+    "ScreenVisual": {
+      "title": "ScreenVisual",
+      "description": "The learner's own screen: how many pixels the browser reports it has.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "screen" }
+      }
     },
     "DoorsVisual": {
       "title": "DoorsVisual",
@@ -1101,7 +1136,7 @@
           "additionalProperties": { "$ref": "#/$defs/HonestyLabel" }
         },
         "levels": {
-          "description": "The label each built zoom level carries, by level number. A level that isn't built yet has none.",
+          "description": "The label each zoom level carries, by level number.",
           "type": "object",
           "propertyNames": { "pattern": "^[1-9]$" },
           "additionalProperties": { "type": "string" }

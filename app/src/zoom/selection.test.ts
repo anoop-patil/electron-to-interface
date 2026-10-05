@@ -101,11 +101,11 @@ test('a box selects the step with exactly its code first: the Call box, the step
   expect(describe(hello, selectionAt(hello, call, 5))).toBe('CALL in code 0, run 1');
 });
 
-test('levels 6, 7 and 9 show the step run closest to the Selection, and keep a selected step run', () => {
+test('levels 6 and 7 show the step run closest to the Selection, and keep a selected step run', () => {
   const print = hello.tokens.find((token) => token.text === 'print')!.id;
   const run = greet.runs[32].id;
 
-  for (const level of [6, 7, 9]) {
+  for (const level of [6, 7]) {
     expect(describe(hello, selectionAt(hello, print, level))).toBe('LOAD_NAME in code 0, run 1');
     expect(selectionAt(greet, run, level)).toBe(run);
   }
@@ -139,6 +139,33 @@ test('a traceback’s lines lead back to the step run that raised the error', ()
 
 test('a Program that printed nothing has nothing to follow at level 8', () => {
   expect(selectionAt(python.analyze('x = 1'), null, 8)).toBeNull();
+});
+
+test('level 9 picks the first character that isn’t a space, on the line of output the selected step run printed', () => {
+  const print = hello.tokens.find((token) => token.text === 'print')!.id;
+  const indented = python.analyze('print("  hi")');
+
+  expect(selectionAt(hello, print, 9)).toBe('px-0-0');
+  expect(selectionAt(greet, printedBy(greet, 'Hello, Grace'), 9)).toBe('px-1-0');
+  expect(selectionAt(greet, null, 9)).toBe('px-0-0');
+  expect(selectionAt(indented, null, 9)).toBe('px-0-2');
+  expect(selectionAt(python.analyze('x = 1'), null, 9)).toBeNull();
+});
+
+test('a line picked at level 8 or 9 stays picked between them, even when one step run printed several lines', () => {
+  const twoLines = python.analyze('print("a\\nb")');
+
+  expect(selectionAt(twoLines, 'out-1-3', 9)).toBe('px-1-0');
+  expect(selectionAt(twoLines, 'px-1-0', 8)).toBe('out-1-1');
+  expect(selectionAt(greet, 'px-1-4', 9)).toBe('px-1-4');
+  expect(selectionAt(greet, 'px-1-4', 5)).toBe(printedBy(greet, 'Hello, Grace'));
+  expect(highlighted(greet, 'px-1-4')).toBe('print("Hello,", name)');
+});
+
+test('an empty line has no characters, so level 9 selects the line at its start', () => {
+  const empty = python.analyze('print()\nprint("a")');
+
+  expect(selectionAt(empty, 'out-0-1', 9)).toBe('px-0-0');
 });
 
 test('code outside every statement, such as a newline, selects the Module at level 4', () => {

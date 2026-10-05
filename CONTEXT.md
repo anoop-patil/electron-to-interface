@@ -126,7 +126,7 @@ A short, self-contained explanation of a general computing idea (UTF-8, byte, st
 _Avoid_: glossary entry, tooltip, doc link
 
 **Try it yourself**:
-A zoom level's section that gives a real command the learner can run on their own computer, for their Program saved as a file, and shows what the command prints. Where the browser can observe it, that is the output for the learner's own Program, labeled Observed; otherwise it is a sample captured for an Example, labeled as the Example's.
+A zoom level's section that gives a real command the learner can run on their own computer, for their Program saved as a file, and shows what the command prints. Level 9's has no command: it says how to see the subpixels of a real screen. Where the browser can observe it, that is the output for the learner's own Program, labeled Observed; otherwise it is a sample captured for an Example, labeled as the Example's.
 _Avoid_: exercise, demo, sample command
 
 **Example**:

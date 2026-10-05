@@ -105,11 +105,11 @@ test.describe('moving between zoom levels', () => {
     await expect(zoomLevel(page, 2, 'Bytes')).toBeVisible();
   });
 
-  test('a deep link opens its zoom level, and a zoom level not built yet says so', async ({ page }) => {
-    await page.goto('/zoom/8');
-    await expect(zoomLevel(page, 8, 'Operating system')).toContainText('Write a program and click Run to see it here.');
-    await page.goto('/zoom/9');
-    await expect(zoomLevel(page, 9, 'Pixels')).toContainText('isn’t built yet');
+  test('a deep link opens its zoom level, which asks for a Run before it has a program to show', async ({ page }) => {
+    for (const [level, title] of [[8, 'Operating system'], [9, 'Pixels']] as const) {
+      await page.goto(`/zoom/${level}`);
+      await expect(zoomLevel(page, level, title)).toContainText('Write a program and click Run to see it here.');
+    }
   });
 
   test('any other address opens zoom level 1 at /zoom/1', async ({ page }) => {
