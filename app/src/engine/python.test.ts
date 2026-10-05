@@ -13,6 +13,9 @@ beforeAll(async () => {
   python = await startPython();
 }, 60_000);
 
+const ADAPTIVE = (file: string) => `python -c "import dis; c = compile(open('${file}').read(), '${file}', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`;
+const TIME = (file: string) => `python -c "import time; t = time.perf_counter(); exec(open('${file}').read()); print(time.perf_counter() - t)"`;
+
 test('the analysis comes from Python 3.14.2, the version the Reference Library is built from', () => {
   expect(python.analyze('print("Hello World!")').pythonVersion).toBe('3.14.2');
 });
@@ -88,6 +91,8 @@ test('the Try it yourself commands run on the Program, saved as program.py', () 
       ].map((line) => `${line}\n`).join(''),
       exitStatus: 0,
     },
+    // The seconds it took change from one run to the next.
+    { command: TIME('program.py'), output: expect.stringMatching(/^Hi\n\d+(\.\d+)?(e-\d+)?\n$/), exitStatus: 0 },
   ]);
 });
 
@@ -200,14 +205,16 @@ test('for greet.py, the output of every command matches the output captured with
     'python -m ast greet.py': captured.commands.ast,
     'python -m dis greet.py': anywhere(captured.commands.dis),
     // Level 6's command has no capture: its forms are checked against the capture's forms after the run, below.
-    [`python -c "import dis; c = compile(open('greet.py').read(), 'greet.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`]: expect.any(String),
+    [ADAPTIVE('greet.py')]: expect.any(String),
+    // Level 7's prints greet.py's output, as captured, then the seconds it took, which change from one run to the next.
+    [TIME('greet.py')]: expect.stringMatching(new RegExp(`^${captured.commands.run}\\d+(\\.\\d+)?(e-\\d+)?\\n$`)),
   });
 });
 
 test('for greet.py, level 6’s command prints greet.py’s output, then its steps in the forms prototype v8 captured after the run', async () => {
   const captured = JSON.parse(await readFile('../prototype/data/example-greet-cpython-3.14.2.json', 'utf-8'));
   const { commands } = python.analyze(captured.source, captured.file);
-  const { output } = commands.at(-1)!;
+  const { output } = commands.find(({ command }) => command === ADAPTIVE('greet.py'))!;
 
   expect(output.startsWith(captured.commands.run)).toBe(true);
   const forms = [...output.slice(captured.commands.run.length).matchAll(/^\s*(?:\d+)?\s+(?:L\d+:)?\s*([A-Z][A-Z0-9_]+)/gm)].map((match) => match[1]);

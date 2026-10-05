@@ -1,6 +1,7 @@
 import { framesAfter } from '../explain/bytecode';
 import { explainProgram, type Span, type TemplateId } from '../explain/explain';
 import { level6 } from '../explain/interpreter';
+import { level7, level7IsReference } from '../explain/machine';
 import { explainForStep, stepSelectionAt } from '../explain/steps';
 import type { Analysis } from '../generated/analysis';
 import type { PartId } from './parts';
@@ -52,6 +53,22 @@ const LEVELS: Record<number, (analysis: Analysis, selection: string | null) => M
     return {
       lit: [{ part: 'ram' }, { part: 'py', note: explainForStep(id, analysis, selected.step, selected.run).text }, { part: 'code' }, { part: 'cpu' }],
     };
+  },
+  // Level 7 lights the CPU running the selected step run's machine code, with its registers and cache, beside Python itself in RAM.
+  7: (analysis, selection) => {
+    const view = level7(analysis, selection);
+    const machine = [
+      { part: 'reg' as const, note: explainProgram('map.level7.reg', analysis).text },
+      { part: 'cache' as const, note: explainProgram('map.level7.cache', analysis).text },
+      { part: 'ram' as const },
+      { part: 'py' as const },
+    ];
+    if (!view) return { lit: [{ part: 'cpu' }, ...machine] };
+    const { selected } = view;
+    let id: TemplateId = 'map.level7.cpuTypical';
+    if (selected.run === null) id = 'map.level7.cpuNeverRan';
+    else if (level7IsReference(view)) id = 'map.level7.cpu';
+    return { lit: [{ part: 'cpu', note: explainForStep(id, analysis, selected.step, selected.run).text }, ...machine] };
   },
 };
 

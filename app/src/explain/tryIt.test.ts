@@ -2,7 +2,8 @@ import { expect, test } from 'vitest';
 import type { CommandRun } from '../generated/analysis';
 import { GREET_OUTPUT, greetAnalysis, helloWorld, analysisOf as programAnalysis } from '../testAnalysis';
 import type { Span } from './explain';
-import { explainTryIt, tryItCommands } from './tryIt';
+import { tryItCommands } from './commands';
+import { explainTryIt } from './tryIt';
 
 const RUN = 'python program.py';
 const BYTES = `python -c "print(list(open('program.py', 'rb').read()))"`;
@@ -10,6 +11,7 @@ const TOKENIZE = 'python -m tokenize program.py';
 const AST = 'python -m ast program.py';
 const DIS = 'python -m dis program.py';
 const ADAPTIVE = `python -c "import dis; c = compile(open('program.py').read(), 'program.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`;
+const TIME = `python -c "import time; t = time.perf_counter(); exec(open('program.py').read()); print(time.perf_counter() - t)"`;
 
 /** An Analysis of the Program, with what each command printed: nothing, unless `printed` says otherwise. */
 const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'command'>> = {}) =>
@@ -17,8 +19,8 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 to 6 have a command for the learner’s file; the others aren’t built yet', () => {
-  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS, ADAPTIVE]);
+test('levels 1 to 7 have a command for the learner’s file; the others aren’t built yet', () => {
+  expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS, ADAPTIVE, TIME]);
   expect(tryItCommands('greet.py')).toEqual([
     'python greet.py',
     `python -c "print(list(open('greet.py', 'rb').read()))"`,
@@ -26,8 +28,9 @@ test('levels 1 to 6 have a command for the learner’s file; the others aren’t
     'python -m ast greet.py',
     'python -m dis greet.py',
     `python -c "import dis; c = compile(open('greet.py').read(), 'greet.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`,
+    `python -c "import time; t = time.perf_counter(); exec(open('greet.py').read()); print(time.perf_counter() - t)"`,
   ]);
-  expect(explainTryIt(7, analysisOf('x = 1\n'))).toBeNull();
+  expect(explainTryIt(8, analysisOf('x = 1\n'))).toBeNull();
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {
@@ -287,6 +290,47 @@ test('level 6 runs the file, then shows the forms its steps had become, explaini
 test('when the Program stops with an error before dis runs, level 6 shows the traceback and explains no lines', () => {
   const error = 'Traceback (most recent call last):\n  …\nZeroDivisionError: division by zero\n';
   const tryIt = explainTryIt(6, analysisOf('1 / 0\n', { [ADAPTIVE]: { output: error, exitStatus: 1 } }), null)!;
+
+  expect(tryIt.output).toBe(error);
+  expect(tryIt.rows).toEqual([]);
+});
+
+test('level 7 times the Program in the browser, then explains its output and how the browser’s clock and WebAssembly differ', () => {
+  const tryIt = explainTryIt(7, greetAnalysis([{ command: TIME, output: 'Hello, Ada\nHello, Grace\n0.0004000000000000001\n', exitStatus: 0 }]))!;
+
+  expect(tryIt.command).toBe(TIME);
+  expect(plain(tryIt.intro)).toBe('Measure how long your whole program takes on your own computer:');
+  expect(tryIt.rows.map((row) => [row.printed, plain(row.text)])).toEqual([
+    ['Hello, Ada\nHello, Grace', 'Your program’s own output, as usual.'],
+    ['0.0004000000000000001', 'How long it took, in seconds, from just before your program started to just after it finished, reading and compiling your file included.'],
+  ]);
+  expect(tryIt.read.map(plain)).toEqual([
+    'Your browser’s Python ran this command on your program just now, and the run it watched counted 0 step runs. In your browser, Python runs as WebAssembly rather than directly on your CPU, so a normal Python on your computer takes a different time.',
+    'Your number will be different: it depends on your computer, your terminal and what else is running.',
+  ]);
+});
+
+test('a time of 0 is the browser’s coarse clock, and the reading tab says so', () => {
+  const tryIt = explainTryIt(7, analysisOf('x = 1\n', { [TIME]: { output: '0.0\n', exitStatus: 0 } }))!;
+
+  expect(tryIt.rows.map((row) => row.printed)).toEqual(['0.0']);
+  expect(plain(tryIt.read[1])).toBe(
+    'Browsers make this clock less precise, to protect against timing attacks: in Chrome it moves in steps of 0.1 ms, and in Firefox and Safari 1 ms. A program that takes less time than that measures as 0.',
+  );
+});
+
+test('level 7 shows native timing as a sample: an Example’s own, or greet.py’s for any other Program, with where it ran', () => {
+  const own = explainTryIt(7, analysisOf('x = 1\n'))!;
+  expect(own.sample!.command).toBe(`python -c "import time; t = time.perf_counter(); exec(open('greet.py').read()); print(time.perf_counter() - t)"`);
+  expect(own.sample!.output).toMatch(/^Hello, Ada\nHello, Grace\n\d\.\d+\n$/);
+  expect(plain(own.sample!.caption)).toMatch(/^A sample of the same command, run with CPython 3\.14\.2 on our test machine for greet\.py: Linux \(.*x86-64\), python-build-standalone 20251205\.$/);
+
+  expect(explainTryIt(6, analysisOf('x = 1\n'))!.sample).toBeNull();
+});
+
+test('when the Program stops with an error, level 7 shows the traceback and explains no lines', () => {
+  const error = 'Traceback (most recent call last):\n  …\nZeroDivisionError: division by zero\n';
+  const tryIt = explainTryIt(7, analysisOf('1 / 0\n', { [TIME]: { output: error, exitStatus: 1 } }))!;
 
   expect(tryIt.output).toBe(error);
   expect(tryIt.rows).toEqual([]);

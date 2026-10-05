@@ -1,0 +1,37 @@
+name: Prototype data
+
+# Reruns the tools in prototype/tools/ on Linux and checks they reproduce the data committed in prototype/data/.
+on:
+  push:
+    paths:
+      - 'prototype/tools/**'
+      - 'prototype/data/**'
+      - 'prototype/examples/**'
+      - '.github/workflows/data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Recapture on Ubuntu 26.04
+    runs-on: ubuntu-latest
+    # The same Ubuntu release the data was first captured on. gdb and strace need ptrace.
+    container:
+      image: ubuntu:26.04
+      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
+    steps:
+      - run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl binutils
+      - uses: actions/checkout@v7
+      - run: cp -r prototype/data /tmp/committed
+      - run: bash prototype/tools/extract-machine-code.sh
+      - run: bash prototype/tools/trace-handler-paths.sh
+      - run: bash prototype/tools/capture-example.sh greet
+      # The new data, so a difference can be looked at and committed.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: prototype-data
+          path: prototype/data
+      - run: /tmp/eti/python/bin/python3 prototype/tools/compare-data.py /tmp/committed prototype/data

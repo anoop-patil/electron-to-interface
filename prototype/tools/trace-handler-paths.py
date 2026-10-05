@@ -7,8 +7,9 @@
 # belongs to hello.py, so the thousands of handler runs during Python's own startup are skipped. From there
 # gdb single-steps (stepi) through the handler and logs every instruction until the handler jumps to the next
 # one. Calls to other functions (print itself, PyDict_GetItemRef, ...) are stepped over and logged by name;
-# their insides are not recorded.
-import gdb, json, os, subprocess
+# their insides are not recorded. Every inc and dec instruction also records the number it changed, before and
+# after (step 'value'), such as a reference count going from 3 to 2, so a note can state it.
+import gdb, json, os, re, subprocess
 
 BIN = gdb.current_progspace().filename
 OUT = os.environ['TRACE_OUT']
@@ -31,6 +32,20 @@ def owner(pc):
     return None
 
 def reg(r): return int(gdb.parse_and_eval('$' + r)) & 0xffffffffffffffff
+
+INC_DEC = re.compile(r'(?:inc|dec)([bwlq]?)\s+(\S+)')
+MEMORY = re.compile(r'(-?0x[0-9a-f]+|-?\d+)?\(%(\w+)(?:,%(\w+),(\d))?\)')
+SIZE = {'b': 1, 'w': 2, 'l': 4, 'q': 8}
+
+def changed(asm):  # the number an inc or dec instruction works on (AT&T syntax: decl 0x30(%r14), dec %eax), as a signed integer
+    m = INC_DEC.match(asm)
+    if not m: return None
+    size, operand = m.groups()
+    if operand.startswith('%'): return int(gdb.parse_and_eval('$' + operand[1:]))
+    disp, base, index, scale = MEMORY.fullmatch(operand).groups()
+    addr = (int(disp, 0) if disp else 0) + reg(base) + (reg(index) * int(scale) if index else 0)
+    data = bytes(gdb.selected_inferior().read_memory(addr & 0xffffffffffffffff, SIZE[size]))
+    return int.from_bytes(data, 'little', signed=True)
 
 def unicode_text(addr):  # a compact ASCII str object, e.g. a code object's co_filename
     o = gdb.parse_and_eval('(PyASCIIObject *)%d' % addr)
@@ -80,7 +95,9 @@ def trace(op):
                     'steps': steps, 'calls': calls, 'next': nxt}
         ins = arch.disassemble(pc)[0]
         line, chain = src(pc)
-        steps.append({'pc': format(pc, 'x'), 'part': o[1], 'asm': ins['asm'], 'src': line, 'inl': chain})
+        step = {'pc': format(pc, 'x'), 'part': o[1], 'asm': ins['asm'], 'src': line, 'inl': chain}
+        steps.append(step)
+        before = changed(ins['asm'])
         if ins['asm'].startswith('call'):
             rsp = reg('rsp'); back = pc + ins['length']
             gdb.execute('stepi', to_string=True)
@@ -92,6 +109,7 @@ def trace(op):
             calls.append({'at': format(pc, 'x'), 'fn': callee, 'returned': format(reg('rax'), 'x')})
         else:
             gdb.execute('stepi', to_string=True)
+        if before is not None: step['value'] = [before, changed(ins['asm'])]
 
 gdb.execute('set pagination off')
 gdb.execute('set confirm off')

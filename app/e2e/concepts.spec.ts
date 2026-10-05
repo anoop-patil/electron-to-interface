@@ -12,7 +12,7 @@ const LABELS = {
 };
 
 test.describe('Honesty labels', () => {
-  test('zoom levels 1 to 6 each carry one for the level, level 5’s panels carry their own, and levels not built yet carry none', async ({ page }) => {
+  test('zoom levels 1 to 7 each carry one for the level, level 5’s and 7’s panels carry their own, and levels not built yet carry none', async ({ page }) => {
     await page.goto('/zoom/1');
     await run(page, 'print("Hi")');
 
@@ -49,7 +49,15 @@ test.describe('Honesty labels', () => {
     await expect(chips.first()).toHaveAccessibleName('How we know: Typical');
     await expect(chips.last()).toHaveAccessibleName('How we know: Observed');
 
-    for (let level = 7; level <= 9; level++) {
+    // Level 7 too explains how it usually works. Its registers are worked out by reading the machine code: Derived.
+    await gauge(page).getByRole('button', { name: '7 CPU' }).click();
+    const cpuChips = zoomLevel(page, 7, 'CPU instructions').getByRole('button', { name: /^How we know:/ });
+    await expect(cpuChips).toHaveCount(3);
+    await expect(cpuChips.nth(0)).toHaveAccessibleName('How we know: Typical');
+    await expect(zoomLevel(page, 7, 'CPU instructions').getByRole('region', { name: 'Registers' }).getByRole('button', { name: 'How we know: Derived' })).toBeVisible();
+    await expect(cpuChips.nth(2)).toHaveAccessibleName('How we know: Observed');
+
+    for (let level = 8; level <= 9; level++) {
       await gauge(page).getByRole('button').nth(level - 1).click();
       await expect(anyZoomLevel(page, level)).toBeVisible();
       await expect(anyZoomLevel(page, level).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);

@@ -1,0 +1,7 @@
+{
+ "file": "hello.py",
+ "commands": {
+  "time": "Hello World!\n0.0002704999999991742\n"
+ },
+ "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"
+}

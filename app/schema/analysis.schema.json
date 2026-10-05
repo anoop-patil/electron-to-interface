@@ -485,10 +485,10 @@
     },
     "ReferenceLibrary": {
       "title": "ReferenceLibrary",
-      "description": "The Reference Library for one exact Python version, such as reference/cpython-3.14.2.json: lines of the interpreter's C source, each with a plain-English sentence, for each handler and how it ran; and, for the Examples, which handlers ran on each step run. Zoom level 6 shows it, labeled Reference.",
+      "description": "The Reference Library for one exact Python version, such as reference/cpython-3.14.2.json: lines of the interpreter's C source, each with a plain-English sentence, for each handler and how it ran; the machine code of the handlers the Examples ran; and, for the Examples, which handlers ran on each step run and the path each took through its machine code. Zoom levels 6 and 7 show it, labeled Reference.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["pythonVersion", "source", "entries", "examples"],
+      "required": ["pythonVersion", "source", "entries", "functions", "lineNotes", "examples", "machineCode"],
       "properties": {
         "pythonVersion": { "description": "The exact Python version the C source is from, such as 3.14.2.", "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
         "source": { "$ref": "#/$defs/ReferenceSource" },
@@ -498,7 +498,15 @@
           "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]*(/[a-z]+)?$" },
           "additionalProperties": { "$ref": "#/$defs/ReferenceEntry" }
         },
-        "examples": { "description": "The Examples whose handlers were recorded on every step run.", "type": "array", "items": { "$ref": "#/$defs/ReferenceExample" } }
+        "functions": {
+          "description": "What each function a handler calls does, in plain English, by its name in the machine code: PyDict_GetItemRef. A function without one is described as another function inside Python.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "lineNotes": { "description": "Notes on single machine instructions that ran for one handler run of an Example, ported from prototype v7.", "type": "array", "items": { "$ref": "#/$defs/LineNotes" } },
+        "examples": { "description": "The Examples whose handlers were recorded on every step run.", "type": "array", "items": { "$ref": "#/$defs/ReferenceExample" } },
+        "machineCode": { "$ref": "#/$defs/MachineCode" }
       }
     },
     "ReferenceSource": {
@@ -523,7 +531,8 @@
       "required": ["note", "lines"],
       "properties": {
         "note": { "description": "What is shown, and what is left out.", "type": "string", "minLength": 1 },
-        "lines": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ReferenceLine" } }
+        "lines": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ReferenceLine" } },
+        "pathNote": { "description": "What the machine instructions that ran show on a run like this, for zoom level 7.", "type": "string", "minLength": 1 }
       }
     },
     "ReferenceLine": {
@@ -544,12 +553,25 @@
       "description": "An Example whose handlers were recorded with a debugger on every step run. A Program gets them only if it is this Example and its step runs are these, in this order.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "program", "recorded", "runs"],
+      "required": ["name", "program", "recorded", "runs", "sample"],
       "properties": {
         "name": { "description": "The Example's name: hello world, greet.py.", "type": "string", "minLength": 1 },
         "program": { "description": "The Program, ending with a newline, as the Analysis has it.", "type": "string", "minLength": 1 },
         "recorded": { "description": "How the handlers were recorded, and on which build of Python.", "type": "string", "minLength": 1 },
-        "runs": { "description": "Each step run, in the order the steps ran, as the Analysis records them.", "type": "array", "items": { "$ref": "#/$defs/ReferenceRun" } }
+        "runs": { "description": "Each step run, in the order the steps ran, as the Analysis records them.", "type": "array", "items": { "$ref": "#/$defs/ReferenceRun" } },
+        "sample": { "$ref": "#/$defs/ReferenceSample" }
+      }
+    },
+    "ReferenceSample": {
+      "title": "ReferenceSample",
+      "description": "Zoom level 7's Try it yourself command, run natively on the test machine for an Example: a sample of how long it took, which a browser can't measure.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "output", "platform"],
+      "properties": {
+        "command": { "description": "The command, for the Example saved as a file: python -c \"… exec(open('greet.py').read()) …\".", "type": "string", "minLength": 1 },
+        "output": { "description": "What it printed: the Example's output, then the seconds it took.", "type": "string", "minLength": 1 },
+        "platform": { "description": "The machine and the build of Python it ran on.", "type": "string", "minLength": 1 }
       }
     },
     "ReferenceRun": {
@@ -577,7 +599,124 @@
       "required": ["entry"],
       "properties": {
         "entry": { "description": "Its Reference Library entry: CALL/rewrites.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*(/[a-z]+)?$" },
-        "inside": { "description": "The handler this one's code ran inside, if the compiler copied it there, so no handler of its own ran: CALL_PY_EXACT_ARGS.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+        "inside": { "description": "The handler this one's code ran inside, if the compiler copied it there, so no handler of its own ran: CALL_PY_EXACT_ARGS.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "path": {
+          "description": "The address of every machine instruction it ran, in the order they ran, recorded with gdb. Left out if no handler of its own ran.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9a-f]+$" }
+        },
+        "calls": {
+          "description": "The functions it called, in the order it first called each.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["function", "times"],
+            "properties": {
+              "function": { "description": "The function's name in the machine code: PyDict_GetItemRef.", "type": "string", "minLength": 1 },
+              "times": { "description": "How many times it called it.", "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "values": {
+          "description": "The number each inc or dec instruction it ran changed, such as a reference count, as gdb read it before and after.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["at", "before", "after"],
+            "properties": {
+              "at": { "description": "The instruction's place in the path, counted from 0.", "type": "integer", "minimum": 0 },
+              "before": { "type": "integer" },
+              "after": { "type": "integer" }
+            }
+          }
+        },
+        "copied": {
+          "description": "Where the path ran another handler's code that the compiler copied onto the end of this one: RESUME_CHECK's, from this place in the path to its end.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entry", "from"],
+          "properties": {
+            "entry": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+            "from": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "LineNotes": {
+      "title": "LineNotes",
+      "description": "Notes on single machine instructions that ran for one handler run of an Example. Its strings are filled in like a Template whose subject is handler: {before} and {after} are the numbers gdb read where the instruction changed one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["example", "run", "handler", "lines"],
+      "properties": {
+        "example": { "description": "The Example's name: hello world.", "type": "string", "minLength": 1 },
+        "run": { "description": "The step run, as a place in the Example's runs, counted from 0.", "type": "integer", "minimum": 0 },
+        "handler": { "description": "The handler that ran for it.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "note": { "description": "What the instructions that ran show, in place of the entry's pathNote.", "type": "string", "minLength": 1 },
+        "lines": {
+          "description": "A note for each instruction, by its address. Each must be on the path.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[0-9a-f]+$" },
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "stages": {
+          "description": "Small headings that split a long handler into stages, by the address of each stage's first note.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[0-9a-f]+$" },
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "MachineCode": {
+      "title": "MachineCode",
+      "description": "The machine code of each handler the Examples ran, disassembled from one build of CPython by prototype/tools/extract-machine-code.py.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binary", "sha256", "handlers"],
+      "properties": {
+        "binary": { "description": "The build: python-build-standalone 20251205, cpython-3.14.2, x86_64-unknown-linux-gnu.", "type": "string", "minLength": 1 },
+        "sha256": { "description": "The SHA-256 of its python3.14 program, which the tools check.", "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "handlers": {
+          "description": "Each handler, by name: LOAD_NAME.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "additionalProperties": { "$ref": "#/$defs/MachineHandler" }
+        }
+      }
+    },
+    "MachineHandler": {
+      "title": "MachineHandler",
+      "description": "One handler's machine code: its main part, then the .warm and .cold parts BOLT moved elsewhere in the program.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "size", "warm", "cold", "instructions"],
+      "properties": {
+        "symbol": { "description": "Its name in the program: _TAIL_CALL_LOAD_NAME.", "type": "string", "minLength": 1 },
+        "size": { "description": "Its main part's size in bytes.", "type": "integer", "minimum": 1 },
+        "warm": { "description": "The size of its .warm parts in bytes.", "type": "integer", "minimum": 0 },
+        "cold": { "description": "The size of its .cold parts in bytes.", "type": "integer", "minimum": 0 },
+        "instructions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/MachineInstruction" } }
+      }
+    },
+    "MachineInstruction": {
+      "title": "MachineInstruction",
+      "description": "One machine instruction, as Capstone disassembles it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "bytes", "mnemonic", "operands"],
+      "properties": {
+        "at": { "description": "Its address, in hexadecimal.", "type": "string", "pattern": "^[0-9a-f]+$" },
+        "bytes": { "description": "Its bytes, as numbers from 0 to 255, separated by spaces.", "type": "string", "pattern": "^[0-9]+( [0-9]+)*$" },
+        "mnemonic": { "description": "What it does, in short: mov, cmp, jne.", "type": "string", "minLength": 1 },
+        "operands": { "description": "What it works on, in Intel syntax: rsp, 8.", "type": "string" },
+        "note": {
+          "description": "Where it jumps or calls: here, within the handler; rare, to its rarely used code; dispatch, to the next step's handler, looked up in the table of handlers; indirect, to an address only known when it runs; or fn:NAME, to a named function or handler.",
+          "type": "string",
+          "pattern": "^(here|rare|dispatch|indirect|fn:[A-Za-z_][A-Za-z0-9_]*)$"
+        },
+        "part": { "description": "The part it is in, if not the main part.", "enum": ["warm", "cold"] }
       }
     },
     "TryIt": {
@@ -639,9 +778,9 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); or step, one Step and, where one is selected, one of its step runs (StepSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); or handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line", "token", "node", "step"]
+      "enum": ["program", "byte", "line", "token", "node", "step", "handler"]
     },
     "StepSlot": {
       "title": "StepSlot",
@@ -674,7 +813,31 @@
         { "const": "general", "description": "For a step run that rewrote its step, the general form that rewrote it: CALL." },
         { "const": "faster", "description": "For a step run that rewrote its step, the new form it then ran: CALL_PY_EXACT_ARGS." },
         { "const": "inside", "description": "For a step run whose work ran inside the handler before it, that handler: CALL_PY_EXACT_ARGS." },
-        { "const": "example", "description": "The Example the Reference Library recorded the handlers of, if the Program is one: greet.py." }
+        { "const": "example", "description": "The Example the Reference Library recorded the handlers of, if the Program is one: greet.py." },
+        { "const": "instructionsRan", "description": "For the selected step run, how many machine instructions each handler ran, in words: 33 instructions of CALL, then 107 of CALL_PY_EXACT_ARGS." }
+      ]
+    },
+    "HandlerSlot": {
+      "title": "HandlerSlot",
+      "description": "A Fact about one handler that ran for a step run, from the Reference Library, that a Template whose subject is handler can name, besides the step run's own. A slot that doesn't apply is empty.",
+      "oneOf": [
+        { "const": "handler", "description": "The handler: CALL_PY_EXACT_ARGS." },
+        { "const": "symbol", "description": "Its name in the program: _TAIL_CALL_CALL_PY_EXACT_ARGS." },
+        { "const": "instructions", "description": "How many instructions it has in all parts, with the word: 824 instructions." },
+        { "const": "main", "description": "How many of them are in its main part, as a number." },
+        { "const": "size", "description": "Its main part's size, with the word: 3,360 bytes." },
+        { "const": "moved", "description": "The size of its .warm and .cold parts, with the word: 3,166 bytes. Empty if it has none." },
+        { "const": "ran", "description": "How many instructions it ran on this run, with the word: 147 instructions." },
+        { "const": "parts", "description": "Which parts those were in, in words: 5 in its main part, 70 in its .warm part." },
+        { "const": "calls", "description": "The functions it called, in words: builtin_print, _Py_Dealloc 2 times." },
+        { "const": "copied", "description": "The handler whose copied code it ran last: RESUME_CHECK." },
+        { "const": "copiedCount", "description": "How many of the instructions it ran are that code, with the word: 11 instructions." },
+        { "const": "to", "description": "For a key line, the handler it jumps to or could fall back to: CALL." },
+        { "const": "fn", "description": "For a key line, the function it calls: PyDict_GetItemRef." },
+        { "const": "does", "description": "What that function does, in plain English." },
+        { "const": "repeats", "description": "For a key line, how many key lines in a row say the same, as a number." },
+        { "const": "before", "description": "For a key line on an inc or dec instruction, the number it changed, before: 3." },
+        { "const": "after", "description": "For a key line on an inc or dec instruction, the number it changed, after: 2." }
       ]
     },
     "NodeSlot": {
@@ -720,7 +883,9 @@
         { "const": "boxes", "description": "How many nodes the syntax tree has, as boxes, with the word: 5 boxes." },
         { "const": "lists", "description": "The lists of steps the compiler made, in words: one list for your program, and one for greet." },
         { "const": "steps", "description": "How many steps all the code objects have, with the word: 26 steps." },
-        { "const": "ran", "description": "How many steps ran in all, with the word: 42 step runs." }
+        { "const": "ran", "description": "How many steps ran in all, with the word: 42 step runs." },
+        { "const": "sample", "description": "The Example whose native timing level 7's Try it yourself shows: the Program itself if it is one, else greet.py." },
+        { "const": "platform", "description": "The machine and the build of Python that timing ran on." }
       ]
     },
     "TokenSlot": {
@@ -871,7 +1036,7 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference"],
+          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "tryItSample", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference", "registers"],
           "properties": {
             "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
             "stepRuns": { "description": "Zoom level 5's strip of every step that ran, in order.", "type": "string" },
@@ -879,10 +1044,12 @@
             "objects": { "description": "Zoom level 5's objects the plates and variables point to.", "type": "string" },
             "recipeCard": { "description": "Zoom level 5's recipe card: a code object's names, fixed values and variables.", "type": "string" },
             "afterRun": { "description": "Zoom level 5's note on the form a step had become after the Program ran again, unwatched.", "type": "string" },
-            "noReference": { "description": "Zoom level 6 for a step run the Reference Library has no C code for: a hand-written explanation of what the interpreter does.", "type": "string" },
+            "noReference": { "description": "Zoom levels 6 and 7 for a step run the Reference Library has nothing for: a hand-written explanation of what the interpreter, or the CPU, does.", "type": "string" },
+            "registers": { "description": "Zoom level 7's panel on the CPU's registers, worked out by reading the machine code.", "type": "string" },
             "machineMap": { "description": "The Machine map, beside every zoom level.", "type": "string" },
             "terminal": { "description": "The Terminal, beside every zoom level: what the Program printed when it ran.", "type": "string" },
-            "tryItOutput": { "description": "Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.", "type": "string" }
+            "tryItOutput": { "description": "Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.", "type": "string" },
+            "tryItSample": { "description": "Try it yourself's sample of a command the browser can't run, captured for an Example on the test machine.", "type": "string" }
           }
         }
       }

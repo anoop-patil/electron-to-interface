@@ -75,12 +75,12 @@ export type VariableChange =
  */
 export type CodeIndex1 = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); or step, one Step and, where one is selected, one of its step runs (StepSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); or handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte" | "line" | "token" | "node" | "step";
+export type Subject = "program" | "byte" | "line" | "token" | "node" | "step" | "handler";
 /**
  * A Fact about one step, or one step run of it, that a Template can name. A slot that doesn't apply is empty.
  *
@@ -115,7 +115,32 @@ export type StepSlot =
   | "general"
   | "faster"
   | "inside"
-  | "example";
+  | "example"
+  | "instructionsRan";
+/**
+ * A Fact about one handler that ran for a step run, from the Reference Library, that a Template whose subject is handler can name, besides the step run's own. A slot that doesn't apply is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "HandlerSlot".
+ */
+export type HandlerSlot =
+  | "handler"
+  | "symbol"
+  | "instructions"
+  | "main"
+  | "size"
+  | "moved"
+  | "ran"
+  | "parts"
+  | "calls"
+  | "copied"
+  | "copiedCount"
+  | "to"
+  | "fn"
+  | "does"
+  | "repeats"
+  | "before"
+  | "after";
 /**
  * A Fact about one node of the syntax tree that a Template can name. A slot that doesn't apply to the node is empty.
  *
@@ -152,7 +177,18 @@ export type LineSlot = "line" | "indent" | "text";
  * via the `definition` "ProgramSlot".
  */
 export type ProgramSlot =
-  "lines" | "characters" | "bytes" | "file" | "tokens" | "encoding" | "boxes" | "lists" | "steps" | "ran";
+  | "lines"
+  | "characters"
+  | "bytes"
+  | "file"
+  | "tokens"
+  | "encoding"
+  | "boxes"
+  | "lists"
+  | "steps"
+  | "ran"
+  | "sample"
+  | "platform";
 /**
  * A Fact about one token that a Template can name.
  *
@@ -743,7 +779,7 @@ export interface TryItPart {
   text: string;
 }
 /**
- * The Reference Library for one exact Python version, such as reference/cpython-3.14.2.json: lines of the interpreter's C source, each with a plain-English sentence, for each handler and how it ran; and, for the Examples, which handlers ran on each step run. Zoom level 6 shows it, labeled Reference.
+ * The Reference Library for one exact Python version, such as reference/cpython-3.14.2.json: lines of the interpreter's C source, each with a plain-English sentence, for each handler and how it ran; the machine code of the handlers the Examples ran; and, for the Examples, which handlers ran on each step run and the path each took through its machine code. Zoom levels 6 and 7 show it, labeled Reference.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ReferenceLibrary".
@@ -761,9 +797,20 @@ export interface ReferenceLibrary {
     [k: string]: ReferenceEntry;
   };
   /**
+   * What each function a handler calls does, in plain English, by its name in the machine code: PyDict_GetItemRef. A function without one is described as another function inside Python.
+   */
+  functions: {
+    [k: string]: string;
+  };
+  /**
+   * Notes on single machine instructions that ran for one handler run of an Example, ported from prototype v7.
+   */
+  lineNotes: LineNotes[];
+  /**
    * The Examples whose handlers were recorded on every step run.
    */
   examples: ReferenceExample[];
+  machineCode: MachineCode;
 }
 /**
  * Where the quoted C comes from: one file of CPython's source at one tag, and the copy the build checks every quoted line against.
@@ -808,6 +855,10 @@ export interface ReferenceEntry {
    * @minItems 1
    */
   lines: [ReferenceLine, ...ReferenceLine[]];
+  /**
+   * What the machine instructions that ran show on a run like this, for zoom level 7.
+   */
+  pathNote?: string;
 }
 /**
  * One quoted C statement and its sentence. A statement on several lines of the source is quoted on one; the build ignores spaces when it checks it, and a quote ending in … only has to match the start of those lines.
@@ -834,6 +885,42 @@ export interface ReferenceLine {
   last: number;
 }
 /**
+ * Notes on single machine instructions that ran for one handler run of an Example. Its strings are filled in like a Template whose subject is handler: {before} and {after} are the numbers gdb read where the instruction changed one.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "LineNotes".
+ */
+export interface LineNotes {
+  /**
+   * The Example's name: hello world.
+   */
+  example: string;
+  /**
+   * The step run, as a place in the Example's runs, counted from 0.
+   */
+  run: number;
+  /**
+   * The handler that ran for it.
+   */
+  handler: string;
+  /**
+   * What the instructions that ran show, in place of the entry's pathNote.
+   */
+  note?: string;
+  /**
+   * A note for each instruction, by its address. Each must be on the path.
+   */
+  lines: {
+    [k: string]: string;
+  };
+  /**
+   * Small headings that split a long handler into stages, by the address of each stage's first note.
+   */
+  stages?: {
+    [k: string]: string;
+  };
+}
+/**
  * An Example whose handlers were recorded with a debugger on every step run. A Program gets them only if it is this Example and its step runs are these, in this order.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -856,6 +943,7 @@ export interface ReferenceExample {
    * Each step run, in the order the steps ran, as the Analysis records them.
    */
   runs: ReferenceRun[];
+  sample: ReferenceSample;
 }
 /**
  * One step run of an Example, and the handlers that ran for it.
@@ -891,6 +979,143 @@ export interface HandlerRun {
    * The handler this one's code ran inside, if the compiler copied it there, so no handler of its own ran: CALL_PY_EXACT_ARGS.
    */
   inside?: string;
+  /**
+   * The address of every machine instruction it ran, in the order they ran, recorded with gdb. Left out if no handler of its own ran.
+   */
+  path?: string[];
+  /**
+   * The functions it called, in the order it first called each.
+   */
+  calls?: {
+    /**
+     * The function's name in the machine code: PyDict_GetItemRef.
+     */
+    function: string;
+    /**
+     * How many times it called it.
+     */
+    times: number;
+  }[];
+  /**
+   * The number each inc or dec instruction it ran changed, such as a reference count, as gdb read it before and after.
+   */
+  values?: {
+    /**
+     * The instruction's place in the path, counted from 0.
+     */
+    at: number;
+    before: number;
+    after: number;
+  }[];
+  /**
+   * Where the path ran another handler's code that the compiler copied onto the end of this one: RESUME_CHECK's, from this place in the path to its end.
+   */
+  copied?: {
+    entry: string;
+    from: number;
+  };
+}
+/**
+ * Zoom level 7's Try it yourself command, run natively on the test machine for an Example: a sample of how long it took, which a browser can't measure.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "ReferenceSample".
+ */
+export interface ReferenceSample {
+  /**
+   * The command, for the Example saved as a file: python -c "… exec(open('greet.py').read()) …".
+   */
+  command: string;
+  /**
+   * What it printed: the Example's output, then the seconds it took.
+   */
+  output: string;
+  /**
+   * The machine and the build of Python it ran on.
+   */
+  platform: string;
+}
+/**
+ * The machine code of each handler the Examples ran, disassembled from one build of CPython by prototype/tools/extract-machine-code.py.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "MachineCode".
+ */
+export interface MachineCode {
+  /**
+   * The build: python-build-standalone 20251205, cpython-3.14.2, x86_64-unknown-linux-gnu.
+   */
+  binary: string;
+  /**
+   * The SHA-256 of its python3.14 program, which the tools check.
+   */
+  sha256: string;
+  /**
+   * Each handler, by name: LOAD_NAME.
+   */
+  handlers: {
+    [k: string]: MachineHandler;
+  };
+}
+/**
+ * One handler's machine code: its main part, then the .warm and .cold parts BOLT moved elsewhere in the program.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "MachineHandler".
+ */
+export interface MachineHandler {
+  /**
+   * Its name in the program: _TAIL_CALL_LOAD_NAME.
+   */
+  symbol: string;
+  /**
+   * Its main part's size in bytes.
+   */
+  size: number;
+  /**
+   * The size of its .warm parts in bytes.
+   */
+  warm: number;
+  /**
+   * The size of its .cold parts in bytes.
+   */
+  cold: number;
+  /**
+   * @minItems 1
+   */
+  instructions: [MachineInstruction, ...MachineInstruction[]];
+}
+/**
+ * One machine instruction, as Capstone disassembles it.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "MachineInstruction".
+ */
+export interface MachineInstruction {
+  /**
+   * Its address, in hexadecimal.
+   */
+  at: string;
+  /**
+   * Its bytes, as numbers from 0 to 255, separated by spaces.
+   */
+  bytes: string;
+  /**
+   * What it does, in short: mov, cmp, jne.
+   */
+  mnemonic: string;
+  /**
+   * What it works on, in Intel syntax: rsp, 8.
+   */
+  operands: string;
+  /**
+   * Where it jumps or calls: here, within the handler; rare, to its rarely used code; dispatch, to the next step's handler, looked up in the table of handlers; indirect, to an address only known when it runs; or fn:NAME, to a named function or handler.
+   */
+  note?: string;
+  /**
+   * The part it is in, if not the main part.
+   */
+  part?: "warm" | "cold";
 }
 /**
  * Every Concept card, and the Concepts index that groups them: concepts/cards.json.
@@ -1037,9 +1262,13 @@ export interface HonestyLabels {
      */
     afterRun: string;
     /**
-     * Zoom level 6 for a step run the Reference Library has no C code for: a hand-written explanation of what the interpreter does.
+     * Zoom levels 6 and 7 for a step run the Reference Library has nothing for: a hand-written explanation of what the interpreter, or the CPU, does.
      */
     noReference: string;
+    /**
+     * Zoom level 7's panel on the CPU's registers, worked out by reading the machine code.
+     */
+    registers: string;
     /**
      * The Machine map, beside every zoom level.
      */
@@ -1052,6 +1281,10 @@ export interface HonestyLabels {
      * Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.
      */
     tryItOutput: string;
+    /**
+     * Try it yourself's sample of a command the browser can't run, captured for an Example on the test machine.
+     */
+    tryItSample: string;
   };
 }
 /**

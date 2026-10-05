@@ -13,3 +13,7 @@
 - [ ] The page says honestly that the highlighted path was recorded on a small test program, not on the learner's own run, and names that program.
 - [ ] A details panel states the compiler, flags (Clang, tail-calling interpreter, PGO, LTO, BOLT) and CPU architecture.
 - [ ] Any program reaches level 7 with an exact or closest match, and no network call beyond static files.
+
+## Comments
+
+- Ticket 13: the Reference Library's `machineCode` holds each handler's instructions, main part then `.warm` and `.cold`, and each handler run of an Example its `path`, `calls` and the `values` gdb read at inc and dec instructions (`app/reference/example_runs.py`). The build fails if a path runs an instruction its handler doesn't have, or a note states a number neither recorded nor in its instruction. Level 7 already describes a conditional jump that ran but didn't jump as a check, says which step run ran another handler's copied code, and names the Example the path was recorded on. To find copied code, line numbers aren't enough: the compiler gives several handlers' last jump a line of RESUME_CHECK's. The Library is about 585 kB with two Examples' handlers; every variant may call for loading it only when level 7 opens.

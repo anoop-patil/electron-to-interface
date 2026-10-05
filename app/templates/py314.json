@@ -759,6 +759,178 @@
       "subject": "program",
       "text": "The C code is quoted from CPython: Copyright (c) 2001 Python Software Foundation; All Rights Reserved. It is used under the PSF License."
     },
+    "level7.intro": {
+      "subject": "program",
+      "text": "The interpreter is a program too, so it also needs something to run on. When Python itself was built, a [[compiler|compiler]] turned its C code into [[machine|machine code]], the only language your [[cpu|CPU]] understands. Each kind of step has its own piece of machine code: its handler."
+    },
+    "level7.provenance": {
+      "subject": "step",
+      "text": "**Real machine code**, taken from the CPython 3.14.2 program for Linux on x86-64 processors, built with Clang, the tail-calling interpreter, PGO, LTO and BOLT. The highlighted instructions are the ones that ran on the step run you picked, recorded with a [[debugger|debugger]] on our test machine, running {example}."
+    },
+    "level7.kinds": {
+      "subject": "program",
+      "text": "We sort the instructions into four broad kinds, plus other. Machine code is bytes too, like your file at zoom level 2: under each instruction are its bytes, as ordinary numbers."
+    },
+    "level7.neverRan": {
+      "subject": "step",
+      "text": "This step never ran for your program, so no machine code ran for it."
+    },
+    "level7.ranInside": {
+      "subject": "step",
+      "text": "**No handler of its own ran for this step.** By this run, Python had rewritten it into {handlers}. When Python was built, the compiler copied {handlers}’s code onto the end of {inside}, the handler of the step before, so its instructions ran there, as the last ones {inside} ran."
+    },
+    "level7.showInside": {
+      "subject": "step",
+      "text": "See them in {inside}"
+    },
+    "level7.first": {
+      "subject": "handler",
+      "text": "First: **{handler}**"
+    },
+    "level7.then": {
+      "subject": "handler",
+      "text": "Then: **{handler}**"
+    },
+    "level7.only": {
+      "subject": "handler",
+      "text": "**{handler}**"
+    },
+    "level7.size": {
+      "subject": "handler",
+      "text": "{instructions} in all: {main} in its main part ({size})."
+    },
+    "level7.sizeMoved": {
+      "subject": "handler",
+      "text": "{instructions} in all: {main} in its main part ({size}), and {moved} in .warm and .cold parts that the build tools moved elsewhere in the program."
+    },
+    "level7.ran": {
+      "subject": "handler",
+      "text": "On this run, **{ran}** ran: {parts}."
+    },
+    "level7.called": {
+      "subject": "handler",
+      "text": "Functions it called: {calls}."
+    },
+    "level7.path": {
+      "subject": "handler",
+      "text": "Highlighted: the {ran} that ran, recorded one at a time with a [[debugger|debugger]] on our test machine."
+    },
+    "level7.copied": {
+      "subject": "handler",
+      "text": "The last {copiedCount} that ran are {copied}’s code, the next step’s handler: when Python was built, the compiler copied it onto the end of this one."
+    },
+    "level7.keyLines": {
+      "subject": "handler",
+      "text": "Key lines, in the order they ran"
+    },
+    "level7.showRan": {
+      "subject": "handler",
+      "text": "Show the {ran} that ran, in order"
+    },
+    "level7.showAll": {
+      "subject": "handler",
+      "text": "Show all {instructions} of this handler"
+    },
+    "level7.line.starts": {
+      "subject": "handler",
+      "text": "The handler starts here"
+    },
+    "level7.line.dispatch": {
+      "subject": "handler",
+      "text": "Jump straight into the handler for the next step, looked up in a table of handlers"
+    },
+    "level7.line.jumpTo": {
+      "subject": "handler",
+      "text": "Jump straight into the handler for {to}"
+    },
+    "level7.line.check": {
+      "subject": "handler",
+      "text": "A check: does it need to fall back to {to}? No, so carry on"
+    },
+    "level7.line.call": {
+      "subject": "handler",
+      "text": "Call {fn}: {does}"
+    },
+    "level7.line.callOther": {
+      "subject": "handler",
+      "text": "Call {fn}, another function inside Python"
+    },
+    "level7.line.indirect": {
+      "subject": "handler",
+      "text": "Call a function whose address is only known when the program runs"
+    },
+    "level7.line.repeats": {
+      "subject": "handler",
+      "text": "({repeats} checks in a row like this one; the first is shown)"
+    },
+    "level7.registers": {
+      "subject": "program",
+      "text": "The CPU’s hands: [[reg|registers]]"
+    },
+    "level7.register.r15": {
+      "subject": "program",
+      "text": "A bookmark: where we are in the bytecode being run"
+    },
+    "level7.register.r13": {
+      "subject": "program",
+      "text": "The top of the plates, Python’s stack"
+    },
+    "level7.register.r12": {
+      "subject": "program",
+      "text": "The [[frame|frame]]: the workspace of the code being run"
+    },
+    "level7.register.edi": {
+      "subject": "program",
+      "text": "On arrival: the step’s argument, like name number 0"
+    },
+    "level7.register.rax": {
+      "subject": "program",
+      "text": "At the end: which handler comes next"
+    },
+    "level7.register.rsp": {
+      "subject": "program",
+      "text": "The top of the CPU’s own stack"
+    },
+    "level7.registersNote": {
+      "subject": "program",
+      "text": "Worked out by reading this machine code. The debugger script also relies on r12 holding the frame and r15 the bookmark."
+    },
+    "level7.clock": {
+      "subject": "program",
+      "text": "Modern CPUs run at billions of clock cycles per second, but one instruction doesn’t necessarily take one clock cycle: a CPU can work on several instructions at once, and some instructions take many cycles."
+    },
+    "level7.recorded": {
+      "subject": "step",
+      "text": "The machine code comes from python-build-standalone’s CPython 3.14.2 for Linux x86-64 (release 20251205), whose SHA-256 we check. Which instructions ran was recorded with a [[debugger|debugger]] on our test machine, running {example} 3 times: every run ran the same instructions and saw the same numbers. In your browser, Python is the same C code compiled to WebAssembly, so the instructions your browser runs are different."
+    },
+    "level7.license": {
+      "subject": "program",
+      "text": "The machine code is CPython’s, taken from its compiled program: Copyright (c) 2001 Python Software Foundation; All Rights Reserved. It is used under the PSF License."
+    },
+    "level7.step": {
+      "subject": "step",
+      "title": "The real machine code for step {number} of {code}",
+      "text": "Whenever any Python program reaches this kind of step, your CPU runs a handler like this. On this run, {instructionsRan} ran. Each is one small action, like moving a number or comparing two numbers."
+    },
+    "level7.stepInside": {
+      "subject": "step",
+      "title": "The real machine code for step {number} of {code}",
+      "text": "Whenever any Python program reaches this kind of step, your CPU runs a handler like this. On this run, its check ran inside the step before, as the last instructions of {inside}."
+    },
+    "level7.stepNeverRan": {
+      "subject": "step",
+      "title": "The real machine code for step {number} of {code}",
+      "text": "Whenever any Python program reaches this kind of step, your CPU runs a handler like this. This step never ran, so no machine code ran for it."
+    },
+    "level7.stepTypical": {
+      "subject": "step",
+      "title": "How the CPU runs step {number} of {code}",
+      "text": "To run a step like this one, your CPU runs the machine code of its handler for {opname}: many small instructions, each one moving a number, doing arithmetic, comparing two numbers or jumping somewhere else. So far this zoom level has the real machine code only for two Examples, hello world and greet.py, whose instructions we recorded on every step run. For your program, this is how it usually works."
+    },
+    "level7.afterRun": {
+      "subject": "step",
+      "text": "When your program ran without being watched, Python had rewritten this step into **{afterRun}**, a faster form, by the time it finished. A run of the step after the rewrite runs {afterRun}’s machine code."
+    },
     "step.term": {
       "subject": "step",
       "text": "{opname}{argument} · step {number} of {code}"
@@ -1232,6 +1404,26 @@
       "subject": "step",
       "text": "step {number} of {code} never ran"
     },
+    "map.level7.cpu": {
+      "subject": "step",
+      "text": "running the machine code of {handlers}"
+    },
+    "map.level7.cpuTypical": {
+      "subject": "step",
+      "text": "running the machine code of {opname}"
+    },
+    "map.level7.cpuNeverRan": {
+      "subject": "step",
+      "text": "step {number} of {code} never ran"
+    },
+    "map.level7.reg": {
+      "subject": "program",
+      "text": "bookmark, top plate, frame"
+    },
+    "map.level7.cache": {
+      "subject": "program",
+      "text": "busy machine code"
+    },
     "tryIt.disRow.lines": {
       "subject": "program",
       "text": "The line of your file each group of steps comes from. 0 is Python’s own setup step, before line 1."
@@ -1263,6 +1455,26 @@
     "tryIt.level6.links": {
       "subject": "program",
       "text": "The C on this zoom level, on GitHub at CPython’s v3.14.2 tag. These links open GitHub, outside this app:"
+    },
+    "tryIt.level7.browser": {
+      "subject": "program",
+      "text": "Your browser’s Python ran this command on your program just now, and the run it watched counted {ran}. In your browser, Python runs as WebAssembly rather than directly on your CPU, so a normal Python on your computer takes a different time."
+    },
+    "tryIt.level7.zero": {
+      "subject": "program",
+      "text": "Browsers make this clock less precise, to protect against timing attacks: in Chrome it moves in steps of 0.1 ms, and in Firefox and Safari 1 ms. A program that takes less time than that measures as 0."
+    },
+    "tryIt.level7.sample": {
+      "subject": "program",
+      "text": "A sample of the same command, run with CPython 3.14.2 on our test machine for {sample}: {platform}."
+    },
+    "tryIt.timeRow.output": {
+      "subject": "program",
+      "text": "Your program’s own output, as usual."
+    },
+    "tryIt.timeRow.seconds": {
+      "subject": "program",
+      "text": "How long it took, in seconds, from just before your program started to just after it finished, reading and compiling your file included."
     },
     "tryIt.adaptiveRow": {
       "subject": "step",
@@ -1392,6 +1604,31 @@
       "read": [
         "First comes what your program printed. Then the steps, as python -m dis shows them at the zoom level before this one, but in the forms they had become.",
         "Python rewrites some steps the first time they run, and others only once they have run a few times. A step that never ran keeps its general form."
+      ]
+    },
+    "7": {
+      "command": "python -c \"import time; t = time.perf_counter(); exec(open('{file}').read()); print(time.perf_counter() - t)\"",
+      "intro": "Measure how long your whole program takes on your own computer:",
+      "parts": [
+        {
+          "code": "time.perf_counter()",
+          "text": "Read a very precise clock, in seconds."
+        },
+        {
+          "code": "t = …",
+          "text": "Remember the time before starting."
+        },
+        {
+          "code": "exec(open('{file}').read())",
+          "text": "Read your file and run it."
+        },
+        {
+          "code": "print(time.perf_counter() - t)",
+          "text": "Show how many seconds passed in between."
+        }
+      ],
+      "read": [
+        "Your number will be different: it depends on your computer, your terminal and what else is running."
       ]
     }
   }

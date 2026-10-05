@@ -9,8 +9,8 @@ import { explainForStep } from '../explain/steps';
 import type { Analysis } from '../generated/analysis';
 import { RunBar, StepLists } from './BytecodeZoomLevel';
 
-/** Where the site serves CPython's license, which must ship with the C it quotes. */
-const CPYTHON_LICENSE = '/licenses/CPython-LICENSE.txt';
+/** Where the site serves CPython's license, which must ship with the C it quotes and the machine code it shows. */
+export const CPYTHON_LICENSE = '/licenses/CPython-LICENSE.txt';
 
 /** The C source file's own name: bytecodes.c. */
 const SOURCE_FILE = LIBRARY.source.file.split('/').at(-1);
@@ -24,7 +24,7 @@ interface LevelProps {
 }
 
 /** The Interpreter handoff: your program, translated as far as bytecode, and Python itself, translated long ago. */
-function Handoff({ analysis }: { analysis: Analysis }) {
+export function Handoff({ analysis }: { analysis: Analysis }) {
   const tracks = [
     { explanation: explainProgram('level6.yourProgram', analysis), here: false },
     { explanation: explainProgram('level6.pythonItself', analysis), here: true },

@@ -27,7 +27,7 @@ test('the map shows the learner’s computer, and lights where the Program is at
   await expect(lit(page)).toHaveAccessibleName(/^RAM .*your program · as 5 boxes, temporary$/);
 
   // A zoom level that isn't built yet lights nothing.
-  await gauge(page).getByRole('button', { name: '7 CPU' }).click();
+  await gauge(page).getByRole('button', { name: '8 OS' }).click();
   await expect(lit(page)).toHaveCount(0);
 });
 

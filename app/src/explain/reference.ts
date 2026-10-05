@@ -38,5 +38,11 @@ export function handlersRun(analysis: Analysis, step: Step, at: number | null): 
   return step.opname in LIBRARY.entries ? [{ entry: step.opname }] : [];
 }
 
+/** The Example whose native timing is shown for a Program that isn't one. */
+const SAMPLE_EXAMPLE = 'greet.py';
+
+/** The Example whose native timing level 7's Try it yourself shows: the Program itself if it is one, else greet.py. */
+export const sampleFor = (analysis: Analysis): ReferenceExample => exampleOf(analysis) ?? LIBRARY.examples.find(({ name }) => name === SAMPLE_EXAMPLE)!;
+
 /** The handler an entry quotes: CALL/rewrites quotes CALL. */
 export const handlerOf = (entry: string) => entry.split('/')[0];

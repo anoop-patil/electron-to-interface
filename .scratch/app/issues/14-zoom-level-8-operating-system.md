@@ -16,3 +16,4 @@
 ## Comments
 
 - Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 8 shows the step run closest to the Selection until this ticket gives it its lines of output: add its Facts to `FACTS` and replace its entry in `LINKS`. The `Anchor` of a step run carries the run, so the entry can find the line it printed.
+- Ticket 13: Try it yourself can show a sample beside the browser's output: `TryItExplanation.sample`, labeled with the panel `tryItSample` (Reference). Level 7's samples are in the Reference Library, one for each Example, from `prototype/data/example-*-cpython-3.14.2.json`; any other Program shows greet.py's. greet.py's capture already holds an `strace` output, but hello world's doesn't yet.

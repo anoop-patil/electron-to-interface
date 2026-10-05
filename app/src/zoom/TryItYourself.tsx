@@ -67,7 +67,26 @@ function Output({ tryIt }: { tryIt: TryItExplanation }) {
           <ExplanationText spans={tryIt.observed} />
         </p>
       </div>
+      {tryIt.sample && <Sample sample={tryIt.sample} />}
     </div>
+  );
+}
+
+/** A command the browser can't run, such as native timing: its output, captured for an Example on the test machine. */
+function Sample({ sample }: { sample: NonNullable<TryItExplanation['sample']> }) {
+  return (
+    <section className="mt-2 grid gap-2" aria-label="A sample from our test machine">
+      <code className="justify-self-start rounded-md border border-rule bg-sunk px-2 py-0.5 text-[12.5px] text-ink2 [overflow-wrap:anywhere]">{sample.command}</code>
+      <pre className="m-0 whitespace-pre-wrap rounded-[10px] border border-rule2 bg-term-bg px-3.5 py-3 font-mono text-[12.5px] leading-[1.55] text-term-fg [overflow-wrap:anywhere]">
+        {sample.output}
+      </pre>
+      <div className="flex flex-wrap items-center gap-2">
+        <HonestyChip label={panelLabel('tryItSample')} size="panel" />
+        <p className="text-[13px] text-ink3">
+          <ExplanationText spans={sample.caption} />
+        </p>
+      </div>
+    </section>
   );
 }
 

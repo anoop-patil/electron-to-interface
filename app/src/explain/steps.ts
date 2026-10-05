@@ -4,7 +4,7 @@ import { codeName, framesAfter, objectsIn, runIndex, runsOfStep, stepById, stepO
 import { counted, fill, fillString, hasTemplate, template, type Explanation, type Span, type TemplateId } from './explain';
 import { exampleOf, handlerOf, handlersRun } from './reference';
 
-/** The Selection at levels 5 and 6: a step, and the run of it that is selected, as a place in the Analysis's runs, or null for a step that never ran. */
+/** The Selection at levels 5 to 7: a step, and the run of it that is selected, as a place in the Analysis's runs, or null for a step that never ran. */
 export interface StepSelection {
   step: StepInCode;
   run: number | null;
@@ -15,7 +15,7 @@ export interface StepSelection {
  * first run if it ran, or the step run closest to a Selection from another level (`selectionAt`, which gives a step's
  * own Fact ID only for a step that never ran). Null if the Program has no steps.
  */
-export function stepSelectionAt(analysis: Analysis, selection: string | null, level: 5 | 6): StepSelection | null {
+export function stepSelectionAt(analysis: Analysis, selection: string | null, level: 5 | 6 | 7): StepSelection | null {
   const id = selectionAt(analysis, selection, level);
   if (id === null) return null;
   if (!id.startsWith('run-')) return { step: stepById(analysis, id)!, run: null };
@@ -124,16 +124,27 @@ export function stepFacts(analysis: Analysis, found: StepInCode, at: number | nu
   };
 }
 
-/** The handlers that ran for a step run, if the Reference Library recorded them: the general form and the new one, if it rewrote itself. */
+/**
+ * The handlers that ran for a step run, if the Reference Library recorded them: the general form and the new one, if it
+ * rewrote itself, and how many machine instructions each ran.
+ */
 function handlerFacts(analysis: Analysis, found: StepInCode, at: number | null) {
   const handlers = handlersRun(analysis, found.step, at);
   const names = handlers.map(({ entry }) => handlerOf(entry));
+  // 33 instructions of CALL, then 107 of CALL_PY_EXACT_ARGS.
+  const ran = handlers
+    .filter(({ path }) => path)
+    .map(({ entry, path }, index) => {
+      const count = path!.length.toLocaleString('en-US');
+      return index === 0 ? `${count} ${path!.length === 1 ? 'instruction' : 'instructions'} of ${handlerOf(entry)}` : `${count} of ${handlerOf(entry)}`;
+    });
   return {
     handlers: names.join(', then '),
     general: names.length > 1 ? names[0] : '',
     faster: names.length > 1 ? names[1] : '',
     inside: handlers[0]?.inside ?? '',
     example: exampleOf(analysis)?.name ?? '',
+    instructionsRan: ran.join(', then '),
   };
 }
 

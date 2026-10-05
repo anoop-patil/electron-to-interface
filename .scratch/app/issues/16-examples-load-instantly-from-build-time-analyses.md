@@ -11,3 +11,7 @@
 - [ ] Hello world renders before Pyodide is ready, while Pyodide loads in the background. Examples run automatically.
 - [ ] The learner can type their own Program while Pyodide loads. A friendly loading indicator shows until Run works.
 - [ ] Browsers that can't run Pyodide (for example low-memory phones) still get every Example, plus a note.
+
+## Comments
+
+- Ticket 13: level 7's Try it yourself shows each Example's own native timing, captured on the test machine, and greet.py's for anything else. Only hello world and greet.py have one; a new Example gets greet.py's until the capture tools time it too.

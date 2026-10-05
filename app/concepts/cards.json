@@ -97,7 +97,7 @@
     "debugger": {
       "name": "Debugger (gdb)",
       "like": "A pause button and a magnifying glass for a running program.",
-      "text": "A tool that can stop a program at any machine instruction, look inside the CPU’s [[reg|registers]] and the program’s memory, then let it take exactly one more step. We used one called gdb to run Python one instruction at a time on the Examples, and wrote down which handler ran on every step run. That makes the program enormously slower, but in each of our 3 runs exactly the same instructions ran.",
+      "text": "A tool that can stop a program at any machine instruction, look inside the CPU’s [[reg|registers]] and the program’s memory, then let it take exactly one more step. We used one called gdb to run Python one instruction at a time on the Examples, and wrote down which handler ran on every step run, every machine instruction it ran, and the numbers some of them changed, such as how many labels point to an object. That makes the program enormously slower, but in each of our 3 runs exactly the same instructions ran.",
       "related": ["machine", "reg", "cpu"]
     },
     "disk": {

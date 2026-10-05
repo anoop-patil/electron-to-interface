@@ -3,6 +3,7 @@ import type { Analysis, ByteFact, ByteSlot, ProgramSlot, Template, Templates, To
 import { bitsOf } from '../concepts/bits';
 import { charLabel, linesOf } from '../zoom/characters';
 import { codeName } from './bytecode';
+import { sampleFor } from './reference';
 
 /** The Templates for Python 3.14. The build checks them against the schema, the slots and the Concept cards (see checkContent.ts). */
 const TEMPLATES = (templateFile as Templates).templates;
@@ -61,6 +62,7 @@ export function fill(template: Template, facts: Record<string, string>): Explana
 export const counted = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
+  const sample = sampleFor(analysis);
   return {
     lines: counted(linesOf(analysis.program).length, 'line', 'lines'),
     characters: counted(Array.from(analysis.program).length, 'character', 'characters'),
@@ -73,11 +75,13 @@ export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
     lists: listsOf(analysis),
     steps: counted(analysis.bytecode.reduce((count, code) => count + code.steps.length, 0), 'step', 'steps'),
     ran: counted(analysis.runs.length, 'step run', 'step runs'),
+    sample: sample.name,
+    platform: sample.sample.platform,
   };
 }
 
 /** Names in a sentence: greet, add and Point. */
-const joined = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+export const joined = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
 
 /** The lists of steps the compiler made, one for each code object, in words. */
 function listsOf(analysis: Analysis) {

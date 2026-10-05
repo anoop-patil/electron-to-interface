@@ -28,18 +28,21 @@
     "3": "observed",
     "4": "observed",
     "5": "observed",
-    "6": "reference"
+    "6": "reference",
+    "7": "reference"
   },
   "panels": {
     "byteBits": "derived",
     "machineMap": "typical",
     "terminal": "observed",
     "tryItOutput": "observed",
+    "tryItSample": "reference",
     "stepRuns": "observed",
     "plates": "derived",
     "objects": "derived",
     "recipeCard": "observed",
     "afterRun": "observed",
-    "noReference": "typical"
+    "noReference": "typical",
+    "registers": "derived"
   }
 }

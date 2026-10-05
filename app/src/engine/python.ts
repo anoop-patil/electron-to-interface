@@ -1,6 +1,6 @@
 import { loadPyodide } from 'pyodide';
 import analyzerSource from '../../analyzer/analyze.py?raw';
-import { FILE_NAME, tryItCommands } from '../explain/tryIt';
+import { FILE_NAME, tryItCommands } from '../explain/commands';
 import type { Analysis } from '../generated/analysis';
 
 export interface Python {

@@ -5,13 +5,23 @@ import { fileURLToPath } from 'node:url';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { Plugin } from 'vite';
 import schema from '../../schema/analysis.schema.json';
-import type { ConceptCards, HonestyLabels, ReferenceLibrary, Subject, Templates } from '../generated/analysis';
+import type { ConceptCards, HonestyLabels, MachineInstruction, ReferenceLibrary, Subject, Templates } from '../generated/analysis';
 import { MAP_NOTE, PARTS } from '../machine/parts';
 
 /** The schema definition that lists each subject's slots. */
-const SLOT_DEFS: Record<Subject, keyof typeof schema.$defs> = { program: 'ProgramSlot', byte: 'ByteSlot', line: 'LineSlot', token: 'TokenSlot', node: 'NodeSlot', step: 'StepSlot' };
+const SLOT_DEFS: Record<Subject, (keyof typeof schema.$defs)[]> = {
+  program: ['ProgramSlot'],
+  byte: ['ByteSlot'],
+  line: ['LineSlot'],
+  token: ['TokenSlot'],
+  node: ['NodeSlot'],
+  step: ['StepSlot'],
+  // A handler's Templates can also name any Fact of the step run it ran for.
+  handler: ['HandlerSlot', 'StepSlot'],
+};
 
-const slotsOf = (subject: Subject) => new Set((schema.$defs[SLOT_DEFS[subject]] as { oneOf: { const: string }[] }).oneOf.map((slot) => slot.const));
+const slotsOf = (subject: Subject) =>
+  new Set(SLOT_DEFS[subject].flatMap((def) => (schema.$defs[def] as { oneOf: { const: string }[] }).oneOf.map((slot) => slot.const)));
 
 const ajv = new Ajv2020({ strict: true }).addSchema(schema, 'analysis');
 const validator = <T>(def: keyof typeof schema.$defs) => ajv.compile<T>({ $ref: `analysis#/$defs/${def}` });
@@ -137,10 +147,78 @@ function quoteProblems(file: ReferenceLibrary, source: string[]): string[] {
   );
 }
 
+/** Numbers as a note writes them, leaving out its slots: 3, 1,000. */
+const numbersIn = (text: string) => [...text.replace(/\{[A-Za-z]+\}/g, '').matchAll(/\d[\d,]*/g)].map(([found]) => Number(found.replace(/,/g, '')));
+
+/** The sizes in bytes that an operand's size names: a word ptr reads 2 bytes. */
+const SIZES: Record<string, number> = { byte: 1, word: 2, dword: 4, qword: 8, xmmword: 16 };
+
+/** Every number an instruction holds: in its operands, written in decimal or hexadecimal, and the sizes they name. */
+const numbersOf = ({ operands }: MachineInstruction) =>
+  new Set([
+    ...[...operands.matchAll(/\b(0x[0-9a-f]+|\d+)\b/g)].map(([found]) => Number(found)),
+    ...[...operands.matchAll(/\b(byte|word|dword|qword|xmmword) ptr/g)].map(([, size]) => SIZES[size]),
+  ]);
+
+/**
+ * What is wrong with the machine code and the notes on it: a step run whose path isn't the machine code of its handler,
+ * and a note on an instruction that didn't run, that names a number gdb didn't record there, or that states a number
+ * neither recorded nor in the instruction itself. Nothing a note says is guessed.
+ */
+function machineProblems(file: ReferenceLibrary): string[] {
+  const { handlers } = file.machineCode;
+  const inRuns = file.examples.flatMap(({ name, runs }) =>
+    runs.flatMap((run, at) =>
+      run.handlers.flatMap(({ entry, path, values, copied }) => {
+        if (!path) return [];
+        const handler = entry.split('/')[0];
+        const code = handlers[handler];
+        if (!code) return [`${name}’s step run ${at + 1} ran ${handler}, which has no machine code`];
+        const addresses = new Set(code.instructions.map((instruction) => instruction.at));
+        return [
+          ...path.filter((address) => !addresses.has(address)).map((address) => `${name}’s step run ${at + 1} ran ${address}, which isn’t an instruction of ${handler}`),
+          ...(values ?? []).filter((value) => value.at >= path.length).map((value) => `${name}’s step run ${at + 1} has a value at ${value.at}, past the end of its path`),
+          ...(copied && copied.from >= path.length ? [`${name}’s step run ${at + 1} ran copied code from ${copied.from}, past the end of its path`] : []),
+        ];
+      }),
+    ),
+  );
+  const handlerSlots = slotsOf('handler');
+  const inNotes = file.lineNotes.flatMap(({ example, run, handler, note, lines, stages }) => {
+    const id = `${example}’s notes on ${handler}`;
+    const ran = file.examples.find(({ name }) => name === example)?.runs[run]?.handlers.find(({ entry }) => entry.split('/')[0] === handler);
+    if (!ran?.path) return [`${id} are for step run ${run + 1}, which didn’t run ${handler}`];
+    const path = ran.path;
+    const instructions = new Map(handlers[handler].instructions.map((instruction) => [instruction.at, instruction]));
+    const strings = [...(note ? [note] : []), ...Object.values(lines)];
+    const onLines = Object.entries(lines).flatMap(([address, say]) => {
+      const place = path.indexOf(address);
+      if (place < 0) return [`${id} has a note on ${address}, which didn’t run`];
+      const recorded = ran.values?.some((value) => value.at === place);
+      const unrecorded = slotsIn([say])
+        .filter((slot) => (slot === 'before' || slot === 'after') && !recorded)
+        .map((slot) => `${id} names {${slot}} at ${address}, where gdb recorded no value`);
+      const held = numbersOf(instructions.get(address)!);
+      const guessed = numbersIn(say)
+        .filter((found) => !held.has(found))
+        .map((found) => `${id} states ${found} at ${address}, which gdb didn’t record and the instruction doesn’t hold`);
+      return [...unrecorded, ...guessed];
+    });
+    return [
+      ...onLines,
+      ...Object.keys(stages ?? {}).filter((address) => !(address in lines)).map((address) => `${id} start a stage at ${address}, which has no note`),
+      ...slotsIn(strings).filter((slot) => !handlerSlots.has(slot)).map((slot) => `${id} refer to {${slot}}, which isn’t a Fact of a handler`),
+      ...(note ? numbersIn(note).map((found) => `${id} state ${found} in their note, which nothing recorded`) : []),
+      ...unclosedBold(id, strings),
+    ];
+  });
+  return [...inRuns, ...inNotes];
+}
+
 /**
  * What is wrong with a Reference Library: a copy of the C source that isn't the file at the tag, a quoted line that
- * isn't where it says, a sentence with a slot a step doesn't have or a card that doesn't exist, and an Example's step
- * run that names an entry that doesn't exist.
+ * isn't where it says, a sentence with a slot a step doesn't have or a card that doesn't exist, an Example's step
+ * run that names an entry that doesn't exist, and anything wrong with the machine code or the notes on it.
  */
 function referenceProblems(file: ReferenceLibrary, copy: Buffer, cardIds: Set<string>): string[] {
   const { source } = file;
@@ -148,18 +226,20 @@ function referenceProblems(file: ReferenceLibrary, copy: Buffer, cardIds: Set<st
   if (sha256 !== source.sha256) return [`${source.copy} isn’t ${source.file} at ${source.tag}: its SHA-256 is ${sha256}`];
   const slots = slotsOf('step');
   const inEntries = Object.entries(file.entries).flatMap(([key, entry]) => {
-    const strings = [entry.note, ...entry.lines.map((line) => line.say)];
+    const strings = [entry.note, ...entry.lines.map((line) => line.say), ...(entry.pathNote ? [entry.pathNote] : [])];
     const unknownSlots = slotsIn(strings)
       .filter((slot) => !slots.has(slot))
       .map((slot) => `${key} refers to {${slot}}, which isn’t a Fact of a step`);
-    return [...unknownSlots, ...unclosedBold(key, strings), ...conceptProblems(key, strings, cardIds)];
+    // A path note is about any run of the handler, so the only numbers it can state are Facts.
+    const guessed = numbersIn(entry.pathNote ?? '').map((found) => `${key}’s path note states ${found}, which nothing recorded`);
+    return [...unknownSlots, ...guessed, ...unclosedBold(key, strings), ...conceptProblems(key, strings, cardIds)];
   });
   const inExamples = file.examples.flatMap(({ name, runs }) =>
     runs.flatMap((run, at) =>
       run.handlers.filter(({ entry }) => !(entry in file.entries)).map(({ entry }) => `${name}’s step run ${at + 1} ran ${entry}, which has no entry`),
     ),
   );
-  return [...quoteProblems(file, copy.toString('utf-8').split(/\r?\n/)), ...inEntries, ...inExamples];
+  return [...quoteProblems(file, copy.toString('utf-8').split(/\r?\n/)), ...inEntries, ...inExamples, ...machineProblems(file)];
 }
 
 const readJson = async (path: string): Promise<unknown> => JSON.parse(await readFile(path, 'utf-8'));

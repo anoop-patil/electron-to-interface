@@ -114,7 +114,10 @@ test('the build fails if more than one label has the warning color', async () =>
 
 test('a different label set is an edit to the labels file alone: three labels instead of five pass the check', async () => {
   const { observed, reference, typical } = SHIPPED.labels.labels;
-  const panels = { byteBits: 'observed', machineMap: 'typical', terminal: 'observed', tryItOutput: 'observed', stepRuns: 'observed', plates: 'observed', objects: 'observed', recipeCard: 'observed', afterRun: 'observed', noReference: 'typical' };
+  const panels = {
+    byteBits: 'observed', machineMap: 'typical', terminal: 'observed', tryItOutput: 'observed', tryItSample: 'reference', stepRuns: 'observed',
+    plates: 'observed', objects: 'observed', recipeCard: 'observed', afterRun: 'observed', noReference: 'typical', registers: 'reference',
+  };
   const run = build(withLabels({ labels: { observed, reference, typical }, panels }));
 
   await expect(run()).resolves.toBeUndefined();
@@ -208,4 +211,47 @@ test('the build fails if the Reference Library doesn’t match the schema', asyn
   const run = build(withEntry('call', { note: 'Lower case.', lines: [] }));
 
   await expect(run()).rejects.toThrow(/must match pattern|must NOT have fewer than 1 items/);
+});
+
+/** The shipped Reference Library, with hello world's notes on one handler changed. */
+function withLineNotes(handler: string, change: (notes: { lines: Record<string, string>; note?: string }) => object) {
+  const lineNotes = SHIPPED.reference.lineNotes.map((notes: { handler: string; lines: Record<string, string> }) => (notes.handler === handler ? { ...notes, ...change(notes) } : notes));
+  return { reference: { ...SHIPPED.reference, lineNotes } };
+}
+
+test('the build fails if a note on a machine instruction states a number nothing recorded', async () => {
+  // gdb recorded print's reference count going from 3 to 2 at 186ea76; the instruction itself holds no number.
+  const run = build(withLineNotes('CALL', ({ lines }) => ({ lines: { ...lines, '186ea76': 'One fewer label points to print: 3 becomes 2' } })));
+
+  await expect(run()).rejects.toThrow(
+    ['hello world’s notes on CALL states 3 at 186ea76, which gdb didn’t record and the instruction doesn’t hold', 'hello world’s notes on CALL states 2 at 186ea76, which gdb didn’t record and the instruction doesn’t hold'].join('\n'),
+  );
+});
+
+test('a note can state a number its instruction holds, such as the 208 bytes of sub rsp, 0xd0, or a size such as a word, 2 bytes', async () => {
+  const run = build(withLineNotes('CALL', ({ lines }) => ({ lines: { ...lines, '186e594': 'Make room: 208 bytes', '186eab1': 'Read one word, 2 bytes' } })));
+
+  await expect(run()).resolves.toBeUndefined();
+});
+
+test('the build fails if a note names a number gdb didn’t record at its instruction, or sits on an instruction that didn’t run', async () => {
+  // 186e594 changes no number, and 186e63a is an instruction of CALL that didn't run for hello world.
+  const run = build(withLineNotes('CALL', ({ lines }) => ({ lines: { ...lines, '186e594': '{before} becomes {after}', '186e63a': 'Never ran' } })));
+
+  await expect(run()).rejects.toThrow(
+    [
+      'hello world’s notes on CALL names {before} at 186e594, where gdb recorded no value',
+      'hello world’s notes on CALL names {after} at 186e594, where gdb recorded no value',
+      'hello world’s notes on CALL has a note on 186e63a, which didn’t run',
+    ].join('\n'),
+  );
+});
+
+test('the build fails if an Example’s path runs an instruction its handler doesn’t have', async () => {
+  const [hello, ...others] = SHIPPED.reference.examples;
+  const [resume] = hello.runs[0].handlers;
+  const runs = [{ ...hello.runs[0], handlers: [{ ...resume, path: [...resume.path, 'abc'] }] }, ...hello.runs.slice(1)];
+  const run = build({ reference: { ...SHIPPED.reference, examples: [{ ...hello, runs }, ...others] } });
+
+  await expect(run()).rejects.toThrow('hello world’s step run 1 ran abc, which isn’t an instruction of RESUME');
 });

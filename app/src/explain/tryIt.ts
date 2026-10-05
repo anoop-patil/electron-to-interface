@@ -3,15 +3,14 @@ import type { Analysis, AstFact, CommandRun, LineSlot, Templates, TokenFact } fr
 import { linesOf } from '../zoom/characters';
 import { byteFacts, counted, fillString, isAfterLastLine, programFacts, template, tokenFacts, type Span, type TemplateId } from './explain';
 import { allSteps, stepsOf, type StepInCode } from './bytecode';
+import { commandFor } from './commands';
 import { level6 } from './interpreter';
+import { sampleFor } from './reference';
 import { stepFacts } from './steps';
 import { nodeFacts, nodeKind } from './syntaxTree';
 
 /** Each zoom level's Try it yourself, from the Template file. The build checks it like the Templates (see checkContent.ts). */
 const TRY_IT = (templateFile as Templates).tryIt ?? {};
-
-/** The name the Program is saved under for the commands, until file upload (ticket 19) supplies the learner's own. */
-export const FILE_NAME = 'program.py';
 
 /** A zoom level's Try it yourself, filled in with the Program's Facts and what its command printed. */
 export interface TryItExplanation {
@@ -32,15 +31,11 @@ export interface TryItExplanation {
   /** Level 6: the lines of C its zoom level shows for the selected step run, on GitHub. */
   links: { text: string; href: string }[];
   linksIntro: Span[];
+  /** Level 7: the same command run natively on the test machine for an Example, which a browser can't do. */
+  sample: { command: string; output: string; caption: Span[] } | null;
 }
 
 const plain = (spans: Span[]) => spans.map((span) => span.text).join('');
-
-/**
- * The Try it yourself commands for a Program saved as `fileName`, in zoom level order. The browser's Python runs each one
- * on the Program, so the Analysis carries what it printed. The build allows no slot but {file} in a command.
- */
-export const tryItCommands = (fileName: string) => Object.values(TRY_IT).map(({ command }) => plain(fillString(command, { file: fileName })));
 
 /** Level 2's rows: the bytes of each line, and what they store. */
 function bytesRows(analysis: Analysis) {
@@ -235,11 +230,41 @@ function adaptiveRows(analysis: Analysis, { output, exitStatus }: CommandRun) {
   });
 }
 
+/** The seconds level 7's command printed on its last line, after the Program's own output, or null if it stopped with an error. */
+function secondsOf({ output, exitStatus }: CommandRun) {
+  const lines = output.replace(/\n$/, '').split('\n');
+  const last = lines.at(-1) ?? '';
+  return exitStatus === 0 && /^\d+(\.\d+)?(e-\d+)?$/.test(last) ? { printed: lines.slice(0, -1), seconds: last } : null;
+}
+
+/** Level 7's rows: the Program's own output, if it printed any, then how long it took. */
+function timeRows(analysis: Analysis, result: CommandRun) {
+  const found = secondsOf(result);
+  if (!found) return [];
+  const facts = programFacts(analysis);
+  const row = (printed: string, id: TemplateId) => ({ printed, text: fillString(template(id, 'program').text, facts) });
+  const shown = found.printed.length > 3 ? [...found.printed.slice(0, 3), '…'] : found.printed;
+  return [...(shown.length > 0 ? [row(shown.join('\n'), 'tryIt.timeRow.output')] : []), row(found.seconds, 'tryIt.timeRow.seconds')];
+}
+
+/** Level 7's notes: the browser measured the time, on WebAssembly, and a time of 0 is its clock's coarseness. */
+function level7Notes(analysis: Analysis, result: CommandRun): Span[][] {
+  const facts = programFacts(analysis);
+  const zero = Number(secondsOf(result)?.seconds) === 0;
+  return (['tryIt.level7.browser', ...(zero ? ['tryIt.level7.zero' as const] : [])] as const).map((id) => fillString(template(id, 'program').text, facts));
+}
+
 /** The notes on reading a level's output that the page works out from the Program and what its command printed. */
-const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes, 4: level4Notes };
+const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]> = { 1: level1Notes, 2: level2Notes, 3: level3Notes, 4: level4Notes, 7: level7Notes };
 
 /** The rows of a level's reading tab, worked out from the Program and what its command printed. */
-const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows, 5: disRows, 6: adaptiveRows };
+const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows, 5: disRows, 6: adaptiveRows, 7: timeRows };
+
+/** Level 7's sample: the timing command, run natively for the Program if it is an Example, else for greet.py. */
+function sampleOf(analysis: Analysis): TryItExplanation['sample'] {
+  const { command, output } = sampleFor(analysis).sample;
+  return { command, output, caption: fillString(template('tryIt.level7.sample', 'program').text, programFacts(analysis)) };
+}
 
 /** Level 6's links: each handler's lines of C that the zoom level shows for the selected step run, on GitHub. */
 const linksOf = (analysis: Analysis, selection: string | null) =>
@@ -251,7 +276,7 @@ export function explainTryIt(level: number, analysis: Analysis, selection: strin
   if (!tryIt) return null;
   const facts = programFacts(analysis);
   const fill = (string: string) => fillString(string, facts);
-  const command = plain(fill(tryIt.command));
+  const command = commandFor(tryIt.command, analysis.fileName);
   const result = analysis.commands.find((other) => other.command === command);
   if (!result) throw new Error(`The Analysis has no output for ${command}`);
   const notes = NOTES[level]?.(analysis, result) ?? [];
@@ -266,5 +291,6 @@ export function explainTryIt(level: number, analysis: Analysis, selection: strin
     read: [...notes, ...tryIt.read.map(fill)],
     links: level === 6 ? linksOf(analysis, selection) : [],
     linksIntro: fill(template('tryIt.level6.links', 'program').text),
+    sample: level === 7 ? sampleOf(analysis) : null,
   };
 }

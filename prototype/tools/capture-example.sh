@@ -2,7 +2,8 @@
 # Captures everything prototype v8 shows for the Example prototype/examples/<name>.py, on the exact
 # CPython 3.14.2 build used for every capture (python-build-standalone 20251205, x86-64 Linux):
 #   data/example-<name>-cpython-3.14.2.json                 facts Python records, plus Try it yourself outputs
-#   data/handler-paths-<name>-cpython-3.14.2-linux-x86_64.json  which machine instructions ran, per step and run (gdb, 3 identical runs)
+#   data/handler-paths-<name>-cpython-3.14.2-linux-x86_64.json  which machine instructions ran, per step and run (gdb, 3 identical
+#                                                               runs), and the numbers inc and dec instructions changed
 #   data/machine-code-<name>-cpython-3.14.2-linux-x86_64.json   the machine code of every handler that ran
 # gdb and strace are downloaded and unpacked under /tmp, never installed.
 set -e
@@ -12,7 +13,7 @@ DATA="$HERE/../data"
 mkdir -p /tmp/eti && cd /tmp/eti
 [ -x python/bin/python3 ] || { curl -sL "https://github.com/astral-sh/python-build-standalone/releases/download/20251205/cpython-3.14.2+20251205-x86_64-unknown-linux-gnu-install_only.tar.gz" -o py.tgz && tar xzf py.tgz; }
 echo "bdeee805c9267caee4c13c811de2082ca08c14e434280ef3bd7fcc31a90f7bd3  python/bin/python3.14" | sha256sum -c -
-[ -x venv/bin/python ] || { python/bin/python3 -m venv venv >/dev/null && venv/bin/pip install -q pyelftools capstone; }
+[ -x venv/bin/python ] || { python/bin/python3 -m venv venv >/dev/null && venv/bin/pip install -q pyelftools==0.33 capstone==5.0.9; }
 if [ ! -x tools/usr/bin/gdb ] || [ ! -x tools/usr/bin/strace ]; then
   mkdir -p debs && (cd debs && for p in gdb libbabeltrace1 libipt2 libsource-highlight4t64 libdebuginfod1t64 strace libunwind8; do apt-get download $p >/dev/null 2>&1 || echo "could not download $p" >&2; done)
   for d in debs/*.deb; do dpkg-deb -x "$d" tools; done
@@ -50,7 +51,7 @@ done
 RAN="$($PY - "$DATA/handler-paths-$NAME-cpython-3.14.2-linux-x86_64.json" "$NAME" <<'EOF'
 import json, sys
 runs = [json.load(open('/tmp/eti/trace%d.json' % i))['runs'] for i in (1, 2, 3)]
-path = lambda rs: [(r['op'], r['code'], r['offset'], [s['pc'] for s in r['steps']], [c['fn'] for c in r['calls']]) for r in rs]
+path = lambda rs: [(r['op'], r['code'], r['offset'], [(s['pc'], s.get('value')) for s in r['steps']], [c['fn'] for c in r['calls']]) for r in rs]
 same = path(runs[0]) == path(runs[1]) == path(runs[2])
 print('3 runs took identical paths:', same, file=sys.stderr)
 if not same: sys.exit(1)
@@ -66,11 +67,12 @@ EOF
 echo "handlers that ran: $RAN"
 EXTRACT_ALL_PARTS=1 /tmp/eti/venv/bin/python "$HERE/extract-machine-code.py" "$DATA/machine-code-$NAME-cpython-3.14.2-linux-x86_64.json" $RAN
 
-$PY - "$DATA/example-$NAME-cpython-3.14.2.json" <<'EOF'
+PLATFORM="Linux ($(. /etc/os-release && echo "$NAME $VERSION_ID")$(grep -qi microsoft /proc/version && echo ' under WSL2'), x86-64), python-build-standalone 20251205"
+$PY - "$DATA/example-$NAME-cpython-3.14.2.json" "$PLATFORM" <<'EOF'
 import json, sys
 d = json.load(open('/tmp/eti/facts.json'))
 d['commands'] = {k: open('/tmp/eti/out-%s.txt' % k).read() for k in ('run', 'bytes', 'tokenize', 'ast', 'dis', 'strace', 'time')}
-d['platform'] = 'Linux (Ubuntu under WSL2, x86-64), python-build-standalone 20251205'
+d['platform'] = sys.argv[2]
 json.dump(d, open(sys.argv[1], 'w'), indent=1)
 EOF
 echo done
