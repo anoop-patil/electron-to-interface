@@ -100,7 +100,16 @@
 @custom-variant mid (@media (max-width: 1180px));
 @custom-variant narrow (@media (max-width: 920px));
 
-/* The zoom is the only animation, and it runs from script (src/zoom/useZoomNavigation.ts). Nothing here transitions. */
+/* Level 8's packet slides into the zone it has reached, when motion isn't reduced (`motion-safe:animate-packet`). */
+@theme {
+  --animate-packet: packet 0.45s ease-out;
+  @keyframes packet {
+    from { transform: translateX(-24px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+}
+
+/* Besides the packet, the zoom is the only animation, and it runs from script (src/zoom/useZoomNavigation.ts). Nothing here transitions. */
 @layer base {
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }

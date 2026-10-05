@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from example_runs import LIBRARY, copied_from, entry_of, example_runs, examples, handler_run, machine_code
+from example_runs import LIBRARY, copied_from, entry_of, example_runs, examples, handler_run, machine_code, strace_output
 
 
 def test_the_reference_library_has_the_handlers_the_gdb_captures_recorded_on_every_step_run():
@@ -59,3 +59,14 @@ def test_the_capture_must_line_up_with_the_step_runs():
 
     with pytest.raises(ValueError, match="gdb recorded no handler for step run run-1"):
         example_runs('print("Hello World!")\n', capture)
+
+
+def test_the_strace_sample_has_no_colors_and_not_the_examples_own_lines():
+    # strace colors its output in a terminal, and the Example's own line arrives in the middle of strace's.
+    captured = (
+        '\x1b[33mwrite\x1b[0m(\x1b[35m1\x1b[0m, \x1b[35m"Hi\\n"\x1b[0m, \x1b[35m3\x1b[0mHi\n\x1b[0m)\x1b[0m = \x1b[32m3\x1b[0m\n'
+        "+++ exited with 0 +++\x1b[0m\n"
+    )
+
+    assert strace_output(captured, "Hi\n") == 'write(1, "Hi\\n", 3) = 3\n+++ exited with 0 +++\n'
+

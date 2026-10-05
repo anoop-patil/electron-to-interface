@@ -5,6 +5,7 @@ import { byteFacts, counted, fillString, isAfterLastLine, programFacts, template
 import { allSteps, stepsOf, type StepInCode } from './bytecode';
 import { commandFor } from './commands';
 import { level6 } from './interpreter';
+import { piecesOutput, straceRows } from './operatingSystem';
 import { sampleFor } from './reference';
 import { stepFacts } from './steps';
 import { nodeFacts, nodeKind } from './syntaxTree';
@@ -31,7 +32,7 @@ export interface TryItExplanation {
   /** Level 6: the lines of C its zoom level shows for the selected step run, on GitHub. */
   links: { text: string; href: string }[];
   linksIntro: Span[];
-  /** Level 7: the same command run natively on the test machine for an Example, which a browser can't do. */
+  /** Levels 7 and 8: the same command run natively on the test machine for an Example, which a browser can't do. */
   sample: { command: string; output: string; caption: Span[] } | null;
 }
 
@@ -260,15 +261,51 @@ const NOTES: Record<number, (analysis: Analysis, result: CommandRun) => Span[][]
 /** The rows of a level's reading tab, worked out from the Program and what its command printed. */
 const ROWS: Record<number, (analysis: Analysis, result: CommandRun) => TryItExplanation['rows']> = { 2: bytesRows, 3: tokenRows, 4: astRows, 5: disRows, 6: adaptiveRows, 7: timeRows };
 
-/** Level 7's sample: the timing command, run natively for the Program if it is an Example, else for greet.py. */
-function sampleOf(analysis: Analysis): TryItExplanation['sample'] {
-  const { command, output } = sampleFor(analysis).sample;
-  return { command, output, caption: fillString(template('tryIt.level7.sample', 'program').text, programFacts(analysis)) };
+/** Level 7 or 8's sample: its command, run natively for the Program if it is an Example, else for greet.py. */
+function sampleOf(analysis: Analysis, level: '7' | '8'): TryItExplanation['sample'] {
+  const { command, output } = sampleFor(analysis).samples[level];
+  return { command, output, caption: fillString(template('tryIt.sample', 'program').text, programFacts(analysis)) };
 }
 
 /** Level 6's links: each handler's lines of C that the zoom level shows for the selected step run, on GitHub. */
 const linksOf = (analysis: Analysis, selection: string | null) =>
   (level6(analysis, selection)?.handlers ?? []).flatMap(({ handler, links }) => links.map(({ where, href }) => ({ text: `${handler}: ${where}`, href })));
+
+/** What the What you’ll see and How to read it tabs show: the output, why it can be trusted, its rows and the notes worked out from it. */
+interface Shown {
+  output: string;
+  observed: TemplateId;
+  rows: TryItExplanation['rows'];
+  notes: Span[][];
+}
+
+/** A command the browser's Python ran on the Program: what it printed, and what the page works out from that. */
+function ranInBrowser(level: number, analysis: Analysis, command: string): Shown {
+  const result = analysis.commands.find((other) => other.command === command);
+  if (!result) throw new Error(`The Analysis has no output for ${command}`);
+  return { output: result.output, observed: 'tryIt.observed', rows: ROWS[level]?.(analysis, result) ?? [], notes: NOTES[level]?.(analysis, result) ?? [] };
+}
+
+/** The exit status of `python FILE`, level 1's command, or what an error would give, if the Analysis has no record of it. */
+function exitStatusOf(analysis: Analysis) {
+  const run = analysis.commands.find((other) => other.command === commandFor(TRY_IT[1].command, analysis.fileName));
+  return run?.exitStatus ?? (analysis.error ? 1 : 0);
+}
+
+/**
+ * What the browser observed in place of a command it can't run, by zoom level. Level 8: the pieces the Program handed
+ * to sys.stdout and sys.stderr, in place of strace's list of the write calls they become.
+ */
+const OBSERVED_INSTEAD: Record<number, (analysis: Analysis) => Shown> = {
+  8: (analysis) => ({
+    output: piecesOutput(analysis),
+    observed: 'tryIt.level8.observed',
+    rows: straceRows(analysis, exitStatusOf(analysis)),
+    notes: analysis.writes.some((write) => 'text' in write && write.report && write.text.includes('\x1b'))
+      ? [fillString(template('tryIt.level8.colors', 'program').text, programFacts(analysis))]
+      : [],
+  }),
+};
 
 /** The Try it yourself of a zoom level, for what it shows selected, or null if the level has none yet. */
 export function explainTryIt(level: number, analysis: Analysis, selection: string | null = null): TryItExplanation | null {
@@ -277,20 +314,18 @@ export function explainTryIt(level: number, analysis: Analysis, selection: strin
   const facts = programFacts(analysis);
   const fill = (string: string) => fillString(string, facts);
   const command = commandFor(tryIt.command, analysis.fileName);
-  const result = analysis.commands.find((other) => other.command === command);
-  if (!result) throw new Error(`The Analysis has no output for ${command}`);
-  const notes = NOTES[level]?.(analysis, result) ?? [];
+  const shown = tryIt.inBrowser === false ? OBSERVED_INSTEAD[level](analysis) : ranInBrowser(level, analysis, command);
   return {
     command,
     intro: fill(tryIt.intro),
     parts: tryIt.parts.map((part) => ({ code: plain(fill(part.code)), text: fill(part.text) })),
-    output: result.output,
-    observed: fill(template('tryIt.observed', 'program').text),
+    output: shown.output,
+    observed: fill(template(shown.observed, 'program').text),
     nothingPrinted: fill(template('tryIt.nothingPrinted', 'program').text),
-    rows: ROWS[level]?.(analysis, result) ?? [],
-    read: [...notes, ...tryIt.read.map(fill)],
+    rows: shown.rows,
+    read: [...shown.notes, ...tryIt.read.map(fill)],
     links: level === 6 ? linksOf(analysis, selection) : [],
     linksIntro: fill(template('tryIt.level6.links', 'program').text),
-    sample: level === 7 ? sampleOf(analysis) : null,
+    sample: level === 7 || level === 8 ? sampleOf(analysis, String(level) as '7' | '8') : null,
   };
 }

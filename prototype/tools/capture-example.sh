@@ -67,7 +67,7 @@ EOF
 echo "handlers that ran: $RAN"
 EXTRACT_ALL_PARTS=1 /tmp/eti/venv/bin/python "$HERE/extract-machine-code.py" "$DATA/machine-code-$NAME-cpython-3.14.2-linux-x86_64.json" $RAN
 
-PLATFORM="Linux ($(. /etc/os-release && echo "$NAME $VERSION_ID")$(grep -qi microsoft /proc/version && echo ' under WSL2'), x86-64), python-build-standalone 20251205"
+PLATFORM="Linux ($(. /etc/os-release && echo "$NAME $VERSION_ID")$(grep -qi microsoft /proc/version && echo ' under WSL2' || true), x86-64), python-build-standalone 20251205"
 $PY - "$DATA/example-$NAME-cpython-3.14.2.json" "$PLATFORM" <<'EOF'
 import json, sys
 d = json.load(open('/tmp/eti/facts.json'))

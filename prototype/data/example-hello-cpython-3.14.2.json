@@ -1,6 +1,7 @@
 {
  "file": "hello.py",
  "commands": {
+  "strace": "\u001b[33mwrite\u001b[0m(\u001b[35m1\u001b[0m, \u001b[35m\"Hello World!\\n\"\u001b[0m, \u001b[35m13\u001b[0mHello World!\n\u001b[0m)\u001b[0m          \u001b[0m=\u001b[0m\u001b[0m \u001b[32m13\u001b[0m\u001b[0m\n+++ exited with 0 +++\u001b[0m\n",
   "time": "Hello World!\n0.0002704999999991742\n"
  },
  "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"

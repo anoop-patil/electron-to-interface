@@ -2,7 +2,10 @@ import greetCapture from '../../prototype/data/example-greet-cpython-3.14.2.json
 import type { Analysis, AstFact, AstField, CodeObject, CommandRun, TokenFact } from './generated/analysis';
 
 /** What the recorded run of a Program left in its Analysis, and the tokens and syntax tree Python found. */
-type RecordedRun = Pick<Analysis, 'encoding' | 'tokens' | 'ast' | 'bytecode' | 'stdout' | 'stderr' | 'error' | 'events' | 'runs' | 'frames' | 'objects' | 'eventsCutShort' | 'runsCutShort'>;
+type RecordedRun = Pick<
+  Analysis,
+  'encoding' | 'tokens' | 'ast' | 'bytecode' | 'stdout' | 'stderr' | 'writes' | 'error' | 'events' | 'runs' | 'frames' | 'objects' | 'eventsCutShort' | 'runsCutShort' | 'writesCutShort'
+>;
 
 /**
  * For tests: an Analysis as the analyzer makes one. The Program ends with a newline, every byte knows its character
@@ -27,6 +30,7 @@ export function analysisOf(program: string, commands: CommandRun[] = [], run: Pa
     bytecode: [],
     stdout: '',
     stderr: '',
+    writes: [],
     error: null,
     events: [],
     runs: [],
@@ -34,6 +38,7 @@ export function analysisOf(program: string, commands: CommandRun[] = [], run: Pa
     objects: [],
     eventsCutShort: false,
     runsCutShort: false,
+    writesCutShort: false,
     ...run,
     commands,
   };

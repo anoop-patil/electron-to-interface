@@ -18,6 +18,7 @@ const SLOT_DEFS: Record<Subject, (keyof typeof schema.$defs)[]> = {
   step: ['StepSlot'],
   // A handler's Templates can also name any Fact of the step run it ran for.
   handler: ['HandlerSlot', 'StepSlot'],
+  output: ['OutputSlot'],
 };
 
 const slotsOf = (subject: Subject) =>
@@ -42,6 +43,8 @@ function conceptProblems(id: string, strings: string[], cardIds: Set<string>) {
     .map(([markup, inside]) => {
       const card = /^([a-z0-9]+)\|.+$/.exec(inside)?.[1];
       if (card === undefined) return `${id} has ${markup}, which isn’t [[card|words]]`;
+      // The words are read as they are, so a slot in them would reach the page as text.
+      if (/\{[^}]*\}/.test(inside)) return `${id} has ${markup}, whose slot wouldn’t be filled in`;
       if (!cardIds.has(card)) return `${id} opens the Concept card ${card}, which doesn’t exist`;
       return null;
     })

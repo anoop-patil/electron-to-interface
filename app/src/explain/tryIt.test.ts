@@ -19,7 +19,7 @@ const analysisOf = (program: string, printed: Record<string, Omit<CommandRun, 'c
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
-test('levels 1 to 7 have a command for the learner’s file; the others aren’t built yet', () => {
+test('levels 1 to 8 have a command for the learner’s file, and the browser runs all but level 8’s strace; level 9 isn’t built yet', () => {
   expect(tryItCommands('program.py')).toEqual([RUN, BYTES, TOKENIZE, AST, DIS, ADAPTIVE, TIME]);
   expect(tryItCommands('greet.py')).toEqual([
     'python greet.py',
@@ -30,7 +30,8 @@ test('levels 1 to 7 have a command for the learner’s file; the others aren’t
     `python -c "import dis; c = compile(open('greet.py').read(), 'greet.py', 'exec'); exec(c, dict(__name__='__main__')); dis.dis(c, adaptive=True)"`,
     `python -c "import time; t = time.perf_counter(); exec(open('greet.py').read()); print(time.perf_counter() - t)"`,
   ]);
-  expect(explainTryIt(8, analysisOf('x = 1\n'))).toBeNull();
+  expect(explainTryIt(8, analysisOf('x = 1\n'))!.command).toBe('strace -e trace=write python program.py');
+  expect(explainTryIt(9, analysisOf('x = 1\n'))).toBeNull();
 });
 
 test('level 1 runs the file and shows what the Program printed', () => {

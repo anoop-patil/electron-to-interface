@@ -931,6 +931,148 @@
       "subject": "step",
       "text": "When your program ran without being watched, Python had rewritten this step into **{afterRun}**, a faster form, by the time it finished. A run of the step after the rewrite runs {afterRun}’s machine code."
     },
+    "level8.intro": {
+      "subject": "program",
+      "text": "print now has text to show, but programs aren’t allowed to touch the screen themselves. On a typical Linux terminal, Python asks the operating system’s core, the kernel, to write the bytes, using a [[syscall|system call]]: usually one for each line your program prints. (In a Windows console, Python uses a different call, WriteConsoleW.)"
+    },
+    "level8.caption": {
+      "subject": "program",
+      "text": "On a typical Linux terminal: where one line of output is, as Python sends it"
+    },
+    "level8.pick": {
+      "subject": "program",
+      "text": "Pick a line, then a stage"
+    },
+    "level8.nothingPrinted": {
+      "subject": "program",
+      "text": "Your program printed nothing, so Python never asked the operating system to write anything to your terminal. Add a print and click Run to follow its line here."
+    },
+    "level8.cutShort": {
+      "subject": "program",
+      "text": "Your program handed over more than 2,000 pieces, so this level follows only the lines made from the first 2,000."
+    },
+    "level8.nothingFollowed": {
+      "subject": "program",
+      "text": "Your program handed over more than 2,000 pieces without finishing a line, so there is no whole line here to follow."
+    },
+    "level8.observed": {
+      "subject": "program",
+      "text": "The pieces in stage 1 are Observed: Python in your browser recorded them as your program ran. The rest is how a typical Linux terminal handles them."
+    },
+    "level8.observedReport": {
+      "subject": "program",
+      "text": "The pieces in stage 1 are Derived: Python wrote this traceback after your program stopped, and the colors are what its traceback code adds for a terminal, worked out in your browser. The rest is how a typical Linux terminal handles them."
+    },
+    "level8.doors": {
+      "subject": "program",
+      "text": "Your program’s three [[fd|doors]]"
+    },
+    "level8.doorsNote": {
+      "subject": "program",
+      "text": "(given by the operating system when it started)"
+    },
+    "level8.pieces": {
+      "subject": "output",
+      "title": "Your program hands the pieces to Python’s output object",
+      "text": "Your program gives this line to **{stream}**, Python’s own “output” object, in {pieces}. print hands over each thing it was given, with a space between them and a [[newline|newline]] at the end. Nothing has left Python yet."
+    },
+    "level8.piecesError": {
+      "subject": "output",
+      "title": "Your program hands the pieces to Python’s errors object",
+      "text": "Your program gives this line to **{stream}**, Python’s own “errors” object, in {pieces}. Nothing has left Python yet."
+    },
+    "level8.piecesTraceback": {
+      "subject": "output",
+      "title": "Python hands its report of the error to sys.stderr",
+      "text": "Your program stopped with an error, so Python writes a report of it, the traceback, to **{stream}**, its “errors” object. This line came in {pieces}. Nothing has left Python yet."
+    },
+    "level8.piecesExit": {
+      "subject": "output",
+      "title": "Python hands the exit message to sys.stderr",
+      "text": "Your program called sys.exit with a message, so Python writes the message to **{stream}**, its “errors” object, in {pieces}. Nothing has left Python yet."
+    },
+    "level8.buffer": {
+      "subject": "output",
+      "title": "The text becomes {bytes} and waits in a small buffer",
+      "text": "The characters are turned back into bytes with [[utf8|UTF-8]]: {characters} plus the newline make **{bytes}**. They wait in a small buffer in RAM. Because the output goes to a terminal, a newline tells Python to send what is waiting straight away."
+    },
+    "level8.bufferEnd": {
+      "subject": "output",
+      "title": "The text becomes {bytes} and waits in a small buffer",
+      "text": "The characters are turned back into bytes with [[utf8|UTF-8]]: {characters} make **{bytes}**, with no newline at the end. They wait in a small buffer in RAM until your program stops, when Python sends whatever is still waiting."
+    },
+    "level8.bufferFlush": {
+      "subject": "output",
+      "title": "The text becomes {bytes} and waits in a small buffer",
+      "text": "The characters are turned back into bytes with [[utf8|UTF-8]]: {characters} make **{bytes}**, with no newline at the end. They wait in a small buffer in RAM until your program asks Python to send them, as print(..., flush=True) does."
+    },
+    "level8.bufferReturn": {
+      "subject": "output",
+      "title": "The text becomes {bytes} and waits in a small buffer",
+      "text": "The characters are turned back into bytes with [[utf8|UTF-8]]: {characters} make **{bytes}**, with no newline at the end. They wait in a small buffer in RAM. A carriage return, which moves back to the start of the line, also tells Python to send what is waiting straight away."
+    },
+    "level8.bufferWithPiece": {
+      "subject": "output",
+      "title": "The text becomes {bytes} and waits in a small buffer",
+      "text": "The characters are turned back into bytes with [[utf8|UTF-8]]: {characters} make **{bytes}**, with no newline at the end. They wait in a small buffer in RAM, but only briefly: they came in the same piece as the line before’s newline, so Python sends them with that line."
+    },
+    "level8.bufferFull": {
+      "subject": "output",
+      "title": "The text becomes {bytes} and waits in a small buffer",
+      "text": "The characters are turned back into bytes with [[utf8|UTF-8]]: {characters} make **{bytes}**, with no newline at the end. Python’s buffer holds 131,072 bytes, so when it has no room for more, Python sends what it holds without waiting for a newline."
+    },
+    "level8.bufferColor": {
+      "subject": "output",
+      "text": "In a terminal, Python 3.14 colors a traceback, so {colorBytes} of them are color codes: instructions to the terminal, which it doesn’t draw."
+    },
+    "level8.bufferPath": {
+      "subject": "output",
+      "text": "This line names your file by where your browser’s Python saved it. On your computer it names your own folder, so its number of bytes differs."
+    },
+    "level8.call": {
+      "subject": "output",
+      "title": "Python knocks on door number {door}",
+      "text": "This is a [[syscall|system call]]: Python asks the operating system to write {callBytes} to [[fd|door]] number {door}. The CPU switches into a special mode where only the operating system runs. Your program waits."
+    },
+    "level8.callShared": {
+      "subject": "output",
+      "text": "This call carries more than this line: everything that was waiting when it was sent."
+    },
+    "level8.callSeveral": {
+      "subject": "output",
+      "text": "This line’s bytes went out in {lineCalls}; this is the last of them."
+    },
+    "level8.allCalls": {
+      "subject": "output",
+      "text": "Python makes {calls} like this for your program in all."
+    },
+    "level8.allCallsPerLine": {
+      "subject": "output",
+      "text": "Python makes {calls} like this for your program, one for each line."
+    },
+    "level8.windows": {
+      "subject": "output",
+      "text": "(In a Windows console, Python uses a different call, WriteConsoleW.)"
+    },
+    "level8.kernel": {
+      "subject": "output",
+      "title": "The operating system delivers the bytes",
+      "text": "The operating system copies the {callBytes} to the terminal’s end of the connection and wakes up the terminal app. Your program never touched the screen. It only asked."
+    },
+    "level8.terminal": {
+      "subject": "output",
+      "title": "The terminal app reads them and draws the letters",
+      "text": "Your [[terminal|terminal]] app reads the bytes, turns them back into characters, moves to a new line for the newline byte, and draws each character. Zoom in to see how."
+    },
+    "level8.terminalNoNewline": {
+      "subject": "output",
+      "title": "The terminal app reads them and draws the letters",
+      "text": "Your [[terminal|terminal]] app reads the bytes, turns them back into characters and draws each one. With no newline at the end, whatever comes next is drawn on the same line. Zoom in to see how."
+    },
+    "level8.terminalColor": {
+      "subject": "output",
+      "text": "It doesn’t draw the color codes: it uses them to color the letters."
+    },
     "step.term": {
       "subject": "step",
       "text": "{opname}{argument} · step {number} of {code}"
@@ -1424,6 +1566,26 @@
       "subject": "program",
       "text": "busy machine code"
     },
+    "map.level8.os": {
+      "subject": "output",
+      "text": "door {door} → terminal · {bytes}"
+    },
+    "map.level8.osWaiting": {
+      "subject": "output",
+      "text": "not asked yet"
+    },
+    "map.level8.ram": {
+      "subject": "output",
+      "text": "{bytes} waiting in a buffer"
+    },
+    "map.level8.osNothing": {
+      "subject": "program",
+      "text": "nothing to send: your program printed nothing"
+    },
+    "map.level8.osCutShort": {
+      "subject": "program",
+      "text": "too much output to follow a whole line"
+    },
     "tryIt.disRow.lines": {
       "subject": "program",
       "text": "The line of your file each group of steps comes from. 0 is Python’s own setup step, before line 1."
@@ -1464,7 +1626,7 @@
       "subject": "program",
       "text": "Browsers make this clock less precise, to protect against timing attacks: in Chrome it moves in steps of 0.1 ms, and in Firefox and Safari 1 ms. A program that takes less time than that measures as 0."
     },
-    "tryIt.level7.sample": {
+    "tryIt.sample": {
       "subject": "program",
       "text": "A sample of the same command, run with CPython 3.14.2 on our test machine for {sample}: {platform}."
     },
@@ -1483,6 +1645,46 @@
     "step.printedText": {
       "subject": "step",
       "text": "{callee} wrote to the terminal: {printed}"
+    },
+    "tryIt.level8.observed": {
+      "subject": "program",
+      "text": "Your browser can’t run strace, but its Python recorded each piece your program handed to sys.stdout and sys.stderr, and each flush, just now. A row ends with a piece that holds a newline, which in a terminal makes Python send a write call; a flush, which does too; or a change of door."
+    },
+    "tryIt.level8.colors": {
+      "subject": "program",
+      "text": "Your program’s traceback goes out in color, so its calls also carry color codes, which strace shows starting with \\33."
+    },
+    "tryIt.straceRow.write": {
+      "subject": "output",
+      "text": "The system call: “please write some bytes”. For your program, Python makes {calls}."
+    },
+    "tryIt.straceRow.door1": {
+      "subject": "program",
+      "text": "[[fd|Door]] number 1: standard output, your terminal."
+    },
+    "tryIt.straceRow.door2": {
+      "subject": "program",
+      "text": "[[fd|Door]] number 2: standard error, also your terminal. A traceback goes out through it."
+    },
+    "tryIt.straceRow.text": {
+      "subject": "program",
+      "text": "The bytes to write. strace shows a newline as \\n, and a byte that isn’t a plain character as a number after a backslash."
+    },
+    "tryIt.straceRow.count": {
+      "subject": "program",
+      "text": "How many bytes each call writes."
+    },
+    "tryIt.straceRow.answer": {
+      "subject": "program",
+      "text": "The operating system’s answer: it wrote them all."
+    },
+    "tryIt.straceRow.exit": {
+      "subject": "program",
+      "text": "Your program finished. 0 means “no error”."
+    },
+    "tryIt.straceRow.exitError": {
+      "subject": "program",
+      "text": "Your program stopped. Any number but 0 means something went wrong."
     }
   },
   "tryIt": {
@@ -1629,6 +1831,30 @@
       ],
       "read": [
         "Your number will be different: it depends on your computer, your terminal and what else is running."
+      ]
+    },
+    "8": {
+      "command": "strace -e trace=write python {file}",
+      "inBrowser": false,
+      "intro": "On Linux, you can watch the system calls happen:",
+      "parts": [
+        {
+          "code": "strace",
+          "text": "A Linux tool that shows the [[syscall|system calls]] a program makes."
+        },
+        {
+          "code": "-e trace=write",
+          "text": "Show only the calls named write."
+        },
+        {
+          "code": "python {file}",
+          "text": "Run your program."
+        }
+      ],
+      "read": [
+        "strace shows at most 32 characters of what each call writes, then \"...\".",
+        "Your program’s own lines may appear in the middle of strace’s, because both go to the same terminal at the same moment. We took them out of the sample.",
+        "strace works on Linux only."
       ]
     }
   }

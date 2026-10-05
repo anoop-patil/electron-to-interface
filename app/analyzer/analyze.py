@@ -390,16 +390,27 @@ def _module_as_main(name, args, folder):
 # The recorded run
 
 def _record_run(file_name, folder):
-    """Runs the Program as `python FILE` would, recording what it printed, its Events and its step runs."""
+    """
+    Runs the Program as `python FILE` would, recording what it printed and the pieces it handed to sys.stdout and
+    sys.stderr, its Events and its step runs.
+    """
     path = os.path.join(folder, file_name)
     with open(path, "rb") as file:
         source = file.read()
-    stdout, stderr = io.StringIO(), io.StringIO()
-    recorder = _Recorder(stdout)
+    writes = _Writes()
+    stdout, stderr = _Output(writes, 1), _Output(writes, 2)
+    recorder = writes.recorder = _Recorder(stdout)
     _, error = _run_as_main(source, path, [file_name], folder, _main_module(path), folder, stdout, stderr, recorder)
+    if error is not None:
+        # In a terminal, Python 3.14 colors a traceback, so the pieces it writes carry color codes. The Terminal panel
+        # shows stderr without them, as a terminal draws it.
+        writes.pieces = [piece for piece in writes.pieces if not piece.get("report")]
+        traceback.print_exception(type(error), error, error.__traceback__.tb_next, file=_Output(writes, 2), colorize=True)
     return {
         "stdout": stdout.getvalue(),
         "stderr": stderr.getvalue(),
+        "writes": writes.pieces,
+        "writesCutShort": writes.cut_short,
         "error": _error_fact(error, path),
         "events": recorder.events,
         "runs": recorder.runs,
@@ -432,6 +443,57 @@ def _code_objects(code):
         if isinstance(const, types.CodeType):
             found.extend(_code_objects(const))
     return found
+
+
+class _Writes:
+    """
+    The pieces the Program hands to sys.stdout (door 1) and sys.stderr (door 2), and its flushes, in the order they
+    happen, each with the step run that did it. Pieces written once the Program's code has stopped are Python's own
+    report: the traceback of an error, or the message sys.exit was given. The first RECORD_LIMIT of the Program's own
+    are kept.
+    """
+
+    def __init__(self):
+        self.pieces = []
+        self.cut_short = False
+        self.recorder = None
+        self._own = 0
+
+    def add(self, door, text):
+        if self.recorder is None or not self.recorder.running:
+            self.pieces.append({"door": door, "text": text, "report": True})
+        else:
+            self._own_entry({"door": door, "text": text})
+
+    def flushed(self, door):
+        if self.recorder is not None and self.recorder.running:
+            self._own_entry({"door": door, "flush": True})
+
+    def _own_entry(self, entry):
+        if self._own == RECORD_LIMIT:
+            self.cut_short = True
+            return
+        self._own += 1
+        run = self.recorder.current_run()
+        self.pieces.append({**entry, **({"run": run} if run is not None else {})})
+
+
+class _Output(io.StringIO):
+    """sys.stdout or sys.stderr for the recorded run: it keeps what is written, and records each piece and flush."""
+
+    def __init__(self, writes, door):
+        super().__init__()
+        self._writes = writes
+        self._door = door
+
+    def write(self, text):
+        written = super().write(text)
+        self._writes.add(self._door, text)
+        return written
+
+    def flush(self):
+        super().flush()
+        self._writes.flushed(self._door)
 
 
 class _Recorder:
@@ -483,6 +545,15 @@ class _Recorder:
         for event, callback in self._callbacks.items():
             monitoring.register_callback(self._tool, event, callback)
         self._update_events()
+
+    @property
+    def running(self):
+        """Whether the Program's code is running: between start and stop."""
+        return self._tool is not None
+
+    def current_run(self):
+        """The place in runs of the step run going on now, or None once the record of step runs is full."""
+        return None if self.runs_cut_short or not self.runs else len(self.runs) - 1
 
     def stop(self):
         if self._tool is None:

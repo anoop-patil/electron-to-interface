@@ -101,14 +101,44 @@ test('a box selects the step with exactly its code first: the Call box, the step
   expect(describe(hello, selectionAt(hello, call, 5))).toBe('CALL in code 0, run 1');
 });
 
-test('levels 6 to 9 show the step run closest to the Selection, and keep a selected step run', () => {
+test('levels 6, 7 and 9 show the step run closest to the Selection, and keep a selected step run', () => {
   const print = hello.tokens.find((token) => token.text === 'print')!.id;
   const run = greet.runs[32].id;
 
-  for (const level of [6, 7, 8, 9]) {
+  for (const level of [6, 7, 9]) {
     expect(describe(hello, selectionAt(hello, print, level))).toBe('LOAD_NAME in code 0, run 1');
     expect(selectionAt(greet, run, level)).toBe(run);
   }
+});
+
+/** The step run that printed a line of output: the run of greet's print call whose `printed` is it. */
+const printedBy = (analysis: Analysis, line: string) => analysis.runs.find((run) => run.printed === `${line}\n`)!.id;
+
+test('level 8 follows the line of output the selected step run printed, from its first stage', () => {
+  const print = hello.tokens.find((token) => token.text === 'print')!.id;
+
+  expect(selectionAt(hello, print, 8)).toBe('out-0-1');
+  expect(selectionAt(greet, printedBy(greet, 'Hello, Grace'), 8)).toBe('out-1-1');
+  // greet's first step run printed nothing: level 8 follows the first line printed after it.
+  expect(selectionAt(greet, greet.runs[0].id, 8)).toBe('out-0-1');
+  expect(selectionAt(greet, null, 8)).toBe('out-0-1');
+});
+
+test('a line of output keeps its stage at level 8, and selects the step run that printed it at levels 5 to 7', () => {
+  expect(selectionAt(greet, 'out-1-3', 8)).toBe('out-1-3');
+  for (const level of [5, 6, 7]) expect(selectionAt(greet, 'out-1-3', level)).toBe(printedBy(greet, 'Hello, Grace'));
+  expect(highlighted(greet, 'out-1-3')).toBe('print("Hello,", name)');
+});
+
+test('a traceback’s lines lead back to the step run that raised the error', () => {
+  const failing = python.analyze('print("Hi")\n1 / 0');
+  const lines = ['out-1-1', 'out-2-1', 'out-3-1'];
+
+  for (const line of lines) expect(describe(failing, selectionAt(failing, line, 5))).toBe('BINARY_OP in code 0, run 1');
+});
+
+test('a Program that printed nothing has nothing to follow at level 8', () => {
+  expect(selectionAt(python.analyze('x = 1'), null, 8)).toBeNull();
 });
 
 test('code outside every statement, such as a newline, selects the Module at level 4', () => {

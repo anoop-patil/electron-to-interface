@@ -76,7 +76,7 @@ export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
     steps: counted(analysis.bytecode.reduce((count, code) => count + code.steps.length, 0), 'step', 'steps'),
     ran: counted(analysis.runs.length, 'step run', 'step runs'),
     sample: sample.name,
-    platform: sample.sample.platform,
+    platform: sample.samples['7'].platform,
   };
 }
 

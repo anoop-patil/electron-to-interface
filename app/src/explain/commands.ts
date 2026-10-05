@@ -10,11 +10,15 @@ import type { Templates } from '../generated/analysis';
 export const FILE_NAME = 'program.py';
 
 /**
- * The Try it yourself commands for a Program saved as `fileName`, in zoom level order. The browser's Python runs each one
- * on the Program, so the Analysis carries what it printed. The build allows no slot but {file} in a command, and a
- * command is shown as it is typed, so nothing else in it is markup: 2**3 stays 2**3.
+ * The Try it yourself commands the browser's Python runs, for a Program saved as `fileName`, in zoom level order. It runs
+ * each one on the Program, so the Analysis carries what it printed; strace, which it can't run, is left out. The build
+ * allows no slot but {file} in a command, and a command is shown as it is typed, so nothing else in it is markup: 2**3
+ * stays 2**3.
  */
-export const tryItCommands = (fileName: string) => Object.values((templateFile as Templates).tryIt ?? {}).map(({ command }) => commandFor(command, fileName));
+export const tryItCommands = (fileName: string) =>
+  Object.values((templateFile as Templates).tryIt ?? {})
+    .filter(({ inBrowser }) => inBrowser !== false)
+    .map(({ command }) => commandFor(command, fileName));
 
 /** A Try it yourself command, for a Program saved as `fileName`. */
 export const commandFor = (command: string, fileName: string) => command.replaceAll('{file}', fileName);

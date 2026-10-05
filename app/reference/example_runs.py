@@ -10,6 +10,7 @@ Usage: python reference/example_runs.py   (from app/; rewrites both in reference
 
 import json
 import pathlib
+import re
 import sys
 import tempfile
 
@@ -22,7 +23,7 @@ LIBRARY = HERE / "cpython-3.14.2.json"
 TEMPLATES = HERE.parent / "templates" / "py314.json"
 DATA = HERE.parent.parent / "prototype" / "data"
 
-# Each Example, the gdb capture of its handlers, and the capture of its Try it yourself commands, with the timing.
+# Each Example, the gdb capture of its handlers, and the capture of its Try it yourself commands, with the timing and strace.
 EXAMPLES = [
     ("hello world", "handler-paths-cpython-3.14.2-linux-x86_64.json", "example-hello-cpython-3.14.2.json"),
     ("greet.py", "handler-paths-greet-cpython-3.14.2-linux-x86_64.json", "example-greet-cpython-3.14.2.json"),
@@ -135,25 +136,42 @@ def example_runs(program, capture):
     return runs
 
 
-def timing_command(file):
-    """Level 7's Try it yourself command, for a Program saved as `file`."""
-    command = json.loads(TEMPLATES.read_text("utf-8"))["tryIt"]["7"]["command"]
+def try_it_command(level, file):
+    """A zoom level's Try it yourself command, for a Program saved as `file`."""
+    command = json.loads(TEMPLATES.read_text("utf-8"))["tryIt"][str(level)]["command"]
     return command.replace("{file}", file)
 
 
+def strace_output(captured, printed):
+    """
+    strace's output as the page shows it: without the colors strace gives it in a terminal, and without the Example's
+    own lines, which reach the same terminal in the middle of strace's.
+    """
+    output = re.sub(r"\x1b\[[0-9;]*m", "", captured)
+    for line in printed.splitlines(keepends=True):
+        output = output.replace(line, "", 1)
+    return output
+
+
 def examples():
-    """The Examples the Reference Library knows what ran for, from the gdb captures, each with its timing sample."""
+    """The Examples the Reference Library knows what ran for, from the gdb captures, each with its timing and strace samples."""
     found = []
     for name, file, commands in EXAMPLES:
         capture = json.loads((DATA / file).read_text("utf-8"))
         captured = json.loads((DATA / commands).read_text("utf-8"))
         program = capture["program"] if capture["program"].endswith("\n") else capture["program"] + "\n"
+        with tempfile.TemporaryDirectory() as folder:
+            printed = analyze(program, "program.py", folder=folder)["stdout"]
+
+        def sample(level, output):
+            return {"command": try_it_command(level, captured["file"]), "output": output, "platform": captured["platform"]}
+
         found.append({
             "name": name,
             "program": program,
             "recorded": f"{capture['how']}, on {capture['binary']}",
             "runs": example_runs(program, capture),
-            "sample": {"command": timing_command(captured["file"]), "output": captured["commands"]["time"], "platform": captured["platform"]},
+            "samples": {"7": sample(7, captured["commands"]["time"]), "8": sample(8, strace_output(captured["commands"]["strace"], printed))},
         })
     return found
 

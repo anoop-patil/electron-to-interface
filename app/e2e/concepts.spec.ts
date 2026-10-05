@@ -57,11 +57,16 @@ test.describe('Honesty labels', () => {
     await expect(zoomLevel(page, 7, 'CPU instructions').getByRole('region', { name: 'Registers' }).getByRole('button', { name: 'How we know: Derived' })).toBeVisible();
     await expect(cpuChips.nth(2)).toHaveAccessibleName('How we know: Observed');
 
-    for (let level = 8; level <= 9; level++) {
-      await gauge(page).getByRole('button').nth(level - 1).click();
-      await expect(anyZoomLevel(page, level)).toBeVisible();
-      await expect(anyZoomLevel(page, level).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);
-    }
+    // Level 8 is hand-written, so Typical; the pieces print handed over are Observed.
+    await gauge(page).getByRole('button', { name: '8 OS' }).click();
+    const osChips = zoomLevel(page, 8, 'Operating system').getByRole('button', { name: /^How we know:/ });
+    await expect(osChips).toHaveCount(2);
+    await expect(osChips.nth(0)).toHaveAccessibleName('How we know: Typical');
+    await expect(osChips.nth(1)).toHaveAccessibleName('How we know: Observed');
+
+    await gauge(page).getByRole('button', { name: '9 Pixels' }).click();
+    await expect(anyZoomLevel(page, 9)).toBeVisible();
+    await expect(anyZoomLevel(page, 9).getByRole('button', { name: /^How we know:/ })).toHaveCount(0);
   });
 
   test('every chip opens the How we know card, which defines every label', async ({ page }) => {

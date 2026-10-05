@@ -1,4 +1,5 @@
 import { allSteps, runIndex, runsOfStep, stepById, stepOfRun, type StepInCode } from '../explain/bytecode';
+import { closestLine, lineById, outputLines, STAGE_ID, stageId } from '../explain/output';
 import { nodeById } from '../explain/syntaxTree';
 import type { Analysis, ByteSpan } from '../generated/analysis';
 import type { CharSpan } from './characters';
@@ -33,20 +34,29 @@ const FACTS: Record<string, (analysis: Analysis, id: string) => Anchor | null> =
     const step = stepById(analysis, id);
     return step ? { span: step.step.span, step } : null;
   },
-  run: (analysis, id) => {
-    const run = runIndex(id);
-    if (!analysis.runs[run]) return null;
-    const step = stepOfRun(analysis, analysis.runs[run]);
-    return { span: step.step.span, step, run };
+  run: (analysis, id) => runAnchor(analysis, runIndex(id)),
+  // out-N is the Nth line of output, and out-N-S that line at stage S of level 8. A line sits where the step run that
+  // wrote its last piece does; a line of Python's own report, where the last step run, which raised the error, does.
+  out: (analysis, id) => {
+    const line = lineById(analysis, id);
+    if (!line) return null;
+    const run = line.run ?? (line.report && !analysis.runsCutShort ? analysis.runs.length - 1 : -1);
+    return runAnchor(analysis, run) ?? { span: null };
   },
 };
+
+function runAnchor(analysis: Analysis, run: number): Anchor | null {
+  if (!analysis.runs[run]) return null;
+  const step = stepOfRun(analysis, analysis.runs[run]);
+  return { span: step.step.span, step, run };
+}
 
 /**
  * Where the Fact with this ID sits, or null if the Analysis has no such Fact. A Fact with no bytes, such as the token
  * that ends a block, has no place in the code.
  */
 export function anchorOf(analysis: Analysis, id: string): Anchor | null {
-  const anchor = FACTS[id.slice(0, id.lastIndexOf('-'))]?.(analysis, id);
+  const anchor = FACTS[id.slice(0, id.indexOf('-'))]?.(analysis, id);
   if (!anchor) return null;
   return anchor.span && anchor.span.end <= anchor.span.start ? { ...anchor, span: null } : anchor;
 }
@@ -105,8 +115,8 @@ const STEP_RUN: LevelLinks = {
 
 /**
  * Each zoom level's links. A level with no entry, level 1, keeps the Selection as it is. Levels 6 and 7's elements are
- * step runs, as level 5's are: they show the C, and the machine code, that ran for one. Levels 8 and 9 show a step run
- * until their tickets give them elements of their own: they then follow the line of output it printed.
+ * step runs, as level 5's are: they show the C, and the machine code, that ran for one. Level 8 follows the line of
+ * output the step run printed (ADR 0007). Level 9 shows a step run until its ticket gives it elements of its own.
  */
 const LINKS: Record<number, LevelLinks> = {
   2: {
@@ -134,7 +144,21 @@ const LINKS: Record<number, LevelLinks> = {
   5: STEP_RUN,
   6: STEP_RUN,
   7: STEP_RUN,
-  8: STEP_RUN,
+  // A line of output at one stage: the line the closest step run printed, else the next one printed after it, at its
+  // first stage. A Program that printed nothing has nothing to select.
+  8: {
+    owns: STAGE_ID,
+    closest: (analysis, anchor) => {
+      const run = STEP_RUN.closest(analysis, anchor);
+      const line = run?.startsWith('run-') ? closestLine(analysis, runIndex(run)) : null;
+      return line && stageId(line, 1);
+    },
+    fallback: (analysis) => {
+      const [first] = outputLines(analysis);
+      return first ? stageId(first, 1) : null;
+    },
+    always: true,
+  },
   9: STEP_RUN,
 };
 

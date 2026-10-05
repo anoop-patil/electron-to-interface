@@ -15,3 +15,4 @@
 ## Comments
 
 - Ticket 13: level 7's Try it yourself shows each Example's own native timing, captured on the test machine, and greet.py's for anything else. Only hello world and greet.py have one; a new Example gets greet.py's until the capture tools time it too.
+- Ticket 14: level 8's Try it yourself does the same with strace's list of write calls (`samples` in the Reference Library, by zoom level). The build-time Analyses must carry `writes`, the pieces each Example handed to `sys.stdout` and `sys.stderr`, which level 8 follows.

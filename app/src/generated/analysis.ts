@@ -75,12 +75,31 @@ export type VariableChange =
  */
 export type CodeIndex1 = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); or handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); or output, one line of the Program's output, at zoom level 8 (OutputSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
-export type Subject = "program" | "byte" | "line" | "token" | "node" | "step" | "handler";
+export type Subject = "program" | "byte" | "line" | "token" | "node" | "step" | "handler" | "output";
+/**
+ * A Fact about one line of the Program's output, and how it reaches the terminal, that a Template can name. A slot that doesn't apply is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "OutputSlot".
+ */
+export type OutputSlot =
+  | "line"
+  | "number"
+  | "door"
+  | "stream"
+  | "characters"
+  | "bytes"
+  | "colorBytes"
+  | "pieces"
+  | "callBytes"
+  | "lineCalls"
+  | "calls"
+  | "lines";
 /**
  * A Fact about one step, or one step run of it, that a Template can name. A slot that doesn't apply is empty.
  *
@@ -221,7 +240,7 @@ export type ByteSlot =
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ConceptVisual".
  */
-export type ConceptVisual = BitsVisual | Utf8Visual | HonestyLabelsVisual;
+export type ConceptVisual = BitsVisual | Utf8Visual | HonestyLabelsVisual | DoorsVisual;
 
 /**
  * The complete set of Facts produced from one Program on one Python version.
@@ -268,6 +287,10 @@ export interface Analysis {
    */
   stderr: string;
   /**
+   * Each piece the Program handed to sys.stdout or sys.stderr, and each flush it asked for, in order. print hands over what it was given, the spaces between, and the newline at the end. The first 2,000 of the Program's own are kept, then Python's own report, if it made one.
+   */
+  writes: (OutputWrite | OutputFlush)[];
+  /**
    * The error that stopped the Program, or null if it ran to the end or called sys.exit.
    */
   error: ProgramError | null;
@@ -295,6 +318,10 @@ export interface Analysis {
    * True if more than 2,000 steps ran, so runs holds only the first 2,000.
    */
   runsCutShort: boolean;
+  /**
+   * True if the Program handed over more than 2,000 pieces and flushes, so writes holds only the first 2,000 of them.
+   */
+  writesCutShort: boolean;
   /**
    * Each Try it yourself command the browser's Python ran on the Program, and what it printed.
    */
@@ -506,6 +533,47 @@ export interface Step {
    * The form it had become after the Program ran again, unwatched, as `python FILE`: RESUME_CHECK, LOAD_CONST_MORTAL, or its own opname if it wasn't rewritten. Left out if that run didn't happen.
    */
   afterRun?: string;
+}
+/**
+ * One piece handed to sys.stdout or sys.stderr. Observed.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "OutputWrite".
+ */
+export interface OutputWrite {
+  /**
+   * Where it goes: 1 for sys.stdout, 2 for sys.stderr, the doors (file descriptors) the operating system gives every program.
+   */
+  door: 1 | 2;
+  /**
+   * The piece, which can be empty, as print's end="" hands over.
+   */
+  text: string;
+  /**
+   * The step run that wrote it: its place in runs. Left out for a piece written after the step runs were cut short, or by Python's own report.
+   */
+  run?: number;
+  /**
+   * True for Python's own report, written after the Program's code stopped: the traceback of an error, colored as Python 3.14 colors it in a terminal, or the message sys.exit was given.
+   */
+  report?: true;
+}
+/**
+ * The Program asking for what waits for sys.stdout or sys.stderr to be sent now, as print(..., flush=True) does. Observed.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "OutputFlush".
+ */
+export interface OutputFlush {
+  /**
+   * The door it flushes: 1 for sys.stdout, 2 for sys.stderr.
+   */
+  door: 1 | 2;
+  flush: true;
+  /**
+   * The step run that asked for it: its place in runs. Left out after the step runs were cut short.
+   */
+  run?: number;
 }
 /**
  * The error that stopped the Program, as the last line of its traceback names it.
@@ -746,9 +814,13 @@ export interface Template {
  */
 export interface TryIt {
   /**
-   * The command, such as python {file}. The browser's Python runs it on the Program.
+   * The command, such as python {file}. The browser's Python runs it on the Program, unless inBrowser is false.
    */
   command: string;
+  /**
+   * False for a command the browser's Python can't run, such as strace. The page then shows what the browser did observe, and a sample from the test machine.
+   */
+  inBrowser?: false;
   /**
    * What to do before typing the command.
    */
@@ -943,7 +1015,13 @@ export interface ReferenceExample {
    * Each step run, in the order the steps ran, as the Analysis records them.
    */
   runs: ReferenceRun[];
-  sample: ReferenceSample;
+  /**
+   * The Try it yourself commands a browser can't run, run natively on the test machine for the Example, by zoom level: 7 times it, 8 lists its write system calls with strace.
+   */
+  samples: {
+    "7": ReferenceSample;
+    "8": ReferenceSample;
+  };
 }
 /**
  * One step run of an Example, and the handlers that ran for it.
@@ -1016,7 +1094,7 @@ export interface HandlerRun {
   };
 }
 /**
- * Zoom level 7's Try it yourself command, run natively on the test machine for an Example: a sample of how long it took, which a browser can't measure.
+ * A Try it yourself command a browser can't run, run natively on the test machine for an Example: how long it took, or the system calls it made.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "ReferenceSample".
@@ -1027,7 +1105,7 @@ export interface ReferenceSample {
    */
   command: string;
   /**
-   * What it printed: the Example's output, then the seconds it took.
+   * What it printed: for timing, the Example's output, then the seconds it took; for strace, its lines, without strace's colors or the Example's own output.
    */
   output: string;
   /**
@@ -1197,6 +1275,22 @@ export interface HonestyLabelsVisual {
   kind: "honestyLabels";
 }
 /**
+ * The three numbered doors (file descriptors) every program is given when it starts, each with what it leads to. Zoom level 8 shows the same doors.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "DoorsVisual".
+ */
+export interface DoorsVisual {
+  kind: "doors";
+  /**
+   * What doors 0, 1 and 2 lead to, in order.
+   *
+   * @minItems 3
+   * @maxItems 3
+   */
+  doors: [string, string, string];
+}
+/**
  * One group in the Concepts index.
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
@@ -1269,6 +1363,14 @@ export interface HonestyLabels {
      * Zoom level 7's panel on the CPU's registers, worked out by reading the machine code.
      */
     registers: string;
+    /**
+     * Zoom level 8's pieces the Program handed to sys.stdout and sys.stderr, recorded as it ran.
+     */
+    outputPieces: string;
+    /**
+     * Zoom level 8's pieces of a traceback, which Python writes after the Program stops, colored as for a terminal.
+     */
+    reportPieces: string;
     /**
      * The Machine map, beside every zoom level.
      */

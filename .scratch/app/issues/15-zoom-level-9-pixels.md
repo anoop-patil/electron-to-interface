@@ -15,3 +15,4 @@
 ## Comments
 
 - Ticket 11: `src/zoom/selection.ts` links each zoom level to the others through Fact IDs. Level 9 shows the step run closest to the Selection until this ticket gives it its lines of output: add its Facts to `FACTS` and replace its entry in `LINKS`. The `Anchor` of a step run carries the run, so the entry can find the line it printed.
+- Ticket 14: the lines of output are Facts, `out-0` and on, from `outputLines` in `src/explain/output.ts`: each with its door (1 for stdout, 2 for a traceback on stderr), its text without color codes, and the step run that wrote its last piece. `closestLine` finds the line a step run printed. Level 8's elements are a line at one stage, `out-N-S`; level 9's can be a line and a character in it. `FACTS.out` anchors `out-N` and `out-N-S` to the step run that wrote the line; level 9's IDs need a pattern of their own there.

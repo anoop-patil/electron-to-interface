@@ -4,7 +4,7 @@
   "description": "The complete set of Facts produced from one Program on one Python version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "bytecode", "stdout", "stderr", "error", "events", "runs", "frames", "objects", "eventsCutShort", "runsCutShort", "commands"],
+  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "bytecode", "stdout", "stderr", "writes", "error", "events", "runs", "frames", "objects", "eventsCutShort", "runsCutShort", "writesCutShort", "commands"],
   "properties": {
     "pythonVersion": {
       "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
@@ -52,6 +52,11 @@
       "description": "Everything the Program wrote to standard error when it ran, including the traceback of an error that stopped it.",
       "type": "string"
     },
+    "writes": {
+      "description": "Each piece the Program handed to sys.stdout or sys.stderr, and each flush it asked for, in order. print hands over what it was given, the spaces between, and the newline at the end. The first 2,000 of the Program's own are kept, then Python's own report, if it made one.",
+      "type": "array",
+      "items": { "anyOf": [{ "$ref": "#/$defs/OutputWrite" }, { "$ref": "#/$defs/OutputFlush" }] }
+    },
     "error": {
       "description": "The error that stopped the Program, or null if it ran to the end or called sys.exit.",
       "anyOf": [{ "$ref": "#/$defs/ProgramError" }, { "type": "null" }]
@@ -84,6 +89,10 @@
       "description": "True if more than 2,000 steps ran, so runs holds only the first 2,000.",
       "type": "boolean"
     },
+    "writesCutShort": {
+      "description": "True if the Program handed over more than 2,000 pieces and flushes, so writes holds only the first 2,000 of them.",
+      "type": "boolean"
+    },
     "commands": {
       "description": "Each Try it yourself command the browser's Python ran on the Program, and what it printed.",
       "type": "array",
@@ -91,6 +100,31 @@
     }
   },
   "$defs": {
+    "OutputWrite": {
+      "title": "OutputWrite",
+      "description": "One piece handed to sys.stdout or sys.stderr. Observed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["door", "text"],
+      "properties": {
+        "door": { "description": "Where it goes: 1 for sys.stdout, 2 for sys.stderr, the doors (file descriptors) the operating system gives every program.", "enum": [1, 2] },
+        "text": { "description": "The piece, which can be empty, as print's end=\"\" hands over.", "type": "string" },
+        "run": { "description": "The step run that wrote it: its place in runs. Left out for a piece written after the step runs were cut short, or by Python's own report.", "type": "integer", "minimum": 0 },
+        "report": { "description": "True for Python's own report, written after the Program's code stopped: the traceback of an error, colored as Python 3.14 colors it in a terminal, or the message sys.exit was given.", "const": true }
+      }
+    },
+    "OutputFlush": {
+      "title": "OutputFlush",
+      "description": "The Program asking for what waits for sys.stdout or sys.stderr to be sent now, as print(..., flush=True) does. Observed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["door", "flush"],
+      "properties": {
+        "door": { "description": "The door it flushes: 1 for sys.stdout, 2 for sys.stderr.", "enum": [1, 2] },
+        "flush": { "const": true },
+        "run": { "description": "The step run that asked for it: its place in runs. Left out after the step runs were cut short.", "type": "integer", "minimum": 0 }
+      }
+    },
     "ProgramError": {
       "title": "ProgramError",
       "description": "The error that stopped the Program, as the last line of its traceback names it.",
@@ -553,24 +587,33 @@
       "description": "An Example whose handlers were recorded with a debugger on every step run. A Program gets them only if it is this Example and its step runs are these, in this order.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "program", "recorded", "runs", "sample"],
+      "required": ["name", "program", "recorded", "runs", "samples"],
       "properties": {
         "name": { "description": "The Example's name: hello world, greet.py.", "type": "string", "minLength": 1 },
         "program": { "description": "The Program, ending with a newline, as the Analysis has it.", "type": "string", "minLength": 1 },
         "recorded": { "description": "How the handlers were recorded, and on which build of Python.", "type": "string", "minLength": 1 },
         "runs": { "description": "Each step run, in the order the steps ran, as the Analysis records them.", "type": "array", "items": { "$ref": "#/$defs/ReferenceRun" } },
-        "sample": { "$ref": "#/$defs/ReferenceSample" }
+        "samples": {
+          "description": "The Try it yourself commands a browser can't run, run natively on the test machine for the Example, by zoom level: 7 times it, 8 lists its write system calls with strace.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["7", "8"],
+          "properties": {
+            "7": { "$ref": "#/$defs/ReferenceSample" },
+            "8": { "$ref": "#/$defs/ReferenceSample" }
+          }
+        }
       }
     },
     "ReferenceSample": {
       "title": "ReferenceSample",
-      "description": "Zoom level 7's Try it yourself command, run natively on the test machine for an Example: a sample of how long it took, which a browser can't measure.",
+      "description": "A Try it yourself command a browser can't run, run natively on the test machine for an Example: how long it took, or the system calls it made.",
       "type": "object",
       "additionalProperties": false,
       "required": ["command", "output", "platform"],
       "properties": {
         "command": { "description": "The command, for the Example saved as a file: python -c \"… exec(open('greet.py').read()) …\".", "type": "string", "minLength": 1 },
-        "output": { "description": "What it printed: the Example's output, then the seconds it took.", "type": "string", "minLength": 1 },
+        "output": { "description": "What it printed: for timing, the Example's output, then the seconds it took; for strace, its lines, without strace's colors or the Example's own output.", "type": "string", "minLength": 1 },
         "platform": { "description": "The machine and the build of Python it ran on.", "type": "string", "minLength": 1 }
       }
     },
@@ -726,7 +769,8 @@
       "additionalProperties": false,
       "required": ["command", "intro", "parts", "read"],
       "properties": {
-        "command": { "description": "The command, such as python {file}. The browser's Python runs it on the Program.", "type": "string", "minLength": 1 },
+        "command": { "description": "The command, such as python {file}. The browser's Python runs it on the Program, unless inBrowser is false.", "type": "string", "minLength": 1 },
+        "inBrowser": { "description": "False for a command the browser's Python can't run, such as strace. The page then shows what the browser did observe, and a sample from the test machine.", "const": false },
         "intro": { "description": "What to do before typing the command.", "type": "string", "minLength": 1 },
         "parts": {
           "description": "The What it does tab: each part of the command, and what it does.",
@@ -778,9 +822,27 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); or handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); or output, one line of the Program's output, at zoom level 8 (OutputSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line", "token", "node", "step", "handler"]
+      "enum": ["program", "byte", "line", "token", "node", "step", "handler", "output"]
+    },
+    "OutputSlot": {
+      "title": "OutputSlot",
+      "description": "A Fact about one line of the Program's output, and how it reaches the terminal, that a Template can name. A slot that doesn't apply is empty.",
+      "oneOf": [
+        { "const": "line", "description": "The line, without its newline or any color codes: Hello, Ada." },
+        { "const": "number", "description": "Which line it is, counted from 1, in the order they reached the terminal." },
+        { "const": "door", "description": "The door it goes out through: 1 for standard output, 2 for standard error." },
+        { "const": "stream", "description": "Python's object for that door: sys.stdout or sys.stderr." },
+        { "const": "characters", "description": "How many characters it has, without its newline, with the word: 10 characters." },
+        { "const": "bytes", "description": "How many bytes it is in UTF-8, with its newline and any color codes, with the word: 11 bytes." },
+        { "const": "colorBytes", "description": "How many of those bytes are color codes, with the word: 11 bytes." },
+        { "const": "pieces", "description": "How many pieces it was handed over in, with the word: 4 pieces." },
+        { "const": "callBytes", "description": "How many bytes the system call that sent its end writes, with the word: 11 bytes." },
+        { "const": "lineCalls", "description": "How many system calls carried its bytes, with the word: 2 calls." },
+        { "const": "calls", "description": "How many write system calls Python makes for the Program in all, with the word: 2 calls." },
+        { "const": "lines", "description": "How many lines of output there are, with the word: 2 lines." }
+      ]
     },
     "StepSlot": {
       "title": "StepSlot",
@@ -884,8 +946,8 @@
         { "const": "lists", "description": "The lists of steps the compiler made, in words: one list for your program, and one for greet." },
         { "const": "steps", "description": "How many steps all the code objects have, with the word: 26 steps." },
         { "const": "ran", "description": "How many steps ran in all, with the word: 42 step runs." },
-        { "const": "sample", "description": "The Example whose native timing level 7's Try it yourself shows: the Program itself if it is one, else greet.py." },
-        { "const": "platform", "description": "The machine and the build of Python that timing ran on." }
+        { "const": "sample", "description": "The Example whose native runs levels 7 and 8's Try it yourself show: the Program itself if it is one, else greet.py." },
+        { "const": "platform", "description": "The machine and the build of Python those ran on." }
       ]
     },
     "TokenSlot": {
@@ -965,8 +1027,20 @@
       "oneOf": [
         { "$ref": "#/$defs/BitsVisual" },
         { "$ref": "#/$defs/Utf8Visual" },
-        { "$ref": "#/$defs/HonestyLabelsVisual" }
+        { "$ref": "#/$defs/HonestyLabelsVisual" },
+        { "$ref": "#/$defs/DoorsVisual" }
       ]
+    },
+    "DoorsVisual": {
+      "title": "DoorsVisual",
+      "description": "The three numbered doors (file descriptors) every program is given when it starts, each with what it leads to. Zoom level 8 shows the same doors.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "doors"],
+      "properties": {
+        "kind": { "const": "doors" },
+        "doors": { "description": "What doors 0, 1 and 2 lead to, in order.", "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 3, "maxItems": 3 }
+      }
     },
     "BitsVisual": {
       "title": "BitsVisual",
@@ -1036,7 +1110,7 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "tryItSample", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference", "registers"],
+          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "tryItSample", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference", "registers", "outputPieces", "reportPieces"],
           "properties": {
             "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
             "stepRuns": { "description": "Zoom level 5's strip of every step that ran, in order.", "type": "string" },
@@ -1046,6 +1120,8 @@
             "afterRun": { "description": "Zoom level 5's note on the form a step had become after the Program ran again, unwatched.", "type": "string" },
             "noReference": { "description": "Zoom levels 6 and 7 for a step run the Reference Library has nothing for: a hand-written explanation of what the interpreter, or the CPU, does.", "type": "string" },
             "registers": { "description": "Zoom level 7's panel on the CPU's registers, worked out by reading the machine code.", "type": "string" },
+            "outputPieces": { "description": "Zoom level 8's pieces the Program handed to sys.stdout and sys.stderr, recorded as it ran.", "type": "string" },
+            "reportPieces": { "description": "Zoom level 8's pieces of a traceback, which Python writes after the Program stops, colored as for a terminal.", "type": "string" },
             "machineMap": { "description": "The Machine map, beside every zoom level.", "type": "string" },
             "terminal": { "description": "The Terminal, beside every zoom level: what the Program printed when it ran.", "type": "string" },
             "tryItOutput": { "description": "Try it yourself's What you’ll see tab, when the browser's Python ran the command on the Program.", "type": "string" },

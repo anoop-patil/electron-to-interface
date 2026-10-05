@@ -158,13 +158,26 @@
       "name": "Operating system",
       "like": "The restaurant manager, the only one with keys to the doors: to the screen, the disk and the network.",
       "text": "Programs aren’t allowed to touch the hardware. To read a file from the [[disk|disk]] or show text on the [[screen|screen]], they ask the operating system. Its core, the **kernel**, also decides which program the [[cpu|CPU]] runs next, and gives each program its share of [[ram|RAM]].",
-      "related": ["disk", "screen", "cpu", "terminal"]
+      "related": ["disk", "screen", "cpu", "syscall", "fd", "terminal"]
+    },
+    "syscall": {
+      "name": "System call",
+      "like": "Ringing the manager’s bell: the cook can’t leave the kitchen, so they ask.",
+      "text": "How a program asks the [[os|operating system]] to do something it isn’t allowed to do itself: read a file, show text, use the network. The [[cpu|CPU]] switches into a protected mode where only the operating system runs, the job gets done, and the CPU switches back. Each kind of request has a name: **write** sends bytes out through one of the program’s [[fd|doors]].",
+      "related": ["os", "fd"]
+    },
+    "fd": {
+      "name": "Door numbers (file descriptors)",
+      "like": "Numbered doors out of the kitchen: orders come in through door 0, dishes go out through door 1, and problems are reported through door 2.",
+      "text": "When a program starts, the [[os|operating system]] gives it numbered doors. Door 0 is input, usually your keyboard. Door 1 is output, usually your [[terminal|terminal]]. Door 2 is for error messages, usually your terminal too. print writes to door 1, and Python’s report of an error goes out through door 2. Programmers call these file descriptors.",
+      "visual": {"kind": "doors", "doors": ["input: your keyboard", "output: your terminal. print uses this one", "errors: also your terminal. A traceback uses this one"]},
+      "related": ["syscall", "terminal"]
     },
     "terminal": {
       "name": "Terminal",
       "like": "The order window: you call in what you want, and whatever the kitchen sends out appears there.",
       "text": "A window for talking to programs by typing. You type a command, and the program it names starts. What the program prints reaches the terminal as [[byte|bytes]]; the terminal turns them back into characters and draws them on the [[screen|screen]]. On Windows, you type commands in PowerShell or Command Prompt.",
-      "related": ["os", "screen"]
+      "related": ["os", "fd", "screen"]
     },
     "screen": {
       "name": "Screen",
@@ -180,7 +193,7 @@
     { "name": "Running it", "cards": ["py", "frame", "cpython", "clang", "compiler", "debugger"] },
     { "name": "Memory", "cards": ["disk", "ram", "heap", "stack", "none"] },
     { "name": "The CPU", "cards": ["cpu", "machine", "reg", "cache"] },
-    { "name": "Talking to the outside world", "cards": ["os", "terminal"] },
+    { "name": "Talking to the outside world", "cards": ["os", "syscall", "fd", "terminal"] },
     { "name": "The screen", "cards": ["screen"] }
   ]
 }

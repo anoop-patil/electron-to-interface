@@ -63,7 +63,7 @@ _Avoid_: opcode function, case
 ## Facts
 
 **Fact**:
-One observed thing about the learner's program (a byte, token, syntax-tree node, Step, Step run or Event), identified by a stable Fact ID.
+One observed thing about the learner's program (a byte, token, syntax-tree node, Step, Step run, Event or line of output), identified by a stable Fact ID.
 _Avoid_: data point, item
 
 **Fact ID**:

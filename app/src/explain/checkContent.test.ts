@@ -55,6 +55,12 @@ test('the build fails on a slot or bold mark that wouldn’t be filled in, inste
   );
 });
 
+test('the build fails on a slot inside highlighted words, which would reach the page as text', async () => {
+  const run = build(withTemplate({ subject: 'byte', text: 'It goes to [[byte|byte number {number}]].' }));
+
+  await expect(run()).rejects.toThrow('byte.test has [[byte|byte number {number}]], whose slot wouldn’t be filled in');
+});
+
 test('the build fails if a Template uses a Fact of a different subject', async () => {
   // The value of a byte means nothing for the whole Program.
   const run = build(withTemplate({ subject: 'program', title: 'Stored as {value}', text: 'Your program.' }));
@@ -117,6 +123,7 @@ test('a different label set is an edit to the labels file alone: three labels in
   const panels = {
     byteBits: 'observed', machineMap: 'typical', terminal: 'observed', tryItOutput: 'observed', tryItSample: 'reference', stepRuns: 'observed',
     plates: 'observed', objects: 'observed', recipeCard: 'observed', afterRun: 'observed', noReference: 'typical', registers: 'reference',
+    outputPieces: 'observed', reportPieces: 'observed',
   };
   const run = build(withLabels({ labels: { observed, reference, typical }, panels }));
 

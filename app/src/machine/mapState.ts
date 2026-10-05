@@ -1,7 +1,8 @@
 import { framesAfter } from '../explain/bytecode';
-import { explainProgram, type Span, type TemplateId } from '../explain/explain';
+import { explainProgram, fillString, template, type Span, type TemplateId } from '../explain/explain';
 import { level6 } from '../explain/interpreter';
 import { level7, level7IsReference } from '../explain/machine';
+import { level8, outputFacts } from '../explain/operatingSystem';
 import { explainForStep, stepSelectionAt } from '../explain/steps';
 import type { Analysis } from '../generated/analysis';
 import type { PartId } from './parts';
@@ -69,6 +70,14 @@ const LEVELS: Record<number, (analysis: Analysis, selection: string | null) => M
     if (selected.run === null) id = 'map.level7.cpuNeverRan';
     else if (level7IsReference(view)) id = 'map.level7.cpu';
     return { lit: [{ part: 'cpu', note: explainForStep(id, analysis, selected.step, selected.run).text }, ...machine] };
+  },
+  // Level 8 lights the operating system, and RAM while the line's bytes are still in the Program's zone, in Python's buffer.
+  8: (analysis, selection) => {
+    const view = level8(analysis, selection);
+    if (!view) return { lit: [{ part: 'os', note: explainProgram(analysis.writesCutShort ? 'map.level8.osCutShort' : 'map.level8.osNothing', analysis).text }] };
+    const note = (id: TemplateId) => fillString(template(id, 'output').text, outputFacts(analysis, view.line));
+    if (view.zone === 0) return { lit: [{ part: 'os', note: note('map.level8.osWaiting') }, { part: 'ram', note: note('map.level8.ram') }] };
+    return { lit: [{ part: 'os', note: note('map.level8.os') }] };
   },
 };
 

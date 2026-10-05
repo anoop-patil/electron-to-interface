@@ -405,7 +405,10 @@
           ]
         }
       ],
-      "sample": {"command": "python -c \"import time; t = time.perf_counter(); exec(open('hello.py').read()); print(time.perf_counter() - t)\"", "output": "Hello World!\n0.0002704999999991742\n", "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"}
+      "samples": {
+        "7": {"command": "python -c \"import time; t = time.perf_counter(); exec(open('hello.py').read()); print(time.perf_counter() - t)\"", "output": "Hello World!\n0.0002704999999991742\n", "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"},
+        "8": {"command": "strace -e trace=write python hello.py", "output": "write(1, \"Hello World!\\n\", 13)          = 13\n+++ exited with 0 +++\n", "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"}
+      }
     },
     {
       "name": "greet.py",
@@ -965,7 +968,10 @@
           ]
         }
       ],
-      "sample": {"command": "python -c \"import time; t = time.perf_counter(); exec(open('greet.py').read()); print(time.perf_counter() - t)\"", "output": "Hello, Ada\nHello, Grace\n0.0005640999999911855\n", "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"}
+      "samples": {
+        "7": {"command": "python -c \"import time; t = time.perf_counter(); exec(open('greet.py').read()); print(time.perf_counter() - t)\"", "output": "Hello, Ada\nHello, Grace\n0.0005640999999911855\n", "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"},
+        "8": {"command": "strace -e trace=write python greet.py", "output": "write(1, \"Hello, Ada\\n\", 11)            = 11\nwrite(1, \"Hello, Grace\\n\", 13)          = 13\n+++ exited with 0 +++\n", "platform": "Linux (Ubuntu 26.04 under WSL2, x86-64), python-build-standalone 20251205"}
+      }
     }
   ],
   "machineCode": {

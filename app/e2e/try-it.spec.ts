@@ -97,7 +97,7 @@ test('a Program that stops with an error shows Python’s traceback, and how to 
   await expect(tryIt(page).getByRole('tabpanel')).toContainText('Your program stopped with an error.');
 });
 
-test('a Program that prints nothing says so, and zoom levels that aren’t built yet have no Try it yourself', async ({ page }) => {
+test('a Program that prints nothing says so, and a zoom level that isn’t built yet has no Try it yourself', async ({ page }) => {
   await page.goto('/');
   await run(page, 'x = 1');
   await tryIt(page).locator('summary').click();
@@ -105,7 +105,7 @@ test('a Program that prints nothing says so, and zoom levels that aren’t built
   await expect(tryIt(page).getByRole('tabpanel')).toContainText('Nothing: your program doesn’t print anything');
   await expect(tryIt(page).locator('pre')).toHaveCount(0);
 
-  await gauge(page).getByRole('button', { name: '8 OS' }).click();
-  await expect(zoomLevel(page, 8, 'Operating system')).toBeVisible();
+  await gauge(page).getByRole('button', { name: '9 Pixels' }).click();
+  await expect(zoomLevel(page, 9, 'Pixels')).toBeVisible();
   await expect(tryIt(page)).toHaveCount(0);
 });

@@ -67,6 +67,24 @@ function HonestyLabelList() {
   );
 }
 
+/** The three numbered doors every program is given, each with what it leads to, and the one in use, if any, highlighted. */
+export function Doors({ doors, used }: { doors: string[]; used?: number }) {
+  return (
+    <ul className="grid grid-cols-3 gap-2 narrow:grid-cols-1">
+      {doors.map((leads, door) => (
+        <li
+          key={door}
+          className={`rounded-[10px] border-[1.5px] px-3 py-2.5 text-[13px] leading-[1.45] text-ink2 ${door === used ? 'border-accent bg-accent-soft' : 'border-rule2 bg-surface'}`}
+          aria-current={door === used || undefined}
+        >
+          <b className="block font-mono text-[20px] font-semibold text-ink">{door}</b>
+          {leads}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The picture under a Concept card's text. */
 export function ConceptVisualView({ visual }: { visual: ConceptVisual }) {
   switch (visual.kind) {
@@ -85,5 +103,7 @@ export function ConceptVisualView({ visual }: { visual: ConceptVisual }) {
       return <Utf8Table chars={visual.chars} />;
     case 'honestyLabels':
       return <HonestyLabelList />;
+    case 'doors':
+      return <Doors doors={visual.doors} />;
   }
 }
