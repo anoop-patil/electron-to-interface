@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Engine } from './engine/engine';
+import type { CantRun } from './engine/support';
+import { ExamplePicker } from './examples/ExamplePicker';
+import { EXAMPLES, loadExample } from './examples/examples';
+import helloSource from '../examples/hello.py?raw';
 import type { Analysis } from './generated/analysis';
 import { buttonClass } from './button';
 import { ConceptsButton } from './concepts/ConceptsButton';
@@ -14,33 +18,57 @@ import { useZoomNavigation } from './zoom/useZoomNavigation';
 import { charsOf, selectionAt } from './zoom/selection';
 import { ZoomView } from './zoom/ZoomView';
 
-type PythonStatus = 'starting' | 'ready' | 'failed';
+type PythonStatus = 'starting' | 'ready' | 'failed' | CantRun;
+
+const EXAMPLES_STILL_WORK = 'The Examples still work: Python ran each one when this site was built.';
 
 const STATUS_NOTES: Record<PythonStatus, string> = {
-  starting: 'Python is starting in your browser. You can type while you wait; Run works once it’s ready.',
+  starting: 'Python is loading in your browser. You can type, or try the Examples, while you wait; Run works once it’s ready.',
   ready: '',
-  failed: 'Python couldn’t start in this browser, so Run is off.',
+  failed: `Python couldn’t start in this browser, so Run is off. ${EXAMPLES_STILL_WORK}`,
+  noWebAssembly: `This browser can’t run WebAssembly, which Python needs here, so Run is off. ${EXAMPLES_STILL_WORK}`,
+  lowMemory: `This device reports less than 1 GB of memory, too little to run Python here, so Run is off. ${EXAMPLES_STILL_WORK}`,
 };
+
+/** What the zoom view shows: an Analysis, and the code as it was in the editor when it was made. */
+interface ShownAnalysis {
+  analysis: Analysis;
+  code: string;
+}
+
+/** The code the editor shows for an Example: its Analysis's Program ends with a newline the editor doesn't need. */
+const codeOf = (analysis: Analysis) => analysis.program.replace(/\n$/, '');
+
+const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 // The zoom view's background shifts from warm (your code) to cool (the machine), one tint per zoom level.
 const TINTS = ['bg-tint-1', 'bg-tint-2', 'bg-tint-3', 'bg-tint-4', 'bg-tint-5', 'bg-tint-6', 'bg-tint-7', 'bg-tint-8', 'bg-tint-9'];
 
 const KBD_CLASSES = 'rounded-[5px] border border-b-2 border-rule2 bg-surface px-1.5 py-px font-mono text-[11px] leading-[normal] text-ink2';
 
-export function App({ engine }: { engine: Engine }) {
-  const [code, setCode] = useState('print("Hello World!")');
+/**
+ * The page. `engine` is Python, starting in a Web Worker, or null where `cantRun` says why the browser can't run it.
+ * Hello world shows at once, from its Analysis made when the site was built, while Python loads.
+ */
+export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun?: CantRun | null }) {
+  const [code, setCode] = useState(helloSource.replace(/\n$/, ''));
   const [codeHidden, setCodeHidden] = useState(false);
-  const [status, setStatus] = useState<PythonStatus>('starting');
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [status, setStatus] = useState<PythonStatus>(cantRun ?? 'starting');
+  const [shown, setShown] = useState<ShownAnalysis | null>(null);
+  const analysis = shown?.analysis ?? null;
   const screen = useScreen();
-  // The code as it was when the learner clicked Run, which the Analysis describes.
-  const [ranCode, setRanCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The Run Python is working on, if any: Run is off meanwhile, and the zoom view says it is busy.
+  const [runningRequest, setRunningRequest] = useState<number | null>(null);
+  const running = runningRequest !== null;
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
   const view = useRef<HTMLDivElement>(null);
   const { level, go } = useZoomNavigation(view);
+  // Counts the learner's Runs and Example picks, so only the latest one's Analysis is shown.
+  const requests = useRef(0);
 
   useEffect(() => {
+    if (!engine) return;
     let current = true;
     engine.ready.then(
       () => current && setStatus('ready'),
@@ -51,22 +79,61 @@ export function App({ engine }: { engine: Engine }) {
     };
   }, [engine]);
 
+  // Hello world, unless the learner has already clicked Run or picked an Example.
+  useEffect(() => {
+    let current = true;
+    loadExample(EXAMPLES[0].id).then(
+      (hello) => current && requests.current === 0 && setShown((before) => before ?? { analysis: hello, code: codeOf(hello) }),
+      (e) => current && requests.current === 0 && setError(messageOf(e)),
+    );
+    return () => {
+      current = false;
+    };
+  }, []);
+
   // What the zoom level on screen shows selected: the learner's Selection, or the closest match to it at this level.
   const levelSelection = analysis && selectionAt(analysis, selectedFactId, level);
   // The editor highlights the code the Selection comes from, while the code is still what was run.
-  const chars = analysis && levelSelection && code === ranCode ? charsOf(analysis, levelSelection) : null;
+  const chars = analysis && levelSelection && code === shown?.code ? charsOf(analysis, levelSelection) : null;
   const highlight: Highlight | null = analysis && chars ? { program: analysis.program, ...chars } : null;
+  // The Example on show, while its code is unedited.
+  const shownExample = analysis?.example !== undefined && code === shown?.code ? analysis.example : null;
 
-  async function run() {
+  /**
+   * Shows what `make` makes, unless the learner has clicked Run or picked an Example since. An Example's code goes
+   * into the editor; a Run leaves the editor alone, in case the learner typed while Python worked.
+   */
+  async function show(request: number, make: () => Promise<ShownAnalysis>, { intoEditor }: { intoEditor: boolean }) {
     try {
-      setAnalysis(await engine.analyze(code));
-      setRanCode(code);
+      const made = await make();
+      if (request !== requests.current) return;
+      if (intoEditor) setCode(made.code);
+      setShown(made);
       setSelectedFactId(null);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (request === requests.current) setError(messageOf(e));
     }
   }
+
+  const run = async () => {
+    if (!engine) return;
+    const ran = code;
+    const request = ++requests.current;
+    setRunningRequest(request);
+    await show(request, async () => ({ analysis: await engine.analyze(ran), code: ran }), { intoEditor: false });
+    setRunningRequest((current) => (current === request ? null : current));
+  };
+  // An Example runs as soon as it is picked: its Analysis was made when the site was built. A Run still going is
+  // left to finish unseen.
+  const pickExample = (id: string) => {
+    const request = ++requests.current;
+    setRunningRequest(null);
+    show(request, async () => {
+      const example = await loadExample(id);
+      return { analysis: example, code: codeOf(example) };
+    }, { intoEditor: true });
+  };
 
   return (
     <div className="mx-auto max-w-[1500px] px-[clamp(16px,2vw,28px)] py-[clamp(12px,2vw,24px)] narrow:p-0">
@@ -107,12 +174,13 @@ export function App({ engine }: { engine: Engine }) {
               </div>
               <div className={`grid gap-3${codeHidden ? ' narrow:hidden' : ''}`} id="program-editor">
                 <p className="text-[14px] text-ink2">Write a short Python program, click Run, and zoom in to see what your computer really does with it.</p>
+                <ExamplePicker shown={shownExample} onPick={pickExample} />
                 <ProgramEditor code={code} onChange={setCode} highlight={highlight} />
                 <div className="flex flex-wrap items-center gap-3">
-                  <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready'} onClick={run}>
+                  <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready' || running} onClick={run}>
                     Run
                   </button>
-                  <p className="text-[14px] text-ink2 empty:hidden" role="status">{STATUS_NOTES[status]}</p>
+                  <p className="min-w-0 flex-1 text-[14px] text-ink2 empty:hidden" role="status">{STATUS_NOTES[status]}</p>
                 </div>
                 {error && <p className="whitespace-pre-wrap font-mono text-[13px] text-warn" role="alert">{error}</p>}
                 <p className="flex flex-wrap gap-x-3 gap-y-1.5 text-[12px] text-ink3 narrow:hidden">
@@ -128,7 +196,7 @@ export function App({ engine }: { engine: Engine }) {
           <DepthGauge level={level} onGo={go} />
 
           {/* `stage` is a hook for the tests, not a style. */}
-          <main className={`stage min-w-0 px-[clamp(16px,4vw,48px)] pb-10 pt-6 narrow:px-4 narrow:pb-8 narrow:pt-5 ${TINTS[level - 1]}`} data-level={level}>
+          <main className={`stage min-w-0 px-[clamp(16px,4vw,48px)] pb-10 pt-6 narrow:px-4 narrow:pb-8 narrow:pt-5 ${TINTS[level - 1]}`} data-level={level} aria-busy={running}>
             <ZoomView
               level={level}
               analysis={analysis}

@@ -251,11 +251,15 @@ function timeRows(analysis: Analysis, result: CommandRun) {
   return [...(shown.length > 0 ? [row(shown.join('\n'), 'tryIt.timeRow.output')] : []), row(found.seconds, 'tryIt.timeRow.seconds')];
 }
 
-/** Level 7's notes: the browser measured the time, on WebAssembly, and a time of 0 is its clock's coarseness. */
+/**
+ * Level 7's notes: Python measured the time on WebAssembly, in the browser, where a time of 0 is its clock's
+ * coarseness, or, for an Example, when the site was built.
+ */
 function level7Notes(analysis: Analysis, result: CommandRun): Span[][] {
   const facts = programFacts(analysis);
   const zero = Number(secondsOf(result)?.seconds) === 0;
-  return (['tryIt.level7.browser', ...(zero ? ['tryIt.level7.zero' as const] : [])] as const).map((id) => fillString(template(id, 'program').text, facts));
+  const ids = analysis.example ? (['tryIt.level7.built'] as const) : (['tryIt.level7.browser', ...(zero ? ['tryIt.level7.zero' as const] : [])] as const);
+  return ids.map((id) => fillString(template(id, 'program').text, facts));
 }
 
 /** The notes on reading a level's output that the page works out from the Program and what its command printed. */
@@ -282,11 +286,11 @@ interface Shown {
   notes: Span[][];
 }
 
-/** A command the browser's Python ran on the Program: what it printed, and what the page works out from that. */
+/** A command the browser's Python ran on the Program, or, for an Example, ran when the site was built: what it printed, and what the page works out from that. */
 function ranInBrowser(level: number, analysis: Analysis, command: string): Shown {
   const result = analysis.commands.find((other) => other.command === command);
   if (!result) throw new Error(`The Analysis has no output for ${command}`);
-  return { output: result.output, observed: 'tryIt.observed', rows: ROWS[level]?.(analysis, result) ?? [], notes: NOTES[level]?.(analysis, result) ?? [] };
+  return { output: result.output, observed: analysis.example ? 'tryIt.built' : 'tryIt.observed', rows: ROWS[level]?.(analysis, result) ?? [], notes: NOTES[level]?.(analysis, result) ?? [] };
 }
 
 /** The exit status of `python FILE`, level 1's command, or what an error would give, if the Analysis has no record of it. */
@@ -302,7 +306,7 @@ function exitStatusOf(analysis: Analysis) {
 const OBSERVED_INSTEAD: Record<number, (analysis: Analysis) => Shown> = {
   8: (analysis) => ({
     output: piecesOutput(analysis),
-    observed: 'tryIt.level8.observed',
+    observed: analysis.example ? 'tryIt.level8.built' : 'tryIt.level8.observed',
     rows: straceRows(analysis, exitStatusOf(analysis)),
     notes: analysis.writes.some((write) => 'text' in write && write.report && write.text.includes('\x1b'))
       ? [fillString(template('tryIt.level8.colors', 'program').text, programFacts(analysis))]

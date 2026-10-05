@@ -14,3 +14,7 @@
 - [ ] Deep links such as `/zoom/7` load the app.
 - [ ] Cloudflare Web Analytics counts page paths only, so zoom depth can be measured (ADR 0002).
 - [ ] Only services with a hard stop are used (ADR 0001).
+
+## Comments
+
+- Ticket 16: `npm run build` now also runs Pyodide under Node.js to make each Example's Analysis (`src/examples/build.ts`), into `public/examples/`, which the site serves as static files. It adds a few seconds and needs no network.

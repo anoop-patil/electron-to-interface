@@ -13,3 +13,4 @@
 ## Comments
 
 - Ticket 09: a Program with a syntax error has no syntax tree. Level 4 says so in one sentence, `level4.noTree`, and points to the Terminal, which shows Python's traceback. This ticket can replace that sentence with the plain-English explanation.
+- Ticket 16: add the syntax-error Example to `EXAMPLES` in `src/examples/examples.ts`; the build then makes its Analysis. `src/examples/build.test.ts` checks that every Example runs to the end and prints, so it needs an exception for this one. An Example's Analysis carries `example`, and Templates that would say the browser just ran it have an Example variant: check any new text for a Program with an error, such as `tryIt.level1.error`, against both.

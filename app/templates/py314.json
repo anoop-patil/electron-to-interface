@@ -5,6 +5,10 @@
       "subject": "program",
       "text": "You typed {lines} and clicked Run. At this level your program is still just text, as you wrote it. Your computer stores it as [[byte|bytes]], which the next zoom level shows. Highlighted words, like that one, open a short explanation."
     },
+    "level1.introBuilt": {
+      "subject": "program",
+      "text": "This Example is {lines} long, and Python ran it when this site was built, so you can zoom in straight away. At this level the program is still just text. Your computer stores it as [[byte|bytes]], which the next zoom level shows. Highlighted words, like that one, open a short explanation."
+    },
     "level1.caption": {
       "subject": "program",
       "text": "Your whole program: {lines}."
@@ -469,6 +473,10 @@
       "subject": "program",
       "text": "Your browser’s Python did what this command does, on your program, just now."
     },
+    "tryIt.built": {
+      "subject": "program",
+      "text": "Python 3.14.2 (Pyodide, the Python this site runs) did what this command does on this Example when this site was built."
+    },
     "tryIt.nothingPrinted": {
       "subject": "program",
       "text": "Nothing: your program doesn’t print anything, so the terminal shows nothing either."
@@ -479,7 +487,7 @@
     },
     "tryIt.level1.error": {
       "subject": "program",
-      "text": "Your program stopped with an error. The last line names the error and says what went wrong; the lines above it say where. The path is where your browser’s Python saved {file}. On your computer, you’ll see your own folder."
+      "text": "Your program stopped with an error. The last line names the error and says what went wrong; the lines above it say where. The path is where Python saved {file}, among its in-memory files. On your computer, you’ll see your own folder."
     },
     "tryIt.level2.multiByte": {
       "subject": "byte",
@@ -626,7 +634,7 @@
     "level5.objects": {
       "subject": "program",
       "title": "Objects, so far",
-      "text": "The [[heap|objects]] the plates and variables have pointed to so far. Those still in use after this step are outlined. Each of Python’s own types gives its size in bytes, as Python in your browser measures it; Python on a 64-bit computer uses more bytes for the same object. A list or dictionary is shown as it was when last seen."
+      "text": "The [[heap|objects]] the plates and variables have pointed to so far. Those still in use after this step are outlined. Each of Python’s own types gives its size in bytes, as this site’s Python, compiled to WebAssembly, measures it; Python on a 64-bit computer uses more bytes for the same object. A list or dictionary is shown as it was when last seen."
     },
     "level5.recipe": {
       "subject": "step",
@@ -959,9 +967,13 @@
       "subject": "program",
       "text": "The pieces in stage 1 are Observed: Python in your browser recorded them as your program ran. The rest is how a typical Linux terminal handles them."
     },
+    "level8.built": {
+      "subject": "program",
+      "text": "The pieces in stage 1 are Observed: Python recorded them as this Example ran, when this site was built. The rest is how a typical Linux terminal handles them."
+    },
     "level8.observedReport": {
       "subject": "program",
-      "text": "The pieces in stage 1 are Derived: Python wrote this traceback after your program stopped, and the colors are what its traceback code adds for a terminal, worked out in your browser. The rest is how a typical Linux terminal handles them."
+      "text": "The pieces in stage 1 are Derived: Python wrote this traceback after your program stopped, and the colors are what its traceback code adds for a terminal. The rest is how a typical Linux terminal handles them."
     },
     "level8.doors": {
       "subject": "program",
@@ -1027,7 +1039,7 @@
     },
     "level8.bufferPath": {
       "subject": "output",
-      "text": "This line names your file by where your browser’s Python saved it. On your computer it names your own folder, so its number of bytes differs."
+      "text": "This line names your file by where Python saved it, among its in-memory files. On your computer it names your own folder, so its number of bytes differs."
     },
     "level8.call": {
       "subject": "output",
@@ -1710,6 +1722,10 @@
       "subject": "program",
       "text": "Your browser’s Python ran this command on your program just now, and the run it watched counted {ran}. In your browser, Python runs as WebAssembly rather than directly on your CPU, so a normal Python on your computer takes a different time."
     },
+    "tryIt.level7.built": {
+      "subject": "program",
+      "text": "Python 3.14.2 (Pyodide, the Python this site runs) ran this command on this Example when this site was built, and the run it watched counted {ran}. It ran on the computer that built the site, as WebAssembly, as it does in a browser, so a normal Python on your computer takes a different time."
+    },
     "tryIt.level7.zero": {
       "subject": "program",
       "text": "Browsers make this clock less precise, to protect against timing attacks: in Chrome it moves in steps of 0.1 ms, and in Firefox and Safari 1 ms. A program that takes less time than that measures as 0."
@@ -1737,6 +1753,10 @@
     "tryIt.level8.observed": {
       "subject": "program",
       "text": "Your browser can’t run strace, but its Python recorded each piece your program handed to sys.stdout and sys.stderr, and each flush, just now. A row ends with a piece that holds a newline, which in a terminal makes Python send a write call; a flush, which does too; or a change of door."
+    },
+    "tryIt.level8.built": {
+      "subject": "program",
+      "text": "Your browser can’t run strace. Python 3.14.2 (Pyodide, the Python this site runs) recorded each piece this Example handed to sys.stdout and sys.stderr, and each flush, when this site was built. A row ends with a piece that holds a newline, which in a terminal makes Python send a write call; a flush, which does too; or a change of door."
     },
     "tryIt.level8.colors": {
       "subject": "program",

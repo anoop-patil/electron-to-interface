@@ -53,7 +53,7 @@ test.describe('moving between zoom levels', () => {
     await expect(zoomLevel(page, 3, 'Tokens')).toBeVisible();
     await expect(page).toHaveURL(/\/zoom\/3$/);
 
-    await page.getByLabel('Your program').press('ArrowDown');
+    await page.getByRole('textbox', { name: 'Your program' }).press('ArrowDown');
     await expect(zoomLevel(page, 3, 'Tokens')).toBeVisible();
   });
 
@@ -105,10 +105,10 @@ test.describe('moving between zoom levels', () => {
     await expect(zoomLevel(page, 2, 'Bytes')).toBeVisible();
   });
 
-  test('a deep link opens its zoom level, which asks for a Run before it has a program to show', async ({ page }) => {
+  test('a deep link opens its zoom level, showing hello world, the Example the page starts with', async ({ page }) => {
     for (const [level, title] of [[8, 'Operating system'], [9, 'Pixels']] as const) {
       await page.goto(`/zoom/${level}`);
-      await expect(zoomLevel(page, level, title)).toContainText('Write a program and click Run to see it here.');
+      await expect(zoomLevel(page, level, title)).toContainText('Hello World!');
     }
   });
 

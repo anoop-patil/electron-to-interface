@@ -84,7 +84,7 @@ The statement every zoom level, and any panel that differs from its level, carri
 _Avoid_: source, confidence
 
 **Observed**:
-Honesty label for content Python itself recorded from the learner's own program.
+Honesty label for content Python itself recorded from the learner's own program, or, for an Example, from the Example when the site was built.
 _Avoid_: traced, live, real
 
 **Derived**:
@@ -130,7 +130,7 @@ A zoom level's section that gives a real command the learner can run on their ow
 _Avoid_: exercise, demo, sample command
 
 **Example**:
-A curated program shipped with the tool (hello world, a for loop, a syntax error, and so on).
+A curated program shipped with the tool (hello world, a for loop, a syntax error, and so on). Its Analysis is made when the site is built, so it shows before Python has loaded in the browser.
 _Avoid_: sample, snippet, demo
 
 **Share link**:

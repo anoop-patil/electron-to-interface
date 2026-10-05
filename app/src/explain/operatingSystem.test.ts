@@ -104,6 +104,7 @@ test('a traceback’s pieces are Derived: Python writes them after the Program s
 
   expect(level8(failing, 'out-0-1')!.derived).toBe(false);
   expect(level8(failing, 'out-1-1')!.derived).toBe(true);
+  expect(level8(failing, 'out-1-1')!.piecesNote).toBe('level8.observedReport');
   // Try it yourself shows only what was recorded as the Program ran.
   expect(explainTryIt(8, failing)!.output).toBe(`sys.stdout ← 'Hi'  '\\n'`);
 });
@@ -143,6 +144,16 @@ test('Python’s way of writing a piece, and strace’s way of writing bytes', (
   expect(straceString('\x1b[35m\x1b0')).toBe('"\\33[35m\\0330"');
   expect(pythonRepr('a b​')).toBe(`'a\\xa0b\\u200b'`);
   expect(straceString('\v\f')).toBe('"\\v\\f"');
+});
+
+test('for an Example, the pieces were recorded when the site was built, and level 8 and Try it yourself say so', () => {
+  const example = { ...hello, example: 'hello' };
+
+  expect(level8(hello, 'out-0-1')!.piecesNote).toBe('level8.observed');
+  expect(level8(example, 'out-0-1')!.piecesNote).toBe('level8.built');
+  expect(plain(explainTryIt(8, example)!.observed)).toBe(
+    'Your browser can’t run strace. Python 3.14.2 (Pyodide, the Python this site runs) recorded each piece this Example handed to sys.stdout and sys.stderr, and each flush, when this site was built. A row ends with a piece that holds a newline, which in a terminal makes Python send a write call; a flush, which does too; or a change of door.',
+  );
 });
 
 test('Try it yourself: strace, which a browser can’t run, beside the pieces the browser saw, and a sample', () => {

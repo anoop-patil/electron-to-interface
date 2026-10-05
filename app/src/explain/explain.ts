@@ -102,6 +102,15 @@ export function template(id: TemplateId, subject: Template['subject']) {
 /** A Template about the whole Program, such as a zoom level's introduction, filled in with its Facts. */
 export const explainProgram = (id: TemplateId, analysis: Analysis) => fill(template(id, 'program'), programFacts(analysis));
 
+/** The Template that introduces each zoom level. */
+const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro', 6: 'level6.intro', 7: 'level7.intro', 8: 'level8.intro', 9: 'level9.intro' };
+
+/** A zoom level's introduction. Level 1's says the learner typed the Program and clicked Run, unless it is an Example, which Python ran when the site was built. */
+export function levelIntro(level: number, analysis: Analysis) {
+  const id = level === 1 && analysis.example ? 'level1.introBuilt' : INTROS[level];
+  return id ? explainProgram(id, analysis) : null;
+}
+
 const hex4 = (codePoint: number) => `U+${codePoint.toString(16).toUpperCase().padStart(4, '0')}`;
 const PLACES = ['first', 'second', 'third', 'fourth'];
 

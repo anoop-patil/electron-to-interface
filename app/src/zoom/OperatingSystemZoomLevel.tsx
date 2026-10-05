@@ -113,7 +113,7 @@ export function OperatingSystemZoomLevel({ analysis, view, onSelect }: LevelProp
       <p className="flex flex-wrap items-center gap-2 text-[13px] text-ink3">
         <HonestyChip label={panelLabel(view.derived ? 'reportPieces' : 'outputPieces')} size="panel" />
         <span>
-          <ExplanationText spans={program(view.derived ? 'level8.observedReport' : 'level8.observed')} />
+          <ExplanationText spans={program(view.piecesNote)} />
         </span>
       </p>
       <section className="grid gap-2.5 rounded-xl border border-rule bg-surface px-3.5 py-3" aria-label="Doors">

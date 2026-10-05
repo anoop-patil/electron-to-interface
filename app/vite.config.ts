@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { checkedContent } from './src/explain/checkContent';
+import { exampleAnalyses } from './src/examples/build';
 
 const PYODIDE_FILES = ['pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json'];
 
@@ -41,7 +42,7 @@ function cpythonLicense(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), selfHostedPyodide(), cpythonLicense(), checkedContent()],
+  plugins: [react(), tailwindcss(), selfHostedPyodide(), cpythonLicense(), checkedContent(), exampleAnalyses()],
   optimizeDeps: { exclude: ['pyodide'] },
   worker: { format: 'es' },
   test: { include: ['src/**/*.test.ts'] },

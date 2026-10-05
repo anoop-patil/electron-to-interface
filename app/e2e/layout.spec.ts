@@ -3,7 +3,7 @@ import { anyZoomLevel, gauge, run, zoomLevel } from './helpers';
 
 test('desktop: the editor is on the left and the zoom view on the right', async ({ page }) => {
   await page.goto('/zoom/1');
-  const editor = (await page.getByLabel('Your program').boundingBox())!;
+  const editor = (await page.getByRole('textbox', { name: 'Your program' }).boundingBox())!;
   const view = (await zoomLevel(page, 1, 'Your code').boundingBox())!;
   expect(editor.x + editor.width).toBeLessThanOrEqual(view.x);
 });
@@ -23,7 +23,7 @@ async function phone(page: Page, path: string) {
 test.describe('phone, 390px wide', () => {
   test('the code is on top, collapsible to one line, and the gauge is a strip above the zoom view', async ({ page }) => {
     const frame = await phone(page, '/zoom/1');
-    const editor = frame.getByLabel('Your program');
+    const editor = frame.getByRole('textbox', { name: 'Your program' });
     const view = zoomLevel(frame, 1, 'Your code');
     expect((await editor.boundingBox())!.y).toBeLessThan((await view.boundingBox())!.y);
 

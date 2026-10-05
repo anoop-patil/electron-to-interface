@@ -2,7 +2,7 @@ import { useState, type Ref } from 'react';
 import { buttonClass } from '../button';
 import { levelLabel, panelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
-import { explainByte, explainProgram, explainToken, type TemplateId } from '../explain/explain';
+import { explainByte, explainProgram, explainToken, levelIntro } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
 import { explainLevel6, level6, level6AfterRun } from '../explain/interpreter';
 import { explainLevel7, level7, level7AfterRun, level7IsReference } from '../explain/machine';
@@ -36,9 +36,6 @@ const ArrowUp = () => (
     <path d="M12 19V5M6 11l6-6 6 6" />
   </svg>
 );
-
-/** The Template that introduces each zoom level that has one. */
-const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro', 6: 'level6.intro', 7: 'level7.intro', 8: 'level8.intro', 9: 'level9.intro' };
 
 /** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
@@ -96,7 +93,7 @@ export function ZoomView({
   // Levels 5 to 7 have no steps to show when the Program has a syntax error.
   else visual = <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram('level5.noBytecode', analysis).text} /></p>;
 
-  const intro = analysis && INTROS[level] ? explainProgram(INTROS[level], analysis) : null;
+  const intro = analysis && levelIntro(level, analysis);
   let explanation = null;
   if (analysis && level === 2 && selectedByte) explanation = explainByte(analysis, selectedByte);
   if (analysis && level === 3 && selectedToken) explanation = explainToken(analysis, selectedToken);

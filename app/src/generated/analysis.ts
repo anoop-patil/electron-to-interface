@@ -342,6 +342,10 @@ export interface Analysis {
    * Each Try it yourself command the browser's Python ran on the Program, and what it printed.
    */
   commands: CommandRun[];
+  /**
+   * The ID of the Example this Analysis was made for when the site was built, by the same Python run under Node.js. Absent when the learner's browser made it.
+   */
+  example?: string;
 }
 /**
  * One byte of the Program.

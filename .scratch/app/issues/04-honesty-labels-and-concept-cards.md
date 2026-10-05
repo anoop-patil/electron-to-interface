@@ -22,7 +22,7 @@ Built in `app/`. Decisions made along the way:
 
 - The cards and the Concepts index are in `app/concepts/cards.json`. The label set is in `app/concepts/honesty-labels.json`, with the label each zoom level and panel carries, so a three-label set is an edit to that file alone. The JSON Schema covers both.
 - The build check (`app/src/explain/checkContent.ts`, which replaces `checkTemplates.ts`) fails if any text opens a card that doesn't exist, a related card or index entry doesn't exist, a card isn't in the index exactly once, no card shows the labels, a zoom level or panel carries a label not in the set, or more than one label has the warning color.
-- Only zoom levels 1 and 2 carry a label: a level that isn't built yet shows nothing to label. A level's chip appears once a Program has run.
+- Only zoom levels 1 and 2 carry a label: a level that isn't built yet shows nothing to label. A level's chip appears once there is an Analysis to show: since ticket 16, hello world's, from the start.
 - Cards open in the browser's own modal `<dialog>`, which gives Escape and focus handling, instead of shadcn/ui's dialog; Requirements.md now says so. Focus returns to whatever opened the card. The arrow keys don't zoom while a card is open, and a click outside the card closes it.
 - Changes from prototype v8's wording:
   - Level 1's introduction: v8's sentence about the file on the disk is gone (the app has no file), so "Your computer stores it as bytes, which the next zoom level shows." comes before "Highlighted words, like that one, open a short explanation.", to give "that one" a highlighted word.

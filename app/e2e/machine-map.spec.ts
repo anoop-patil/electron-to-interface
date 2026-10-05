@@ -9,12 +9,11 @@ test('the map shows the learner’s computer, and lights where the Program is at
   for (const part of ['Disk', 'RAM', 'Python itself', 'Your steps', 'Objects', 'Plates', 'CPU', 'Registers', 'Cache', 'Operating system', 'Screen']) {
     await expect(map(page).getByRole('button', { name: new RegExp(`^${part}`) })).toBeVisible();
   }
-  // Nothing is anywhere until the learner clicks Run.
-  await expect(lit(page)).toHaveCount(0);
+  // Hello world, an Example, shows from the start. The app keeps the Program in RAM; it never saves it to the disk.
+  await expect(lit(page)).toHaveCount(1);
+  await expect(lit(page)).toHaveAccessibleName(/^RAM .*your program · 1 line$/);
 
   await run(page, 'print("Hello World!")');
-  // The app keeps the Program in RAM; it never saves it to the disk.
-  await expect(lit(page)).toHaveCount(1);
   await expect(lit(page)).toHaveAccessibleName(/^RAM .*your program · 1 line$/);
 
   await page.getByRole('button', { name: 'Zoom in: Bytes' }).click();

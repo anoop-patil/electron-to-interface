@@ -151,7 +151,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 
 **Zoom UI**
 
-- Left: code editor (CodeMirror 6) with file upload, a **Run** button and the Examples: hello world, a for loop, a function call, a list comprehension, a class, a syntax error.
+- Left: code editor (CodeMirror 6) with file upload, a **Run** button and the Examples, as a row of buttons above the editor: hello world, a for loop, a function call, a list comprehension, a class, a syntax error.
 - Right: the zoom view. Clicking an element (a token, a box, a bytecode step, one run of a step) selects it and explains it; moving to the next level is always an explicit **Zoom in** button (or ↓), never a second click on the element, which is hard to discover and easy to trigger by accident. Each level opens with a sentence explaining why the next layer has to exist.
 - **Each zoom level has its own URL path** (e.g. `/zoom/7`), so back buttons and deep links work and analytics can count zoom depth.
 - Each zoom level shows its Explanation, its Honesty label and a **Try it yourself** section, collapsed by default to one row showing the command: a real command, written for the learner's own file, that shows the same Facts on their own computer. Tabs explain what each part of the command does, what it shows, and how to read every number in it. What it shows is observed in the learner's browser wherever the browser can observe it:
@@ -168,9 +168,9 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 
 **First visit**
 
-- The Analysis of every Example is computed at build time and shipped as static data, so hello world zooms instantly while Pyodide loads in the background.
+- The Analysis of every Example is computed at build time, with the same Pyodide run under Node.js, and shipped as static data, so hello world zooms instantly while Pyodide loads in the background. It records which Example it is. Wherever the page would say the browser's Python just did something, an Example's says the same Python did it when the site was built.
 - The editor works straight away, so the learner can type while Pyodide loads. Run works once Pyodide is ready, with a friendly loading indicator until then.
-- Browsers that cannot run Pyodide (e.g. low-memory phones) still get every Example, plus a note.
+- Browsers that cannot run Pyodide still get every Example, plus a note. The page doesn't load Pyodide where the browser has no WebAssembly or reports under 1 GB of memory, since a low-memory phone can close the tab rather than fail cleanly.
 - Supported browsers: the last two versions of Chrome, Firefox, Safari and Edge; iOS Safari 17+.
 
 **Share links**

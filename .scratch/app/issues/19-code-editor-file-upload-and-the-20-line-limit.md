@@ -15,3 +15,4 @@
 ## Comments
 
 - Ticket 11: the editor highlights the code the Selection comes from. The textarea can’t mark its own text, so `src/editor/ProgramEditor.tsx` draws a copy of the code with the mark underneath it. A code editor can mark its own text instead, and should keep the e2e hooks in `e2e/selection.spec.ts` (`.editor-highlight`, `data-line`) or update them. The highlight goes away once the code is edited after Run.
+- Ticket 16: the Examples are a row of buttons above the editor (`src/examples/ExamplePicker.tsx`). Picking one puts its code in the editor. `App.tsx` keeps the code each Analysis describes (`shown.code`): an Example's button stays pressed, and the highlight shows, only while the editor holds that code. The e2e tests find the editor by role (`getByRole('textbox', { name: 'Your program' })`).

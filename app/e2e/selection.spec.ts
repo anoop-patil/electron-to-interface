@@ -93,7 +93,7 @@ test('editing the code after Run takes the highlight away, since it no longer ma
   await zoomLevel(page, 3, 'Tokens').getByRole('button', { name: 'NAME: print' }).click();
   await expect(highlights(page)).toHaveText(['print']);
 
-  await page.getByLabel('Your program').fill('x = 1');
+  await page.getByRole('textbox', { name: 'Your program' }).fill('x = 1');
   await expect(highlights(page)).toHaveCount(0);
 });
 
@@ -104,7 +104,7 @@ test('a highlight out of sight in the editor scrolls the editor to it', async ({
 
   await zoomLevel(page, 3, 'Tokens').getByRole('button', { name: 'NAME: n18' }).click();
   await expect(highlightsOnLine(page, 18)).toHaveText(['n18']);
-  const editor = page.getByLabel('Your program');
+  const editor = page.getByRole('textbox', { name: 'Your program' });
   await expect.poll(() => editor.evaluate((area) => area.scrollTop)).toBeGreaterThan(0);
   const box = (await editor.boundingBox())!;
   const mark = (await highlights(page).boundingBox())!;

@@ -2,7 +2,7 @@
   "labels": {
     "observed": {
       "name": "Observed",
-      "means": "Python itself recorded this from your code, running in your browser. The header says which version of Python."
+      "means": "Python itself recorded this from your code, running in your browser, or, for an Example, when this site was built. The header says which version of Python."
     },
     "derived": {
       "name": "Derived",

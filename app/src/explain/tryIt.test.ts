@@ -66,7 +66,7 @@ test('level 1 says when the Program printed nothing, and explains a traceback wh
     [RUN]: { output: 'Traceback (most recent call last):\n  File "/home/pyodide/program.py", line 1, in <module>\n    1 / 0\n    ~~^~~\nZeroDivisionError: division by zero\n', exitStatus: 1 },
   });
   expect(plain(explainTryIt(1, error)!.read[0])).toBe(
-    'Your program stopped with an error. The last line names the error and says what went wrong; the lines above it say where. The path is where your browser’s Python saved program.py. On your computer, you’ll see your own folder.',
+    'Your program stopped with an error. The last line names the error and says what went wrong; the lines above it say where. The path is where Python saved program.py, among its in-memory files. On your computer, you’ll see your own folder.',
   );
 });
 
@@ -96,6 +96,14 @@ test('a value from the Program is never read as markup', () => {
 test('the What you’ll see tab says the browser’s Python ran the command on the Program', () => {
   expect(plain(explainTryIt(1, analysisOf('x = 1\n'))!.observed)).toBe('Your browser’s Python did what this command does, on your program, just now.');
   expect(plain(explainTryIt(1, analysisOf('x = 1\n'))!.nothingPrinted)).toBe('Nothing: your program doesn’t print anything, so the terminal shows nothing either.');
+});
+
+test('for an Example, the What you’ll see tab says the same Python ran the command when the site was built', () => {
+  const example = { ...analysisOf('x = 1\n'), example: 'hello' };
+
+  expect(plain(explainTryIt(1, example)!.observed)).toBe(
+    'Python 3.14.2 (Pyodide, the Python this site runs) did what this command does on this Example when this site was built.',
+  );
 });
 
 test('a Program that ends itself with sys.exit and a message gets no note saying it printed that message', () => {
@@ -328,6 +336,15 @@ test('a time of 0 is the browser’s coarse clock, and the reading tab says so',
   expect(plain(tryIt.read[1])).toBe(
     'Browsers make this clock less precise, to protect against timing attacks: in Chrome it moves in steps of 0.1 ms, and in Firefox and Safari 1 ms. A program that takes less time than that measures as 0.',
   );
+});
+
+test('for an Example, level 7 says its time was measured when the site was built, so the browser’s coarse clock plays no part', () => {
+  const tryIt = explainTryIt(7, { ...analysisOf('x = 1\n', { [TIME]: { output: '0.0\n', exitStatus: 0 } }), example: 'hello' })!;
+
+  expect(tryIt.read.map(plain)).toEqual([
+    'Python 3.14.2 (Pyodide, the Python this site runs) ran this command on this Example when this site was built, and the run it watched counted 0 step runs. It ran on the computer that built the site, as WebAssembly, as it does in a browser, so a normal Python on your computer takes a different time.',
+    'Your number will be different: it depends on your computer, your terminal and what else is running.',
+  ]);
 });
 
 test('level 7 shows native timing as a sample: an Example’s own, or greet.py’s for any other Program, with where it ran', () => {

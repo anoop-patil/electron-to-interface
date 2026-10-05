@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { analysisOf } from '../testAnalysis';
-import { explainBits, explainByte, explainProgram, type Span } from './explain';
+import { explainBits, explainByte, explainProgram, levelIntro, type Span } from './explain';
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
 
@@ -19,6 +19,16 @@ test('the level 1 and 2 text counts the lines, characters and bytes of the Progr
   // ë is one character but two bytes.
   expect(plain(explainProgram('level1.size', zoe).text)).toMatch(/has 2 lines and 25 characters,/);
   expect(plain(explainProgram('level2.caption', zoe).text)).toMatch(/: 26 bytes, shown/);
+});
+
+test('level 1 says the learner typed their Program and clicked Run, or, for an Example, that Python ran it when the site was built', () => {
+  const typed = analysisOf('print("Hello World!")\n');
+
+  expect(plain(levelIntro(1, typed)!.text)).toMatch(/^You typed 1 line and clicked Run\./);
+  expect(plain(levelIntro(1, { ...typed, example: 'hello' })!.text)).toBe(
+    'This Example is 1 line long, and Python ran it when this site was built, so you can zoom in straight away. At this level the program is still just text. Your computer stores it as bytes, which the next zoom level shows. Highlighted words, like that one, open a short explanation.',
+  );
+  expect(plain(levelIntro(2, { ...typed, example: 'hello' })!.text)).toBe(plain(levelIntro(2, typed)!.text));
 });
 
 test('a byte explains the character it stores, in prototype v8’s words', () => {

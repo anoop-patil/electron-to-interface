@@ -5,8 +5,6 @@ const terminal = (page: Page) => page.getByRole('region', { name: 'Terminal' });
 
 test('the Terminal shows what hello world printed, labeled Observed', async ({ page }) => {
   await page.goto('/');
-  await expect(terminal(page)).toContainText('Nothing yet. Click Run to run your program.');
-
   await run(page, 'print("Hello World!")');
 
   await expect(terminal(page).locator('pre')).toHaveText('Hello World!\n');

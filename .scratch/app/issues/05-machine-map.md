@@ -17,7 +17,7 @@
 Built in `app/src/machine/`. Decisions made along the way:
 
 - Levels 1 and 2 light RAM, not the disk. The app keeps the Program in memory and never saves it as a file (tickets 03 and 04), so the ticket's example "hello.py · 22 bytes" on the disk would be false. The notes are "your program · 1 line" at level 1 and "your program · 22 characters" at level 2. Level 2 counts characters, not bytes: 22 is the Program's size in UTF-8, but neither the browser nor Python holds it in RAM as UTF-8.
-- Nothing is lit before the first Run, or at a level that isn't built yet.
+- Nothing is lit before there is an Analysis to show, or at a level that isn't built yet. Since ticket 16, hello world's shows from the start.
 - `mapState.ts` holds the state: for each zoom level, a function from the Analysis and the Selection (a Fact ID) to the lit parts and their notes. A level ticket adds its entry there. Levels 1 and 2 don't use the Selection yet.
 - The notes are Templates (`map.level1.ram`, `map.level2.ram`), filled with Facts. A note sits inside a part, which is a button that opens the part's card, so the build fails if a note would open a card itself. It also fails if a part of the map has no Concept card.
 - The map carries one Honesty label, Typical, as a panel in `concepts/honesty-labels.json`. It shows how computers usually work: what goes where, and how big and fast each part is. The learner's computer may differ. The user chose this after the first commit.

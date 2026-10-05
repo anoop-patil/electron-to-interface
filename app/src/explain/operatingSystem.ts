@@ -28,6 +28,8 @@ export interface Level8 {
   packet: string;
   /** Whether the line's pieces were worked out, rather than recorded: a traceback, which Python colors for a terminal. */
   derived: boolean;
+  /** What the page says about how it knows the line's pieces: recorded in the browser, or for an Example when the site was built, or worked out. */
+  piecesNote: TemplateId;
 }
 
 /** A piece as Python's repr writes it: 'Hello,', '\n', "it's", with any character that isn't printable escaped. */
@@ -185,7 +187,9 @@ export function level8(analysis: Analysis, selection: string | null): Level8 | n
   }));
   const stage = stageOf(id);
   const zone = ZONES[stage - 1];
-  return { lines: outputLines(analysis), line, stage, stages, zone, packet: packetOf(line, zone), derived: line.report && analysis.error !== null };
+  const derived = line.report && analysis.error !== null;
+  const piecesNote = derived ? 'level8.observedReport' : analysis.example ? 'level8.built' : 'level8.observed';
+  return { lines: outputLines(analysis), line, stage, stages, zone, packet: packetOf(line, zone), derived, piecesNote };
 }
 
 /** The Explanation of the selected stage: its title, and its sentences, filled in with the line's Facts. */
