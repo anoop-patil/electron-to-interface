@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import schema from '../../schema/analysis.schema.json';
 import type { Analysis } from '../generated/analysis';
 import { analysisOf } from '../testAnalysis';
-import { fileNameFor, importNote, lineLimitNote } from './limits';
+import { fileNameFor, importNote, inputNote, lineLimitNote, stopNote } from './limits';
 
 const lines = (count: number) => Array.from({ length: count }, (_, at) => `n = ${at}`).join('\n');
 
@@ -61,4 +61,22 @@ test('only an import Python couldn’t find outside the standard library gets th
   expect(stoppedBy({ type: 'ZeroDivisionError', message: 'division by zero', line: 1 })).toBeNull();
   expect(stoppedBy({ type: 'ModuleNotFoundError', message: 'mine', line: 1 })).toBeNull();
   expect(stoppedBy({ type: 'ModuleNotFoundError', message: "No module named 'tkinter'", line: 1, module: 'tkinter', standardLibrary: true })).toBeNull();
+});
+
+test('a Program that read input says input() returned an empty string, and how many times it asked', () => {
+  expect(inputNote(analysisOf('input()\n', [], { stdinReads: 1 }))).toBe(
+    'Your program asked for input 1 time. Nothing can be typed into a program here, so input() always returns an empty string.',
+  );
+  expect(inputNote(analysisOf('input()\ninput()\n', [], { stdinReads: 2 }))).toMatch(/^Your program asked for input 2 times\./);
+  expect(inputNote(analysisOf('print(1)\n'))).toBeNull();
+});
+
+test('a stopped Run says why it was stopped', () => {
+  expect(stopNote('timeout')).toBe(
+    'Your program was still running after 5 seconds, so it was stopped. A loop that never ends, such as while True: pass, runs until something stops it.',
+  );
+  expect(stopNote('tooDeep')).toBe(
+    'Your program was stopped because the Python in your browser ran out of room working through it. A line nested very deeply, such as a sum of thousands of numbers on one line, does that.',
+  );
+  expect(stopNote('crashed')).toBe('The Python in your browser stopped working while it ran your program, so your program was stopped.');
 });

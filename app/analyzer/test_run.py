@@ -286,3 +286,53 @@ def test_an_object_that_pretends_to_be_a_function_is_still_named_by_its_class():
 
     assert analysis["events"][-1]["locals"]["s"] == "<Sneaky object>"
     assert analysis["stdout"] == ""
+
+
+# Input, and the clock
+
+def test_input_returns_an_empty_string_as_if_enter_were_pressed_with_nothing_typed():
+    analysis = analyze('name = input("Name? ")\nprint(repr(name))')
+
+    assert analysis["stdout"] == "Name? ''\n"
+    assert analysis["error"] is None
+    assert analysis["stdinReads"] == 1
+
+
+def test_each_read_from_standard_input_is_counted():
+    analysis = analyze("import sys\nfor _ in range(3):\n    input()\nsys.stdin.readline()")
+
+    assert analysis["stdinReads"] == 4
+
+
+def test_reading_standard_input_to_the_end_finds_nothing_so_it_ends():
+    analysis = analyze("import sys\nprint(repr(sys.stdin.read()), sys.stdin.readlines(), [line for line in sys.stdin])")
+
+    assert analysis["stdout"] == "'' [] []\n"
+
+
+def test_reading_standard_input_in_a_for_loop_or_with_readlines_counts_as_a_read():
+    assert analyze("import sys\nfor line in sys.stdin:\n    pass\nsys.stdin.readlines()")["stdinReads"] == 2
+
+
+def test_a_program_that_reads_no_input_reads_none():
+    assert analyze('print("Hi")')["stdinReads"] == 0
+
+
+def test_a_try_it_yourself_run_gets_empty_input_too():
+    analysis = analyze('print(repr(input("Name? ")))', commands=["python program.py"])
+
+    assert analysis["commands"][0]["output"] == "Name? ''\n"
+
+
+def test_the_clock_runs_only_while_code_runs_once_for_the_program_and_once_for_each_command():
+    ticks = []
+    analyze('print("Hi")', commands=["python program.py", "python -m dis program.py"], clock=ticks.append)
+
+    assert ticks == [True, False] * 3
+
+
+def test_the_clock_stops_when_the_program_stops_with_an_error():
+    ticks = []
+    analyze("1 / 0", clock=ticks.append)
+
+    assert ticks == [True, False]

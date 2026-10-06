@@ -4,7 +4,7 @@ import type { Analysis, AstFact, AstField, CodeObject, CommandRun, TokenFact } f
 /** What the recorded run of a Program left in its Analysis, and the tokens and syntax tree Python found. */
 type RecordedRun = Pick<
   Analysis,
-  'encoding' | 'tokens' | 'ast' | 'bytecode' | 'stdout' | 'stderr' | 'writes' | 'error' | 'events' | 'runs' | 'frames' | 'objects' | 'eventsCutShort' | 'runsCutShort' | 'writesCutShort'
+  'encoding' | 'tokens' | 'ast' | 'bytecode' | 'stdout' | 'stderr' | 'writes' | 'error' | 'events' | 'runs' | 'frames' | 'objects' | 'eventsCutShort' | 'runsCutShort' | 'writesCutShort' | 'stdinReads'
 >;
 
 /**
@@ -39,6 +39,7 @@ export function analysisOf(program: string, commands: CommandRun[] = [], run: Pa
     eventsCutShort: false,
     runsCutShort: false,
     writesCutShort: false,
+    stdinReads: 0,
     ...run,
     commands,
   };

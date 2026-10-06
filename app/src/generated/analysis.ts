@@ -370,6 +370,10 @@ export interface Analysis {
    */
   writesCutShort: boolean;
   /**
+   * How many times the Program read from sys.stdin, as input() does. Nobody can type into the browser's Python, so each line it read was empty, and input() returned an empty string.
+   */
+  stdinReads: number;
+  /**
    * Each Try it yourself command the browser's Python ran on the Program, and what it printed.
    */
   commands: CommandRun[];

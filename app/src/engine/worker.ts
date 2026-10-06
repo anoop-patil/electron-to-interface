@@ -1,4 +1,4 @@
-import type { FromWorker, ToWorker } from './engine';
+import type { CrashReason, FromWorker, ToWorker } from './engine';
 import { startPython } from './python';
 
 const workerScope = self as unknown as {
@@ -16,10 +16,23 @@ python.then(
   (error) => workerScope.postMessage({ type: 'failed', message: String(error) }),
 );
 
+/**
+ * Pyodide marks an error it can't recover from, after which its Python can't be used again. Running out of the
+ * browser's stack, as one line nested thousands deep does in compile, is a RangeError in Chrome and an InternalError,
+ * "too much recursion", in Firefox.
+ */
+function crashOf(error: unknown): CrashReason | null {
+  if (!(error instanceof Error) || !(error as { pyodide_fatal_error?: boolean }).pyodide_fatal_error) return null;
+  return error instanceof RangeError || /too much recursion/.test(error.message) ? 'tooDeep' : 'crashed';
+}
+
 workerScope.onmessage = async ({ data: { id, code, fileName } }) => {
   try {
-    workerScope.postMessage({ type: 'analysis', id, analysis: (await python).analyze(code, fileName) });
+    // The page times the code only while it runs, and ends this worker if it runs for too long.
+    const clock = (running: boolean) => workerScope.postMessage({ type: running ? 'running' : 'paused', id });
+    workerScope.postMessage({ type: 'analysis', id, analysis: (await python).analyze(code, fileName, clock) });
   } catch (error) {
-    workerScope.postMessage({ type: 'error', id, message: String(error) });
+    const crash = crashOf(error);
+    workerScope.postMessage(crash ? { type: 'crashed', id, reason: crash } : { type: 'error', id, message: String(error) });
   }
 };

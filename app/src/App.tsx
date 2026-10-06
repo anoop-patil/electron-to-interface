@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Engine } from './engine/engine';
+import { RunStopped, type Engine, type StopReason } from './engine/engine';
 import type { CantRun } from './engine/support';
 import { ExamplePicker } from './examples/ExamplePicker';
 import { EXAMPLES, loadExample } from './examples/examples';
@@ -14,19 +14,20 @@ import { mapState } from './machine/mapState';
 import { useScreen } from './screen';
 import { Terminal } from './terminal/Terminal';
 import { ThemeToggle } from './ThemeToggle';
-import { fileNameFor, importNote, lineLimitNote } from './editor/limits';
+import { fileNameFor, importNote, inputNote, lineLimitNote, stopNote } from './editor/limits';
 import { ProgramEditor, type Highlight } from './editor/ProgramEditor';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
 import { charsOf, selectionAt } from './zoom/selection';
 import { ZoomView } from './zoom/ZoomView';
 
-type PythonStatus = 'starting' | 'ready' | 'failed' | CantRun;
+type PythonStatus = 'starting' | 'restarting' | 'ready' | 'failed' | CantRun;
 
 const EXAMPLES_STILL_WORK = 'The Examples still work: Python ran each one when this site was built.';
 
 const STATUS_NOTES: Record<PythonStatus, string> = {
   starting: 'Python is loading in your browser. You can type, or try the Examples, while you wait; Run works once it’s ready.',
+  restarting: 'Python is starting again after the stop. Run works once it’s ready.',
   ready: '',
   failed: `Python couldn’t start in this browser, so Run is off. ${EXAMPLES_STILL_WORK}`,
   noWebAssembly: `This browser can’t run WebAssembly, which Python needs here, so Run is off. ${EXAMPLES_STILL_WORK}`,
@@ -65,6 +66,8 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
   const analysis = shown?.analysis ?? null;
   const screen = useScreen();
   const [error, setError] = useState<string | null>(null);
+  // Why the latest Run was stopped before it finished, if it was.
+  const [stopped, setStopped] = useState<StopReason | null>(null);
   // The Run Python is working on, if any: Run is off meanwhile, and the zoom view says it is busy.
   const [runningRequest, setRunningRequest] = useState<number | null>(null);
   const running = runningRequest !== null;
@@ -111,6 +114,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
   const outOfDate = shown !== null && code !== shown.code;
   const tooLong = lineLimitNote(code);
   const notStandardLibrary = analysis && importNote(analysis);
+  const readInput = analysis && inputNote(analysis);
 
   /**
    * Shows what `make` makes, unless the learner has clicked Run or picked an Example since. An Example's code goes
@@ -125,9 +129,20 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
       setSelectedFactId(null);
       setError(null);
     } catch (e) {
-      if (request === requests.current) setError(messageOf(e));
+      if (request !== requests.current) return;
+      if (e instanceof RunStopped) setStopped(e.reason);
+      else setError(messageOf(e));
     }
   }
+
+  // A stopped Run's worker is ended, and a new one starts: Run is off until its Python is ready.
+  const awaitNewPython = (engine: Engine) => {
+    setStatus('restarting');
+    engine.ready.then(
+      () => setStatus('ready'),
+      () => setStatus('failed'),
+    );
+  };
 
   const run = async () => {
     if (!engine) return;
@@ -135,7 +150,19 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     const request = ++requests.current;
     setRunningRequest(request);
     setUploadNote(null);
-    await show(request, async () => ({ analysis: await engine.analyze(ran, fileName), code: ran }), { intoEditor: false });
+    setStopped(null);
+    await show(
+      request,
+      async () => {
+        try {
+          return { analysis: await engine.analyze(ran, fileName), code: ran };
+        } catch (e) {
+          if (e instanceof RunStopped) awaitNewPython(engine);
+          throw e;
+        }
+      },
+      { intoEditor: false },
+    );
     setRunningRequest((current) => (current === request ? null : current));
   };
   // An Example runs as soon as it is picked: its Analysis was made when the site was built. A Run still going is
@@ -144,6 +171,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     const request = ++requests.current;
     setFileName(FILE_NAME);
     setUploadNote(null);
+    setStopped(null);
     setRunningRequest(null);
     show(request, async () => {
       const example = await loadExample(id);
@@ -228,7 +256,9 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
                 </div>
                 {tooLong && <p className="text-[14px] text-warn" role="status">{tooLong}</p>}
                 {uploadNote && <p className="text-[14px] text-ink2" role="status">{uploadNote}</p>}
+                {stopped && <p className="text-[14px] text-warn" role="status">{stopNote(stopped)}</p>}
                 {notStandardLibrary && <p className="text-[14px] text-warn" role="status">{notStandardLibrary}</p>}
+                {readInput && <p className="text-[14px] text-ink2" role="status">{readInput}</p>}
                 {error && <p className="whitespace-pre-wrap font-mono text-[13px] text-warn" role="alert">{error}</p>}
                 <p className="flex flex-wrap gap-x-3 gap-y-1.5 text-[12px] text-ink3 narrow:hidden">
                   <span><kbd className={KBD_CLASSES}>↓</kbd> zoom in</span>

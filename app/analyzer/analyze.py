@@ -25,11 +25,12 @@ import weakref
 RECORD_LIMIT = 2000
 
 
-def analyze(code, file_name="program.py", commands=(), folder=None):
+def analyze(code, file_name="program.py", commands=(), folder=None, clock=None):
     """
     Runs the Program once, saved as `file_name` in `folder` (the working folder if None), recording what it printed,
     its Events and the order its steps ran in. `commands` are Try it yourself commands, such as `python program.py`:
-    each runs on the same file, and the Analysis records what it printed.
+    each runs on the same file, and the Analysis records what it printed. `clock`, if given, is called with True as
+    the Program or a command starts running and with False as it stops, so the page can stop one that runs too long.
     """
     # Code editors save a file with a newline at the end, so the Program always has one.
     program = code if code.endswith("\n") else code + "\n"
@@ -38,10 +39,10 @@ def analyze(code, file_name="program.py", commands=(), folder=None):
     with open(path, "wb") as file:
         file.write(program.encode("utf-8"))
     try:
-        recorded = _record_run(file_name, folder)
+        recorded = _record_run(file_name, folder, clock)
         command_runs, after_run = [], None
         for command in commands:
-            run, ran = _run_command(command, folder)
+            run, ran = _run_command(command, folder, clock)
             command_runs.append(run)
             # `python FILE` runs the Program again, unwatched, so Python rewrites its busy steps as it would anywhere.
             if shlex.split(command) == ["python", file_name] and isinstance(ran, types.CodeType):
@@ -301,14 +302,15 @@ def _main_module(file_name=None):
     return main
 
 
-def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stderr, recorder=None):
+def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stderr, stdin=None, clock=None, recorder=None):
     """
     Does what `python` does with a program: runs it as __main__, in `folder`, with stdout and stderr going where
-    they're told, and returns its exit status and the error that stopped it, if any. It runs in this Python, not a
-    new one, so anything the analyzer or an earlier Run imported is already imported.
+    they're told and stdin giving only empty lines, and returns its exit status and the error that stopped it, if any.
+    It runs in this Python, not a new one, so anything the analyzer or an earlier Run imported is already imported.
+    `clock` is told when the code starts and stops running.
     """
-    saved = (sys.stdout, sys.stderr, sys.argv, list(sys.path), sys.modules["__main__"], os.getcwd())
-    sys.stdout, sys.stderr = stdout, stderr
+    saved = (sys.stdin, sys.stdout, sys.stderr, sys.argv, list(sys.path), sys.modules["__main__"], os.getcwd())
+    sys.stdin, sys.stdout, sys.stderr = stdin or _Stdin(), stdout, stderr
     sys.argv = argv
     sys.path.insert(0, path_entry)
     sys.modules["__main__"] = main
@@ -317,9 +319,13 @@ def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stde
         compiled = source if isinstance(source, types.CodeType) else compile(source, file_name, "exec")
         if recorder:
             recorder.start(compiled)
+        if clock:
+            clock(True)
         try:
             exec(compiled, main.__dict__)
         finally:
+            if clock:
+                clock(False)
             if recorder:
                 recorder.stop()
         return 0, None
@@ -332,7 +338,7 @@ def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stde
         _free_trees_in(tb)
         return 1, error
     finally:
-        sys.stdout, sys.stderr, sys.argv, sys.path[:], sys.modules["__main__"], cwd = saved
+        sys.stdin, sys.stdout, sys.stderr, sys.argv, sys.path[:], sys.modules["__main__"], cwd = saved
         os.chdir(cwd)
 
 
@@ -358,7 +364,7 @@ def _exit_status(exit, stderr):
     return 1
 
 
-def _run_command(command, folder):
+def _run_command(command, folder, clock=None):
     """Does what `python FILE`, `python -c CODE` or `python -m MODULE` does, in `folder`, and returns what a terminal shows."""
     words = shlex.split(command)
     if len(words) >= 3 and words[:2] == ["python", "-c"]:
@@ -380,7 +386,7 @@ def _run_command(command, folder):
 
     # A terminal shows stdout and stderr together, in the order they were written.
     terminal = io.StringIO()
-    status, _ = _run_as_main(source, file_name, argv, path_entry, main, folder, terminal, terminal)
+    status, _ = _run_as_main(source, file_name, argv, path_entry, main, folder, terminal, terminal, clock=clock)
     return {"command": command, "output": terminal.getvalue(), "exitStatus": status}, source
 
 
@@ -412,18 +418,18 @@ def _module_as_main(name, args, folder):
 
 # The recorded run
 
-def _record_run(file_name, folder):
+def _record_run(file_name, folder, clock=None):
     """
     Runs the Program as `python FILE` would, recording what it printed and the pieces it handed to sys.stdout and
-    sys.stderr, its Events and its step runs.
+    sys.stderr, its Events, its step runs and how many times it read from sys.stdin.
     """
     path = os.path.join(folder, file_name)
     with open(path, "rb") as file:
         source = file.read()
     writes = _Writes()
-    stdout, stderr = _Output(writes, 1), _Output(writes, 2)
+    stdout, stderr, stdin = _Output(writes, 1), _Output(writes, 2), _Stdin()
     recorder = writes.recorder = _Recorder(stdout)
-    _, error = _run_as_main(source, path, [file_name], folder, _main_module(path), folder, stdout, stderr, recorder)
+    _, error = _run_as_main(source, path, [file_name], folder, _main_module(path), folder, stdout, stderr, stdin, clock, recorder)
     if error is not None:
         # In a terminal, Python 3.14 colors a traceback, so the pieces it writes carry color codes. The Terminal panel
         # shows stderr without them, as a terminal draws it.
@@ -440,7 +446,35 @@ def _record_run(file_name, folder):
         **(recorder.replay.facts(recorder.runs) if recorder.replay else {"frames": [], "objects": []}),
         "eventsCutShort": recorder.events_cut_short,
         "runsCutShort": recorder.runs_cut_short,
+        "stdinReads": stdin.reads,
     }
+
+
+class _Stdin(io.TextIOBase):
+    """
+    sys.stdin while the Program runs. Nobody can type into the Python in a browser, so each line read is empty, as if
+    Enter were pressed with nothing typed: input() returns "". Reading to the end, with read(), readlines() or a for
+    loop, finds nothing, so it ends.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.reads = 0
+
+    def readable(self):
+        return True
+
+    def readline(self, size=-1):
+        self.reads += 1
+        return "\n"
+
+    def read(self, size=-1):
+        self.reads += 1
+        return ""
+
+    def __next__(self):
+        self.reads += 1
+        raise StopIteration
 
 
 def _error_fact(error, path, source):

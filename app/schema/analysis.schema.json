@@ -4,7 +4,7 @@
   "description": "The complete set of Facts produced from one Program on one Python version.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "bytecode", "stdout", "stderr", "writes", "error", "events", "runs", "frames", "objects", "eventsCutShort", "runsCutShort", "writesCutShort", "commands"],
+  "required": ["pythonVersion", "program", "fileName", "bytes", "encoding", "tokens", "ast", "bytecode", "stdout", "stderr", "writes", "error", "events", "runs", "frames", "objects", "eventsCutShort", "runsCutShort", "writesCutShort", "stdinReads", "commands"],
   "properties": {
     "pythonVersion": {
       "description": "The version of the Python that produced this Analysis, such as 3.14.2.",
@@ -92,6 +92,11 @@
     "writesCutShort": {
       "description": "True if the Program handed over more than 2,000 pieces and flushes, so writes holds only the first 2,000 of them.",
       "type": "boolean"
+    },
+    "stdinReads": {
+      "description": "How many times the Program read from sys.stdin, as input() does. Nobody can type into the browser's Python, so each line it read was empty, and input() returned an empty string.",
+      "type": "integer",
+      "minimum": 0
     },
     "commands": {
       "description": "Each Try it yourself command the browser's Python ran on the Program, and what it printed.",

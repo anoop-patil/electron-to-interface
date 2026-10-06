@@ -5,6 +5,7 @@ import { beforeAll, expect, test } from 'vitest';
 import schema from '../../schema/analysis.schema.json';
 import { astOf } from '../testAnalysis';
 import { framesAfter } from '../explain/bytecode';
+import { tryItCommands } from '../explain/commands';
 import { startPython, type Python } from './python';
 
 let python: Python;
@@ -253,4 +254,18 @@ test('for greet.py, the plates after the first run of greet’s LOAD_FAST_BORROW
     { code: '<module>', plates: ['?'], variables: { greet: '<function greet>', person: "'Ada'" } },
     { code: 'greet', plates: ['<function print>', 'empty', "'Hello,'", "'Ada'"], variables: { name: "'Ada'" } },
   ]);
+});
+
+test('input() returns an empty string in the browser’s Python, and the Analysis counts the read', () => {
+  const analysis = python.analyze('name = input("Name? ")\nprint(repr(name))');
+
+  expect(analysis).toMatchObject({ stdout: "Name? ''\n", error: null, stdinReads: 1 });
+});
+
+test('the clock is told each time the Program or a command starts and stops running', () => {
+  const ticks: boolean[] = [];
+  python.analyze('print("Hi")', 'program.py', (running) => ticks.push(running));
+
+  const runs = 1 + tryItCommands('program.py').length;
+  expect(ticks).toEqual(Array.from({ length: runs }, () => [true, false]).flat());
 });
