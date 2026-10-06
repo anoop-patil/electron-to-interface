@@ -68,6 +68,16 @@ test('the build fails if a Template uses a Fact of a different subject', async (
   await expect(run()).rejects.toThrow('byte.test refers to {value}, which isn’t a Fact of a program');
 });
 
+test('the build fails if a link to Python’s documentation names a Fact that doesn’t exist, or leads anywhere else', async () => {
+  const docs = (href: string) => withTemplate({ subject: 'token', text: 'A token.', docs: { text: 'Read about {type}', href } });
+
+  await expect(build(docs('https://docs.python.org/3.14/library/token.html#token.{type}'))()).resolves.toBeUndefined();
+  await expect(build(docs('https://docs.python.org/3.14/library/token.html#token.{colour}'))()).rejects.toThrow('byte.test refers to {colour}, which isn’t a Fact of a token');
+  await expect(build(docs('https://example.com/{type}'))()).rejects.toThrow(/docs\/href must match pattern/);
+  const card = withTemplate({ subject: 'token', text: 'A token.', docs: { text: 'Read about [[byte|bytes]]', href: 'https://docs.python.org/3.14/' } });
+  await expect(build(card)()).rejects.toThrow('byte.test has a link to Python’s documentation whose words open a Concept card');
+});
+
 test('the build fails if a Template doesn’t match the schema', async () => {
   await expect(build(withTemplate({ subject: 'byte' }))()).rejects.toThrow(/must have required property 'text'/);
 });

@@ -35,6 +35,13 @@ test('hello world is 22 bytes, from p to the newline', () => {
   expect(bytes[21]).toMatchObject({ id: 'byte-21', value: 0x0a });
 });
 
+test('python -m ast stops with a RecursionError on one line of 3,000 terms, and its tree is let go without running out of stack', () => {
+  const { stdout, commands } = python.analyze(`print(${Array(3000).fill('1').join('+')})`);
+
+  expect(stdout).toBe('3000\n');
+  expect(commands.find(({ command }) => command === 'python -m ast program.py')).toMatchObject({ exitStatus: 1, output: expect.stringMatching(/RecursionError/) });
+});
+
 test('the Try it yourself commands run on the Program, saved as program.py', () => {
   const { fileName, commands } = python.analyze('print("Hi")');
 

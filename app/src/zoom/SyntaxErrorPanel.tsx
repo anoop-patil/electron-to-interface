@@ -1,4 +1,4 @@
-import { ExplanationText } from '../explain/ExplanationText';
+import { DocsLink, ExplanationText } from '../explain/ExplanationText';
 import { syntaxErrorOf } from '../explain/stopped';
 import { errorSpan, explainSyntaxError } from '../explain/syntaxError';
 import type { Analysis } from '../generated/analysis';
@@ -33,6 +33,7 @@ export function SyntaxErrorPanel({ analysis, showLine = false }: { analysis: Ana
       <p className="max-w-[65ch] text-[14px] leading-[1.6] text-ink2">
         <ExplanationText spans={explanation.more!} />
       </p>
+      {explanation.docs && <DocsLink docs={explanation.docs} />}
     </section>
   );
 }

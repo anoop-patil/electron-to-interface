@@ -198,11 +198,13 @@ export function explainStep(analysis: Analysis, found: StepInCode, at: number | 
   const facts = stepFacts(analysis, found, at);
   const term: TemplateId = at !== null ? 'step.termRun' : runsOfStep(analysis, found.step).length === 0 ? 'step.termNeverRan' : 'step.term';
   const more = at === null ? fillString(template('step.neverRan', 'step').text, facts) : whatItDid(analysis, found, at, facts);
+  const { text, docs } = fill(template(stepKind(analysis, found, at), 'step'), facts);
   return {
     title: stepTitle(analysis, found),
     term: fillString(template(term, 'step').text, facts),
-    text: fill(template(stepKind(analysis, found, at), 'step'), facts).text,
+    text,
     ...(more.length > 0 && { more }),
+    ...(docs && { docs }),
   };
 }
 

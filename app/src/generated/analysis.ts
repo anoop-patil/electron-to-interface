@@ -872,6 +872,19 @@ export interface Template {
    * The technical term, shown once in small print, such as code point U+0070.
    */
   term?: string;
+  /**
+   * For a general Template, which explains any kind of element that has no Template of its own: a link to the part of Python's official documentation about that kind. Its words and address are filled in like the Template's other strings.
+   */
+  docs?: {
+    /**
+     * The link's words.
+     */
+    text: string;
+    /**
+     * The link's address, in the documentation for Python 3.14.
+     */
+    href: string;
+  };
 }
 /**
  * A zoom level's Try it yourself: a real command the learner can run on their own computer, or, with a summary instead, something to do with no command, such as level 9's look at the subpixels. Its strings are filled in like a Template whose subject is program.

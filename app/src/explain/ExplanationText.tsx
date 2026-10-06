@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { useConcepts } from '../concepts/ConceptsProvider';
-import type { Span } from './explain';
+import type { Explanation, Span } from './explain';
 
 const TERM_CLASSES = 'inline cursor-pointer rounded-md bg-accent-soft px-[5px] text-accent [box-decoration-break:clone] hover:bg-accent hover:text-on-accent';
 
@@ -20,4 +20,15 @@ export function ExplanationText({ spans }: { spans: Span[] }) {
     const text = span.concept ? <ConceptTerm card={span.concept}>{span.text}</ConceptTerm> : span.text;
     return span.strong ? <b key={index} className="font-semibold text-ink">{text}</b> : <Fragment key={index}>{text}</Fragment>;
   });
+}
+
+/** The link an Explanation gives to Python's documentation, for an element with no Template of its own. It opens in a new tab, so the learner keeps their place. */
+export function DocsLink({ docs }: { docs: NonNullable<Explanation['docs']> }) {
+  return (
+    <p className="max-w-[65ch] text-[14px] leading-[1.6]">
+      <a className="text-accent underline underline-offset-2" href={docs.href} target="_blank" rel="noopener noreferrer">
+        <ExplanationText spans={docs.text} />
+      </a>
+    </p>
+  );
 }

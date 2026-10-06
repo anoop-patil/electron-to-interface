@@ -211,7 +211,11 @@
     "token.other": {
       "subject": "token",
       "title": "A token tokenize calls {type}",
-      "text": "The tokenizer calls this piece of your code a **{type}**."
+      "text": "The tokenizer calls this piece of your code a **{type}**.",
+      "docs": {
+        "text": "Read about {type} in Python’s documentation",
+        "href": "https://docs.python.org/3.14/library/token.html#token.{type}"
+      }
     },
     "token.where": {
       "subject": "token",
@@ -319,12 +323,20 @@
     "syntaxError.general": {
       "subject": "syntaxError",
       "title": "Python can’t read line {line}",
-      "text": "Python stopped at the place it points at on line {line}: the code there breaks Python’s rules for how code is written. Its message is **{message}**."
+      "text": "Python stopped at the place it points at on line {line}: the code there breaks Python’s rules for how code is written. Its message is **{message}**.",
+      "docs": {
+        "text": "Read about {kind} in Python’s documentation",
+        "href": "https://docs.python.org/3.14/library/exceptions.html#{kind}"
+      }
     },
     "syntaxError.noPlace": {
       "subject": "syntaxError",
       "title": "Python can’t read your program",
-      "text": "Your program breaks Python’s rules for how code is written, and Python doesn’t say where. Its message is **{message}**."
+      "text": "Your program breaks Python’s rules for how code is written, and Python doesn’t say where. Its message is **{message}**.",
+      "docs": {
+        "text": "Read about {kind} in Python’s documentation",
+        "href": "https://docs.python.org/3.14/library/exceptions.html#{kind}"
+      }
     },
     "syntaxError.stoppedTokens": {
       "subject": "syntaxError",
@@ -455,12 +467,20 @@
     "node.other": {
       "subject": "node",
       "title": "Part of your program",
-      "text": "Python calls this box a **{type}**. It stands for this part of your code: **{code}**."
+      "text": "Python calls this box a **{type}**. It stands for this part of your code: **{code}**.",
+      "docs": {
+        "text": "Read about {type} in Python’s documentation",
+        "href": "https://docs.python.org/3.14/library/ast.html#ast.{type}"
+      }
     },
     "node.otherNoPlace": {
       "subject": "node",
       "title": "Part of the structure",
-      "text": "Python calls this box a **{type}**. It doesn’t match any single piece of your code."
+      "text": "Python calls this box a **{type}**. It doesn’t match any single piece of your code.",
+      "docs": {
+        "text": "Read about {type} in Python’s documentation",
+        "href": "https://docs.python.org/3.14/library/ast.html#ast.{type}"
+      }
     },
     "role.call.func": {
       "subject": "node",
@@ -1738,7 +1758,11 @@
     "step.other": {
       "subject": "step",
       "title": "A {opname} step",
-      "text": "Python has many kinds of step. This one, **{opname}**, doesn’t have its own explanation here yet."
+      "text": "Python has many kinds of step. This one, **{opname}**, doesn’t have its own explanation here yet.",
+      "docs": {
+        "text": "Read about {opname} in Python’s documentation",
+        "href": "https://docs.python.org/3.14/library/dis.html#opcode-{opname}"
+      }
     },
     "map.level5.code": {
       "subject": "step",

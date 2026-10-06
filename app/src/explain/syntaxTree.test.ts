@@ -1,9 +1,10 @@
 import { expect, test } from 'vitest';
 import { analysisOf, astOf, greetAnalysis, helloWorld, tokensOf } from '../testAnalysis';
-import { explainProgram, type Span } from './explain';
+import { explainProgram, type Explanation, type Span } from './explain';
 import { boxLabel, explainNode, explainNotDrawn, explainSignposts, fieldLabel, leafText, nodeById as node, treeLabel } from './syntaxTree';
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
+const docsOf = ({ docs }: Explanation) => docs && { text: plain(docs.text), href: docs.href };
 
 const greet = greetAnalysis();
 const hello = helloWorld();
@@ -161,6 +162,11 @@ test('a kind of box with no Template of its own gets a general one, which still 
 
   expect(plain(explainNode(analysis, node(analysis, 'ast-3')).title)).toBe('Part of your program');
   expect(plain(explainNode(analysis, node(analysis, 'ast-3')).text)).toBe('Python calls this box a Pass. It stands for this part of your code: pass.');
+  expect(docsOf(explainNode(analysis, node(analysis, 'ast-3')))).toEqual({
+    text: 'Read about Pass in Python’s documentation',
+    href: 'https://docs.python.org/3.14/library/ast.html#ast.Pass',
+  });
+  expect(explainNode(analysis, node(analysis, 'ast-2')).docs).toBeUndefined();
   expect(leafText(node(analysis, 'ast-3'))).toBeNull();
 });
 

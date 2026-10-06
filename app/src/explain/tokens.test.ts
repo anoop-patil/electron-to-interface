@@ -1,8 +1,9 @@
 import { expect, test } from 'vitest';
 import { analysisOf, greetAnalysis, helloWorld, tokensOf } from '../testAnalysis';
-import { explainProgram, explainToken, type Span } from './explain';
+import { explainProgram, explainToken, type Explanation, type Span } from './explain';
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
+const docsOf = ({ docs }: Explanation) => docs && { text: plain(docs.text), href: docs.href };
 
 const greet = greetAnalysis();
 
@@ -160,6 +161,12 @@ test('a kind of token with no Template of its own gets a general one, and a valu
 
   expect(plain(explainToken(analysis, analysis.tokens[0]).title)).toBe('A token tokenize calls FSTRING_START');
   expect(plain(explainToken(analysis, analysis.tokens[0]).text)).toBe('The tokenizer calls this piece of your code a FSTRING_START.');
+  expect(docsOf(explainToken(analysis, analysis.tokens[0]))).toEqual({
+    text: 'Read about FSTRING_START in Python’s documentation',
+    href: 'https://docs.python.org/3.14/library/token.html#token.FSTRING_START',
+  });
+  // A token with words of its own needs no link.
+  expect(explainToken(analysis, analysis.tokens[1]).docs).toBeUndefined();
   expect(plain(explainToken(analysis, analysis.tokens[1]).title)).toBe('{ is punctuation or an operator');
 
   const stars = analysisOf('**\n', [], { tokens: tokensOf('**\n', [['OP', '**', [1, 0], [1, 2], 'DOUBLESTAR']]) });

@@ -1,11 +1,12 @@
 import { expect, test } from 'vitest';
 import type { AstFact, ProgramError } from '../generated/analysis';
 import { analysisOf, greetAnalysis, helloWorld, tokensOf } from '../testAnalysis';
-import { explainProgram, type Span } from './explain';
+import { explainProgram, type Explanation, type Span } from './explain';
 import { stoppedAt, syntaxErrorOf } from './stopped';
 import { errorSpan, explainSyntaxError } from './syntaxError';
 
 const plain = (spans: Span[] | undefined) => spans?.map((span) => span.text).join('');
+const docsOf = ({ docs }: Explanation) => docs && { text: plain(docs.text), href: docs.href };
 
 /** The syntax-error Example: tokenize stops at the quote mark that starts the unclosed text on line 3. */
 const EXAMPLE = 'names = ["Ada", "Grace"]\nfor name in names:\n    print("Hello, name)\nprint("Done")\n';
@@ -100,9 +101,16 @@ test('any other syntax error gets a general explanation that quotes Python, and 
   expect(plain(general.title)).toBe('Python can’t read line 1');
   expect(plain(general.text)).toBe('Python stopped at the place it points at on line 1: the code there breaks Python’s rules for how code is written. Its message is invalid syntax.');
   expect(plain(general.more)).toBe('Python stopped at this when it tried to work out your program’s structure, at zoom level 4, Structure, so it made no steps and ran none of it.');
+  expect(docsOf(general)).toEqual({
+    text: 'Read about SyntaxError in Python’s documentation',
+    href: 'https://docs.python.org/3.14/library/exceptions.html#SyntaxError',
+  });
 
   const nowhere = explainSyntaxError(stoppedProgram(program, { type: 'SyntaxError', message: 'invalid syntax' }, 4))!;
   expect(plain(nowhere.title)).toBe('Python can’t read your program');
+  expect(docsOf(nowhere)?.href).toBe('https://docs.python.org/3.14/library/exceptions.html#SyntaxError');
+  // A syntax error with words of its own needs no link.
+  expect(explainSyntaxError(exampleAnalysis())!.docs).toBeUndefined();
 
   const compiled = explainSyntaxError(stoppedProgram('return 5\n', { type: 'SyntaxError', message: "'return' outside function", line: 1, start: { line: 1, column: 0 } }, 5))!;
   expect(plain(compiled.more)).toBe('Python worked out your program’s structure, but stopped at this when it compiled it into steps, at zoom level 5, Bytecode, so it made no steps and ran none of it.');

@@ -26,6 +26,8 @@ export interface Explanation {
   term?: Span[];
   /** A second paragraph, such as where a token sits and its bytes. */
   more?: Span[];
+  /** For an element with no Template of its own: a link to the part of Python's documentation about its kind. */
+  docs?: { text: Span[]; href: string };
 }
 
 /** `**`, `[[concept|words]]` or `{slot}`: the markup a Template's strings can hold. */
@@ -52,11 +54,19 @@ export function fillString(string: string, facts: Record<string, string> = {}): 
 /** Text with bold words and words with a Concept card, but no slots, such as a Concept card's own text. */
 export const textSpans = (string: string) => fillString(string);
 
+/** Fills in a link's address. Each value is encoded, so a Fact can't change where the link leads. */
+const fillAddress = (href: string, facts: Record<string, string>) =>
+  href.replace(/\{([A-Za-z]+)\}/g, (slot, name: string) => {
+    if (facts[name] === undefined) throw new Error(`No Fact fills ${slot}`);
+    return encodeURIComponent(facts[name]);
+  });
+
 export function fill(template: Template, facts: Record<string, string>): Explanation {
   return {
     ...(template.title && { title: fillString(template.title, facts) }),
     text: fillString(template.text, facts),
     ...(template.term && { term: fillString(template.term, facts) }),
+    ...(template.docs && { docs: { text: fillString(template.docs.text, facts), href: fillAddress(template.docs.href, facts) } }),
   };
 }
 

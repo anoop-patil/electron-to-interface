@@ -825,6 +825,16 @@
           "description": "The technical term, shown once in small print, such as code point U+0070.",
           "type": "string",
           "minLength": 1
+        },
+        "docs": {
+          "description": "For a general Template, which explains any kind of element that has no Template of its own: a link to the part of Python's official documentation about that kind. Its words and address are filled in like the Template's other strings.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "href"],
+          "properties": {
+            "text": { "description": "The link's words.", "type": "string", "minLength": 1 },
+            "href": { "description": "The link's address, in the documentation for Python 3.14.", "type": "string", "pattern": "^https://docs\\.python\\.org/3\\.14/" }
+          }
         }
       }
     },

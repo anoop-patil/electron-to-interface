@@ -167,12 +167,22 @@ def _syntax_tree(program, encoding):
             else:
                 fact["fields"].append({"name": name, "value": _shown_value(value)})
         facts.append(fact)
-    # Python frees a node by freeing the nodes inside it first, one call inside another. For a deep tree that runs
-    # out of the browser's stack and stops Pyodide for good, so each node is emptied first and freed on its own.
-    for node, _, _ in order:
-        for name in node._fields:
-            setattr(node, name, None)
+    _free_tree(tree)
     return facts
+
+
+def _free_tree(tree):
+    """
+    Lets a syntax tree go. Python frees a node by freeing the nodes inside it first, one call inside another. For a deep
+    tree that runs out of the browser's stack and stops Pyodide for good, so each node is emptied first and freed on
+    its own.
+    """
+    stack = [tree]
+    while stack:
+        node = stack.pop()
+        for name in node._fields:
+            stack.extend(item for item in _items(getattr(node, name, None)) if isinstance(item, ast.AST))
+            setattr(node, name, None)
 
 
 def _compiler_positions(raw, encoding):
@@ -319,10 +329,23 @@ def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stde
         # Leave out this function's own frame, so the traceback starts in the learner's file, as Python's does.
         tb = error.__traceback__.tb_next
         traceback.print_exception(type(error), error, tb, file=stderr)
+        _free_trees_in(tb)
         return 1, error
     finally:
         sys.stdout, sys.stderr, sys.argv, sys.path[:], sys.modules["__main__"], cwd = saved
         os.chdir(cwd)
+
+
+def _free_trees_in(tb):
+    """
+    Lets go of the syntax trees the frames of a traceback hold. `python -m ast` on one long line, such as 1+1+...+1,
+    stops with a RecursionError. The error's traceback keeps the frame that holds the tree, so letting the error go
+    would free the tree in one go.
+    """
+    for frame, _ in traceback.walk_tb(tb):
+        for value in list(frame.f_locals.values()):
+            if isinstance(value, ast.AST):
+                _free_tree(value)
 
 
 def _exit_status(exit, stderr):

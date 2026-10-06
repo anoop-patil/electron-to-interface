@@ -6,12 +6,13 @@ import type { Analysis } from '../generated/analysis';
 import { mapState } from '../machine/mapState';
 import { allSteps } from './bytecode';
 import { explainAfterRun, explainStep, stepSelectionAt, stepTitle } from './steps';
-import { programFacts, type Span } from './explain';
+import { programFacts, type Explanation, type Span } from './explain';
 
 let python: Python;
 let greet: Analysis;
 
 const plain = (spans: Span[] | undefined) => (spans ?? []).map((span) => span.text).join('');
+const docsOf = ({ docs }: Explanation) => docs && { text: plain(docs.text), href: docs.href };
 
 beforeAll(async () => {
   python = await startPython();
@@ -113,6 +114,11 @@ test('a step without a Template of its own gets the general one, naming its opna
   const invert = allSteps(analysis).find(({ step }) => step.opname === 'UNARY_INVERT')!;
 
   expect(plain(stepTitle(analysis, invert))).toBe('A UNARY_INVERT step');
+  expect(docsOf(explainStep(analysis, invert, null))).toEqual({
+    text: 'Read about UNARY_INVERT in Python’s documentation',
+    href: 'https://docs.python.org/3.14/library/dis.html#opcode-UNARY_INVERT',
+  });
+  expect(explainStep(analysis, allSteps(analysis)[1], null).docs).toBeUndefined();
 });
 
 test('the Program’s lists of steps, its steps and its step runs are counted in words', () => {

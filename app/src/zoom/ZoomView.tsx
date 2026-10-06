@@ -3,7 +3,7 @@ import { buttonClass } from '../button';
 import { levelLabel, panelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
 import { explainByte, explainProgram, explainToken, levelIntro, type TemplateId } from '../explain/explain';
-import { ExplanationText } from '../explain/ExplanationText';
+import { DocsLink, ExplanationText } from '../explain/ExplanationText';
 import { explainLevel6, level6, level6AfterRun } from '../explain/interpreter';
 import { explainLevel7, level7, level7AfterRun, level7IsReference } from '../explain/machine';
 import { explainLevel8, level8 } from '../explain/operatingSystem';
@@ -160,6 +160,7 @@ export function ZoomView({
                   <ExplanationText spans={explanation.more} />
                 </p>
               )}
+              {explanation.docs && <DocsLink docs={explanation.docs} />}
               {afterRun && (
                 <p className="max-w-[65ch] text-[14px] leading-[1.6] text-ink2">
                   <ExplanationText spans={afterRun} /> <HonestyChip label={panelLabel('afterRun')} size="panel" />

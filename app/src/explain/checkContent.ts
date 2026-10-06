@@ -64,16 +64,18 @@ function templateProblems(file: unknown, cardIds: Set<string>): string[] {
   if (!validTemplates(file)) return schemaProblems(validTemplates, file);
   const inTemplates = Object.entries(file.templates).flatMap(([id, template]) => {
     const slots = slotsOf(template.subject);
-    const strings = [template.title, template.text, template.term].filter((string) => string !== undefined);
+    const strings = [template.title, template.text, template.term, template.docs?.text].filter((string) => string !== undefined);
     // Any {…}, not just a well-formed one: a slot the check misses would reach the page as text.
-    const unknownSlots = slotsIn(strings)
+    const unknownSlots = slotsIn([...strings, template.docs?.href ?? ''])
       .filter((slot) => !slots.has(slot))
       .map((slot) => `${id} refers to {${slot}}, which isn’t a Fact of a ${template.subject}`);
     // A Machine map note sits inside a part, a button that opens the part's own card.
     const mapNoteCards = id.startsWith(MAP_NOTE)
       ? strings.flatMap((string) => [...string.matchAll(/\[\[([a-z0-9]+)\|/g)]).map(([, card]) => `${id} is a Machine map note, so it can’t open the Concept card ${card}`)
       : [];
-    return [...unknownSlots, ...unclosedBold(id, strings), ...conceptProblems(id, strings, cardIds), ...mapNoteCards];
+    // A link's words sit inside the link, so they can't also open a card.
+    const linkCards = template.docs?.text.includes('[[') ? [`${id} has a link to Python’s documentation whose words open a Concept card`] : [];
+    return [...unknownSlots, ...unclosedBold(id, strings), ...conceptProblems(id, strings, cardIds), ...mapNoteCards, ...linkCards];
   });
   return [...inTemplates, ...tryItProblems(file.tryIt ?? {}, cardIds)];
 }
