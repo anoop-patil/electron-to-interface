@@ -16,6 +16,7 @@ import { Terminal } from './terminal/Terminal';
 import { ThemeToggle } from './ThemeToggle';
 import { fileNameFor, importNote, inputNote, lineLimitNote, stopNote } from './editor/limits';
 import { ProgramEditor, type Highlight } from './editor/ProgramEditor';
+import { isShareFragment, programInLink, sharedNote, shareLinkFor, unreadLinkNote, waitingNote, type InLink } from './share/shareLink';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
 import { charsOf, selectionAt } from './zoom/selection';
@@ -72,6 +73,10 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
   const [runningRequest, setRunningRequest] = useState<number | null>(null);
   const running = runningRequest !== null;
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
+  // A Share link's Program, waiting in the editor for its first Run, or why a link's Program couldn't be opened.
+  const [fromLink, setFromLink] = useState<InLink>(null);
+  // The link Share made, for the code as it was then.
+  const [shared, setShared] = useState<{ link: string; code: string; copied: boolean } | null>(null);
   const view = useRef<HTMLDivElement>(null);
   const { level, go } = useZoomNavigation(view);
   // Counts the learner's Runs and Example picks, so only the latest one's Analysis is shown.
@@ -101,6 +106,34 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     };
   }, []);
 
+  // A Share link's Program goes into the editor and waits there: code from a link never runs by itself. A link opened
+  // in a tab already showing the page changes only the fragment, so the page reads it again; an Example pick or Run
+  // still going is then left to finish unseen, as when an Example is picked.
+  useEffect(() => {
+    let current = true;
+    const open = async (inOpenTab: boolean) => {
+      const inLink = await programInLink(location.hash);
+      if (!current || !inLink) return;
+      setFromLink(inLink);
+      if (inLink.kind !== 'program') return;
+      if (inOpenTab) {
+        requests.current++;
+        setRunningRequest(null);
+      }
+      setCode(inLink.code);
+      setFileName(FILE_NAME);
+      setUploadNote(null);
+      setCodeHidden(false);
+    };
+    const onHashChange = () => open(true);
+    open(false);
+    addEventListener('hashchange', onHashChange);
+    return () => {
+      current = false;
+      removeEventListener('hashchange', onHashChange);
+    };
+  }, []);
+
   // What the zoom level on screen shows selected: the learner's Selection, or the closest match to it at this level.
   const levelSelection = analysis && selectionAt(analysis, selectedFactId, level);
   // The editor marks the code the Selection comes from, and the code a syntax error points at, while the code is still what was run.
@@ -115,6 +148,11 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
   const tooLong = lineLimitNote(code);
   const notStandardLibrary = analysis && importNote(analysis);
   const readInput = analysis && inputNote(analysis);
+  const linkWaiting = fromLink?.kind === 'program';
+  const unreadLink = fromLink && fromLink.kind !== 'program' ? unreadLinkNote(fromLink) : null;
+  const shownLabel = EXAMPLES.find(({ id }) => id === analysis?.example)?.label;
+  // The link Share made goes once the code changes, since it carries the code as it was.
+  const shareOffer = shared?.code === code ? shared : null;
 
   /**
    * Shows what `make` makes, unless the learner has clicked Run or picked an Example since. An Example's code goes
@@ -144,6 +182,13 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     );
   };
 
+  // An Example or an uploaded file takes the place of a Share link's Program, so the address stops carrying it: a
+  // reload then doesn't bring it back.
+  const leaveLink = () => {
+    setFromLink(null);
+    if (isShareFragment(location.hash)) history.replaceState(history.state, '', location.pathname + location.search);
+  };
+
   const run = async () => {
     if (!engine) return;
     const ran = code;
@@ -151,6 +196,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     setRunningRequest(request);
     setUploadNote(null);
     setStopped(null);
+    setFromLink(null);
     await show(
       request,
       async () => {
@@ -172,6 +218,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     setFileName(FILE_NAME);
     setUploadNote(null);
     setStopped(null);
+    leaveLink();
     setRunningRequest(null);
     show(request, async () => {
       const example = await loadExample(id);
@@ -185,11 +232,27 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     const name = fileNameFor(file.name);
     setCode(text);
     setFileName(name);
+    leaveLink();
     setUploadNote(
       name === file.name
         ? `Loaded ${name}. Click Run when you’re ready.`
         : `Loaded “${file.name}”. The Try it yourself commands call it ${name}, since a name you type in a terminal is simplest with only letters, digits, _, . and -. Click Run when you’re ready.`,
     );
+  };
+
+  // A link carrying the code goes onto the clipboard, and shows under Run in case the browser won't allow that. Safari
+  // allows the clipboard only while it handles the click, so the clipboard gets the link still being made.
+  const share = async () => {
+    const sharedCode = code;
+    const making = shareLinkFor(sharedCode, location.href);
+    let copied = true;
+    try {
+      const text = making.then((link) => new Blob([link], { type: 'text/plain' }));
+      await navigator.clipboard.write([new ClipboardItem({ 'text/plain': text })]);
+    } catch {
+      copied = false;
+    }
+    setShared({ link: await making, code: sharedCode, copied });
   };
 
   return (
@@ -240,6 +303,9 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
                   <button type="button" className={buttonClass()} onClick={() => upload.current?.click()}>
                     Upload a .py file
                   </button>
+                  <button type="button" className={buttonClass()} onClick={share}>
+                    Share
+                  </button>
                   <input
                     ref={upload}
                     type="file"
@@ -256,6 +322,20 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
                 </div>
                 {tooLong && <p className="text-[14px] text-warn" role="status">{tooLong}</p>}
                 {uploadNote && <p className="text-[14px] text-ink2" role="status">{uploadNote}</p>}
+                {unreadLink && <p className="text-[14px] text-warn" role="status">{unreadLink}</p>}
+                {shareOffer && (
+                  <div className="grid gap-1.5">
+                    <p className="text-[14px] text-ink2" role="status">{sharedNote(shareOffer.copied)}</p>
+                    {/* 16px on phones, so focusing it doesn't zoom the page in iOS Safari. */}
+                    <input
+                      readOnly
+                      aria-label="Share link"
+                      value={shareOffer.link}
+                      onFocus={(e) => e.target.select()}
+                      className="min-w-0 rounded-[10px] border border-rule2 bg-sunk px-2.5 py-2 font-mono text-[13px] text-ink2 narrow:text-[16px]"
+                    />
+                  </div>
+                )}
                 {stopped && <p className="text-[14px] text-warn" role="status">{stopNote(stopped)}</p>}
                 {notStandardLibrary && <p className="text-[14px] text-warn" role="status">{notStandardLibrary}</p>}
                 {readInput && <p className="text-[14px] text-ink2" role="status">{readInput}</p>}
@@ -276,7 +356,9 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
           <main className={`stage min-w-0 px-[clamp(16px,4vw,48px)] pb-10 pt-6 narrow:px-4 narrow:pb-8 narrow:pt-5 ${TINTS[level - 1]}`} data-level={level} aria-busy={running}>
             {outOfDate && (
               <p className="mb-5 rounded-[10px] border border-rule2 bg-surface px-3.5 py-2.5 text-[14px] text-ink2" role="status">
-                You’ve changed your program since it ran, so the zoom view shows it as it was. Click Run to zoom into the new version.
+                {linkWaiting
+                  ? waitingNote(shownLabel ? `the ${shownLabel} Example` : 'the program that ran before')
+                  : 'You’ve changed your program since it ran, so the zoom view shows it as it was. Click Run to zoom into the new version.'}
               </p>
             )}
             <ZoomView

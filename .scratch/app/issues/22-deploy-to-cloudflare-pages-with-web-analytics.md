@@ -18,3 +18,4 @@
 ## Comments
 
 - Ticket 16: `npm run build` now also runs Pyodide under Node.js to make each Example's Analysis (`src/examples/build.ts`), into `public/examples/`, which the site serves as static files. It adds a few seconds and needs no network.
+- Ticket 21: a Share link carries the Program in the URL fragment (`/zoom/1#code=…`), and the fragment stays in the address at every zoom level until an Example or an upload replaces the link's Program. Whether the Web Analytics beacon sends the fragment hasn't been checked; it must count paths only.
