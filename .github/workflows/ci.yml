@@ -78,6 +78,10 @@ jobs:
           workingDirectory: app
           command: pages deploy dist --project-name electrontointerface --branch main --commit-hash ${{ github.sha }}
       - run: npx playwright install --with-deps chromium
+      # A new deploy's URL can take a few minutes to answer over HTTPS; on the first deploy its certificate didn't exist yet.
+      - run: curl --silent --fail --output /dev/null --retry 30 --retry-delay 10 --retry-all-errors "$LIVE_URL"
+        env:
+          LIVE_URL: ${{ steps.pages.outputs.deployment-url }}
       # Smoke-tests this deploy at its own URL, so it checks exactly what was uploaded.
       - run: npx playwright test --config playwright.live.config.ts
         env:

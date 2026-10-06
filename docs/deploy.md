@@ -6,7 +6,7 @@ The site is static files on Cloudflare Pages, at `electrontointerface.com`, with
 
 - Every push to `main` runs the `deploy` job in `.github/workflows/ci.yml`, after the typecheck, Vitest, Playwright and pytest jobs pass.
 - The job runs `npm run build` and uploads `app/dist` to the Pages project `electrontointerface` with Wrangler. The first deploy creates the project.
-- It then runs the smoke test, `app/e2e/live/smoke.spec.ts`, against that deploy's own URL. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, and that Pyodide's files are cached for a year.
+- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, and that Pyodide's files are cached for a year.
 - The job needs two GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, a token allowed only to edit Cloudflare Pages, and `CLOUDFLARE_ACCOUNT_ID`.
 
 To run the smoke test by hand, from `app/`:
