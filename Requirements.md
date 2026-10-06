@@ -177,6 +177,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 
 - A Share link carries the program compressed in the URL fragment (`#…`). No server or storage; the fragment is never sent to a server.
 - A Share link opens with the code visible and a **Run** button; it never runs automatically. Examples do run automatically.
+- A link to the site, posted on LinkedIn or in a chat, shows a preview card: a title, a one-line description and a 1200 × 630 screenshot. A Share link shows the same card, never its code.
 
 **Robustness**
 

@@ -23,6 +23,15 @@ test('Web Analytics counts each zoom level by its path, and never sends the code
   expect(sent.join('\n')).not.toContain(marker);
 });
 
+test('the link-preview image the page names is served', async ({ page, request }) => {
+  await page.goto('/');
+  const image = await page.locator('head meta[property="og:image"]').getAttribute('content');
+  // The tag names the main domain; this checks the same path on the deploy under test.
+  const response = await request.get(new URL(image!).pathname);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toBe('image/png');
+});
+
 test('Python 3.14.2 runs from our own site, and its files are cached for a year', async ({ page, baseURL }) => {
   const pyodide: Response[] = [];
   page.on('response', (response) => response.url().includes('/pyodide/') && pyodide.push(response));

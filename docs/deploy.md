@@ -6,7 +6,7 @@ The site is static files on Cloudflare Pages, live at `https://electrontointerfa
 
 - Every push to `main` runs the `deploy` job in `.github/workflows/ci.yml`, after the typecheck, Vitest, Playwright and pytest jobs pass.
 - The job runs `npm run build` and uploads `app/dist` to the Pages project `electrontointerface` with Wrangler. The first deploy creates the project.
-- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, that Pyodide's files are cached for a year, and that Web Analytics counts each zoom level's path but never sends what follows `#`, where a Share link carries the learner's code.
+- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, that Pyodide's files are cached for a year, that the link-preview image is served, and that Web Analytics counts each zoom level's path but never sends what follows `#`, where a Share link carries the learner's code.
 - The job needs two GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, a token allowed only to edit Cloudflare Pages, and `CLOUDFLARE_ACCOUNT_ID`.
 
 To run the smoke test by hand, from `app/`:
@@ -24,6 +24,12 @@ LIVE_URL=https://electrontointerface.com npx playwright test --config playwright
 ## Analytics
 
 Cloudflare Web Analytics is turned on in the Pages project (Metrics, then Web Analytics), and Pages adds its script to each deploy. It sets no cookies. Each zoom level, `/zoom/1` to `/zoom/9`, counts as its own page view, which measures zoom depth (ADR 0002). It sends the path without the fragment, so a Share link's code stays in the browser (ADR 0004); the smoke test checks this on every deploy, since the script is Cloudflare's and can change. The script loads from `https://static.cloudflareinsights.com/beacon.min.js` and reports to `https://cloudflareinsights.com/cdn-cgi/rum`, which the Content Security Policy (ticket 23) must allow.
+
+## Link previews
+
+LinkedIn, Slack, X and chat apps build a preview card for a link from tags in `app/index.html`: a description, and Open Graph's `og:title`, `og:description` and `og:image`. Crawlers need absolute URLs, so the tags name `https://electrontointerface.com`. The image, `app/public/og-image.png`, is a 1200 × 630 screenshot of `/zoom/2` in the light theme, taken at a 1200 × 630 window. Retake it when that view changes. A Share link gets the same card, since crawlers never receive what follows `#`.
+
+LinkedIn keeps a preview for about 7 days. After changing the tags or the image, paste the address into LinkedIn's Post Inspector (`https://www.linkedin.com/post-inspector/`), which fetches it afresh and shows the card. Do this before posting a link.
 
 ## Launch checklist
 
