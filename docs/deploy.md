@@ -1,0 +1,35 @@
+# Deploying the site
+
+The site is static files on Cloudflare Pages, at `electrontointerface.com`, with no backend (ADR 0002). The domain is registered with Cloudflare Registrar, a fixed yearly price (ADR 0001).
+
+## How a deploy happens
+
+- Every push to `main` runs the `deploy` job in `.github/workflows/ci.yml`, after the typecheck, Vitest, Playwright and pytest jobs pass.
+- The job runs `npm run build` and uploads `app/dist` to the Pages project `electrontointerface` with Wrangler. The first deploy creates the project.
+- It then runs the smoke test, `app/e2e/live/smoke.spec.ts`, against that deploy's own URL. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, and that Pyodide's files are cached for a year.
+- The job needs two GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, a token allowed only to edit Cloudflare Pages, and `CLOUDFLARE_ACCOUNT_ID`.
+
+To run the smoke test by hand, from `app/`:
+
+```
+LIVE_URL=https://electrontointerface.com npx playwright test --config playwright.live.config.ts
+```
+
+## What Pages does with the files
+
+- **Deep links:** with no `404.html` at the top of the build, Pages answers any path that isn't a file with `index.html`, so `/zoom/7` loads the app. Don't add a top-level `404.html`.
+- **Caching:** `app/public/_headers` lets browsers keep `assets/` and `pyodide/` for a year. Vite puts a hash in each `assets/` file name, and Pyodide's files sit under their version, `pyodide/314.0.7/`, so a changed file always has a new path. Everything else, `index.html` and the Example Analyses included, is checked for a newer copy on every visit.
+- **Limits:** Pages takes files up to 25 MiB and 20,000 files per site on the free plan. The largest file, `pyodide.asm.wasm`, is 9.6 MB, and the build has about 20 files.
+
+## Analytics
+
+Cloudflare Web Analytics is turned on in the Pages project (Metrics, then Web Analytics), and Pages adds its script to each deploy. It sets no cookies and counts page paths, so each zoom level, `/zoom/1` to `/zoom/9`, counts as its own page view, which measures zoom depth (ADR 0002). On our own domain the script loads from `static.cloudflareinsights.com` and reports to `/cdn-cgi/rum` on our site, which the Content Security Policy (ticket 23) must allow.
+
+## Launch checklist
+
+1. Buy `electrontointerface.com` with Cloudflare Registrar, with auto-renew and the transfer lock on.
+2. Create the API token and add both secrets to GitHub.
+3. Push to `main`, and check that the `deploy` job passes. The site is then at `electrontointerface.pages.dev`.
+4. In the Pages project, add `electrontointerface.com` as a custom domain, and `www.electrontointerface.com` redirecting to it.
+5. Turn on Web Analytics in the Pages project, then deploy again (rerun the job), since Pages adds the script on the next deploy.
+6. Run the smoke test against `https://electrontointerface.com`. Open `/zoom/7` in a browser and check, after a few minutes, that the visit shows in Web Analytics under its path.

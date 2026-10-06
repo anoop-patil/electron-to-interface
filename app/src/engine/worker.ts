@@ -1,3 +1,4 @@
+import { version as pyodideVersion } from 'pyodide';
 import type { CrashReason, FromWorker, ToWorker } from './engine';
 import { startPython } from './python';
 
@@ -8,7 +9,7 @@ const workerScope = self as unknown as {
 };
 
 const python = startPython({
-  indexURL: new URL(`${import.meta.env.BASE_URL}pyodide/`, workerScope.location.href).href,
+  indexURL: new URL(`${import.meta.env.BASE_URL}pyodide/${pyodideVersion}/`, workerScope.location.href).href,
 });
 
 python.then(

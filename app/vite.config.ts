@@ -1,7 +1,8 @@
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { version as pyodideVersion } from 'pyodide';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { checkedContent } from './src/explain/checkContent';
@@ -11,14 +12,18 @@ const PYODIDE_FILES = ['pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip
 
 /**
  * Pyodide is served from our own site, never a third-party CDN (ADR 0004).
- * This copies its runtime files from the pinned npm package into public/pyodide/.
+ * This copies its runtime files from the pinned npm package into public/pyodide/<version>/. The version in the path
+ * lets browsers cache the files for a year (public/_headers): a new Pyodide gets a new path.
  */
 function selfHostedPyodide(): Plugin {
   const from = fileURLToPath(new URL('node_modules/pyodide/', import.meta.url));
-  const to = fileURLToPath(new URL('public/pyodide/', import.meta.url));
+  const root = fileURLToPath(new URL('public/pyodide/', import.meta.url));
+  const to = `${root}${pyodideVersion}/`;
   return {
     name: 'self-hosted-pyodide',
     async buildStart() {
+      // Clears any earlier version's files, so the site never ships two.
+      await rm(root, { recursive: true, force: true });
       await mkdir(to, { recursive: true });
       for (const file of PYODIDE_FILES) await cp(from + file, to + file);
     },

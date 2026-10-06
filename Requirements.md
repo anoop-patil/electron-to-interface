@@ -264,7 +264,7 @@ v1 costs about **$0/month to run, plus a domain**, at any traffic level. The $50
 | Error monitoring | Sentry (free tier) | $0 | Drops events past the quota |
 | CI and builds | GitHub Actions (public repo) | $0 | Free for public repos |
 | Template generation | Anthropic API, Batch API | One-off, per generation run | Prepaid credit, auto-reload off |
-| Domain | Registrar | ~$10–15/year | Fixed |
+| Domain (`electrontointerface.com`) | Cloudflare Registrar | About $10–11/year | Fixed |
 
 **Cost rules (required)**
 
@@ -327,7 +327,6 @@ Each milestone ships on its own; the next one starts only when every box above i
 
 **Open questions**
 
-- Domain name.
 - When to add ARM64 to the Reference Library.
 - Donation platform, if any.
 - **Which form ran on each run, for the learner's own program.** For the Examples, gdb records at build time which handler ran on every step run. In the browser only the form each step had become after a second, unwatched run is known: the recorded run can't show any, because watching every step stops Python rewriting them. How levels 6–7 show earlier runs of the learner's own program is still open.
