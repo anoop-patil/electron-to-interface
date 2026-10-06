@@ -70,6 +70,17 @@ def test_an_error_inside_a_function_is_placed_on_the_line_that_raised_it():
     assert analysis["error"] == {"type": "IndexError", "message": "list index out of range", "line": 2}
 
 
+def test_an_import_python_cant_find_names_the_module_and_whether_it_is_in_the_standard_library():
+    analysis = analyze("import math\nimport no_such_package")
+
+    assert analysis["error"] == {
+        "type": "ModuleNotFoundError", "message": "No module named 'no_such_package'", "line": 2, "module": "no_such_package", "standardLibrary": False,
+    }
+    assert analyze("import xml.nothing")["error"]["standardLibrary"] is True
+    # The Program's own ModuleNotFoundError names no module.
+    assert "module" not in analyze('raise ModuleNotFoundError("mine")')["error"]
+
+
 def test_a_syntax_error_stops_the_program_before_anything_runs():
     analysis = analyze('print("Hi"')
 

@@ -647,6 +647,14 @@ export interface ProgramError {
   line?: number;
   start?: Position1;
   end?: Position2;
+  /**
+   * For an import Python couldn't find (its own ModuleNotFoundError), the module it looked for, such as numpy.
+   */
+  module?: string;
+  /**
+   * Whether that module's top-level name is in Python's standard library (sys.stdlib_module_names).
+   */
+  standardLibrary?: boolean;
 }
 /**
  * A place in the Program, as tokenize gives it: the line, counted from 1, and the column, counted in characters from 0. A token's end is the first column after it.

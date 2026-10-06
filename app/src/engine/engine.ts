@@ -1,6 +1,6 @@
 import type { Analysis } from '../generated/analysis';
 
-export type ToWorker = { id: number; code: string };
+export type ToWorker = { id: number; code: string; fileName: string };
 
 export type FromWorker =
   | { type: 'ready' }
@@ -11,7 +11,8 @@ export type FromWorker =
 export interface Engine {
   /** Resolves once Python has started in the worker; rejects if it can't start. */
   ready: Promise<void>;
-  analyze(code: string): Promise<Analysis>;
+  /** Analyzes the Program, saved as `fileName` for the Try it yourself commands. */
+  analyze(code: string, fileName: string): Promise<Analysis>;
 }
 
 /** Starts Python in a Web Worker, so loading and running it never freezes the page. */
@@ -40,11 +41,11 @@ export function startEngine(): Engine {
 
   return {
     ready,
-    analyze(code) {
+    analyze(code, fileName) {
       const id = nextId++;
       return new Promise((resolve, reject) => {
         pending.set(id, { resolve, reject });
-        worker.postMessage({ id, code } satisfies ToWorker);
+        worker.postMessage({ id, code, fileName } satisfies ToWorker);
       });
     },
   };

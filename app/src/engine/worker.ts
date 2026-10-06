@@ -16,9 +16,9 @@ python.then(
   (error) => workerScope.postMessage({ type: 'failed', message: String(error) }),
 );
 
-workerScope.onmessage = async ({ data: { id, code } }) => {
+workerScope.onmessage = async ({ data: { id, code, fileName } }) => {
   try {
-    workerScope.postMessage({ type: 'analysis', id, analysis: (await python).analyze(code) });
+    workerScope.postMessage({ type: 'analysis', id, analysis: (await python).analyze(code, fileName) });
   } catch (error) {
     workerScope.postMessage({ type: 'error', id, message: String(error) });
   }

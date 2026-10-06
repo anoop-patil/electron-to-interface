@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { run, zoomLevel } from './helpers';
+import { editor, editorCode, run, zoomLevel } from './helpers';
 
 const terminal = (page: Page) => page.getByRole('region', { name: 'Terminal' });
 const examples = (page: Page) => page.getByRole('group', { name: 'Examples', exact: true });
@@ -21,8 +21,8 @@ test('hello world shows at once, before Python has loaded, and the learner can t
   // Every zoom level has hello world to show.
   await page.goto('/zoom/5');
   await expect(zoomLevel(page, 5, 'Bytecode')).toContainText('LOAD_NAME');
-  await page.getByRole('textbox', { name: 'Your program' }).fill('print("mine")');
-  await expect(page.getByRole('textbox', { name: 'Your program' })).toHaveValue('print("mine")');
+  await editor(page).fill('print("mine")');
+  await expect.poll(() => editorCode(page)).toBe('print("mine")');
   await expect(examples(page).getByRole('button', { name: 'hello world' })).toHaveAttribute('aria-pressed', 'false');
 });
 
@@ -31,7 +31,7 @@ test('picking an Example puts its code in the editor and shows it at once, run, 
   await page.goto('/');
 
   await examples(page).getByRole('button', { name: 'for loop' }).click();
-  await expect(page.getByRole('textbox', { name: 'Your program' })).toHaveValue('total = 0\nfor n in range(1, 4):\n    total = total + n\n    print(n, total)\nprint("Total:", total)');
+  await expect.poll(() => editorCode(page)).toBe('total = 0\nfor n in range(1, 4):\n    total = total + n\n    print(n, total)\nprint("Total:", total)');
   await expect(terminal(page).locator('pre')).toHaveText('1 1\n2 3\n3 6\nTotal: 6\n');
   await expect(examples(page).getByRole('button', { name: 'for loop' })).toHaveAttribute('aria-pressed', 'true');
   await expect(examples(page).getByRole('button', { name: 'hello world' })).toHaveAttribute('aria-pressed', 'false');
@@ -47,7 +47,7 @@ test('the syntax-error Example shows how far Python got, explains the error wher
   await page.goto('/');
 
   await examples(page).getByRole('button', { name: 'syntax error' }).click();
-  await expect(page.getByRole('textbox', { name: 'Your program' })).toHaveValue('names = ["Ada", "Grace"]\nfor name in names:\n    print("Hello, name)\nprint("Done")');
+  await expect.poll(() => editorCode(page)).toBe('names = ["Ada", "Grace"]\nfor name in names:\n    print("Hello, name)\nprint("Done")');
   await expect(terminal(page).locator('pre')).toContainText('SyntaxError: unterminated string literal (detected at line 3)');
 
   // Level 1: the quote mark Python points at is marked in the code and the editor, and the error is explained.

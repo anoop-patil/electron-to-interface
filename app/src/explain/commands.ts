@@ -6,7 +6,7 @@ import type { Templates } from '../generated/analysis';
  * Template file, not the Reference Library and everything else the Explanations need.
  */
 
-/** The name the Program is saved under for the commands, until file upload (ticket 19) supplies the learner's own. */
+/** The name the Program is saved under for the commands, unless the learner uploaded it: then it is their file's name (see `fileNameFor`). */
 export const FILE_NAME = 'program.py';
 
 /**

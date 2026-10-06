@@ -457,6 +457,10 @@ def _error_fact(error, path, source):
             return {**fact, "line": error.lineno, **_syntax_error_place(error, source)} if error.lineno else fact
     else:
         fact = {"type": _class_name(type(error)), "message": _safe_message(error)}
+    if type(error) is ModuleNotFoundError and isinstance(error.name, str):
+        # Python's own error for an import it couldn't find, so reading its name runs none of the Program's code.
+        fact["module"] = error.name
+        fact["standardLibrary"] = error.name.partition(".")[0] in sys.stdlib_module_names
     # The last line of the Program's own file the traceback passes through. For a syntax error in code the Program
     # ran, such as eval("1 +"), that is the line that ran it.
     line = None

@@ -10,6 +10,8 @@ const PROGRAMS = readdirSync(FOLDER)
 
 for (const { file, source } of PROGRAMS) {
   test(`${file} zooms through every level in the browser without an error`, async ({ page }) => {
+    // One line of 2,500 terms takes about 19 seconds on its own, and can pass 30 alongside the other tests.
+    if (file === 'deep.py') test.slow();
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/zoom/1');

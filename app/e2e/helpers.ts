@@ -5,7 +5,7 @@ import { expect, type FrameLocator, type Page } from '@playwright/test';
  * hello world it shows at first. Works on a page or inside a frame.
  */
 export async function run(page: Page | FrameLocator, program: string) {
-  await page.getByRole('textbox', { name: 'Your program' }).fill(program);
+  await editor(page).fill(program);
   // Pyodide takes a few seconds to start; Run stays off until it has.
   await expect(page.getByRole('button', { name: 'Run', exact: true })).toBeEnabled({ timeout: 60_000 });
   await page.getByRole('button', { name: 'Run', exact: true }).click();
@@ -21,3 +21,8 @@ export const anyZoomLevel = (page: Page | FrameLocator, number: number) =>
   page.getByRole('region', { name: new RegExp(`^Zoom level ${number}:`) });
 
 export const gauge = (page: Page | FrameLocator) => page.getByRole('navigation', { name: 'Depth gauge' });
+
+export const editor = (page: Page | FrameLocator) => page.getByRole('textbox', { name: 'Your program' });
+
+/** The code in the editor, line by line. CodeMirror draws each line as its own element. */
+export const editorCode = async (page: Page | FrameLocator) => (await editor(page).locator('.cm-line').allTextContents()).join('\n');

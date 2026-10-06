@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { gauge, run, zoomLevel } from './helpers';
+import { editor, gauge, run, zoomLevel } from './helpers';
 
 const GREET = 'def greet(name):\n    print("Hello,", name)\n\nfor person in ["Ada", "Grace"]:\n    greet(person)';
 
@@ -93,7 +93,7 @@ test('editing the code after Run takes the highlight away, since it no longer ma
   await zoomLevel(page, 3, 'Tokens').getByRole('button', { name: 'NAME: print' }).click();
   await expect(highlights(page)).toHaveText(['print']);
 
-  await page.getByRole('textbox', { name: 'Your program' }).fill('x = 1');
+  await editor(page).fill('x = 1');
   await expect(highlights(page)).toHaveCount(0);
 });
 
@@ -104,9 +104,10 @@ test('a highlight out of sight in the editor scrolls the editor to it', async ({
 
   await zoomLevel(page, 3, 'Tokens').getByRole('button', { name: 'NAME: n18' }).click();
   await expect(highlightsOnLine(page, 18)).toHaveText(['n18']);
-  const editor = page.getByRole('textbox', { name: 'Your program' });
-  await expect.poll(() => editor.evaluate((area) => area.scrollTop)).toBeGreaterThan(0);
-  const box = (await editor.boundingBox())!;
+  // CodeMirror scrolls the box around the code, not the code itself.
+  const scroller = page.locator('.editor-highlight .cm-scroller');
+  await expect.poll(() => scroller.evaluate((box) => box.scrollTop)).toBeGreaterThan(0);
+  const box = (await scroller.boundingBox())!;
   const mark = (await highlights(page).boundingBox())!;
   expect(mark.y).toBeGreaterThanOrEqual(box.y);
   expect(mark.y + mark.height).toBeLessThanOrEqual(box.y + box.height);

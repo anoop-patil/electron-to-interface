@@ -13,3 +13,4 @@
 ## Comments
 
 - Ticket 16: the page starts by showing hello world's Analysis, made when the site was built, with its code in the editor. A Share link puts its own code in the editor instead, so it shouldn't also show hello world's Analysis as if it were that code's.
+- Ticket 19: new code in `App.tsx`'s `code` state goes into the editor by itself. Code that differs from what the zoom view shows gets the out-of-date note, which suits a Share link before its Run. `fileName` holds an uploaded file's name; a Share link that carries only the code would use `program.py`.

@@ -141,7 +141,9 @@
         "message": { "description": "Python's message, such as division by zero. Empty for an error class the Program defines, whose message could only be had by running its code.", "type": "string" },
         "line": { "description": "The line of the Program where it happened, counted from 1, if Python names one.", "type": "integer", "minimum": 1 },
         "start": { "description": "For a syntax error in the Program, where the code Python points at starts. A place past the end of a line, or of the Program, is moved back to the line's newline.", "$ref": "#/$defs/Position" },
-        "end": { "description": "For a syntax error in the Program, the first column after the code Python points at, if Python names an end after its start.", "$ref": "#/$defs/Position" }
+        "end": { "description": "For a syntax error in the Program, the first column after the code Python points at, if Python names an end after its start.", "$ref": "#/$defs/Position" },
+        "module": { "description": "For an import Python couldn't find (its own ModuleNotFoundError), the module it looked for, such as numpy.", "type": "string", "minLength": 1 },
+        "standardLibrary": { "description": "Whether that module's top-level name is in Python's standard library (sys.stdlib_module_names).", "type": "boolean" }
       }
     },
     "CodeIndex": {

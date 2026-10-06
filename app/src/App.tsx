@@ -4,6 +4,7 @@ import type { CantRun } from './engine/support';
 import { ExamplePicker } from './examples/ExamplePicker';
 import { EXAMPLES, loadExample } from './examples/examples';
 import helloSource from '../examples/hello.py?raw';
+import { FILE_NAME } from './explain/commands';
 import { errorSpan } from './explain/syntaxError';
 import type { Analysis } from './generated/analysis';
 import { buttonClass } from './button';
@@ -13,6 +14,7 @@ import { mapState } from './machine/mapState';
 import { useScreen } from './screen';
 import { Terminal } from './terminal/Terminal';
 import { ThemeToggle } from './ThemeToggle';
+import { fileNameFor, importNote, lineLimitNote } from './editor/limits';
 import { ProgramEditor, type Highlight } from './editor/ProgramEditor';
 import { DepthGauge } from './zoom/DepthGauge';
 import { useZoomNavigation } from './zoom/useZoomNavigation';
@@ -53,6 +55,10 @@ const KBD_CLASSES = 'rounded-[5px] border border-b-2 border-rule2 bg-surface px-
  */
 export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun?: CantRun | null }) {
   const [code, setCode] = useState(helloSource.replace(/\n$/, ''));
+  // The name the Try it yourself commands use: the uploaded file's, made safe to type, or program.py.
+  const [fileName, setFileName] = useState(FILE_NAME);
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const upload = useRef<HTMLInputElement>(null);
   const [codeHidden, setCodeHidden] = useState(false);
   const [status, setStatus] = useState<PythonStatus>(cantRun ?? 'starting');
   const [shown, setShown] = useState<ShownAnalysis | null>(null);
@@ -101,6 +107,10 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
   const highlight: Highlight | null = unedited && (selected || errorChars) ? { program: unedited.program, selected, error: errorChars } : null;
   // The Example on show, while its code is unedited.
   const shownExample = analysis?.example !== undefined && code === shown?.code ? analysis.example : null;
+  // The code has changed since the Analysis on show was made, so the zoom view is out of date until the next Run.
+  const outOfDate = shown !== null && code !== shown.code;
+  const tooLong = lineLimitNote(code);
+  const notStandardLibrary = analysis && importNote(analysis);
 
   /**
    * Shows what `make` makes, unless the learner has clicked Run or picked an Example since. An Example's code goes
@@ -124,18 +134,34 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
     const ran = code;
     const request = ++requests.current;
     setRunningRequest(request);
-    await show(request, async () => ({ analysis: await engine.analyze(ran), code: ran }), { intoEditor: false });
+    setUploadNote(null);
+    await show(request, async () => ({ analysis: await engine.analyze(ran, fileName), code: ran }), { intoEditor: false });
     setRunningRequest((current) => (current === request ? null : current));
   };
   // An Example runs as soon as it is picked: its Analysis was made when the site was built. A Run still going is
   // left to finish unseen.
   const pickExample = (id: string) => {
     const request = ++requests.current;
+    setFileName(FILE_NAME);
+    setUploadNote(null);
     setRunningRequest(null);
     show(request, async () => {
       const example = await loadExample(id);
       return { analysis: example, code: codeOf(example) };
     }, { intoEditor: true });
+  };
+
+  // An uploaded file goes into the editor, and waits for Run. Its name is used in the Try it yourself commands.
+  const uploadFile = async (file: File) => {
+    const text = (await file.text()).replace(/\r\n?/g, '\n').replace(/\n$/, '');
+    const name = fileNameFor(file.name);
+    setCode(text);
+    setFileName(name);
+    setUploadNote(
+      name === file.name
+        ? `Loaded ${name}. Click Run when you’re ready.`
+        : `Loaded “${file.name}”. The Try it yourself commands call it ${name}, since a name you type in a terminal is simplest with only letters, digits, _, . and -. Click Run when you’re ready.`,
+    );
   };
 
   return (
@@ -163,7 +189,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
               aria-label="Editor"
             >
               <div className="flex items-center justify-between gap-2">
-                <label htmlFor="program" className={`text-[13px] font-semibold text-ink2${codeHidden ? ' narrow:hidden' : ''}`}>Your program</label>
+                <span id="program-label" className={`text-[13px] font-semibold text-ink2${codeHidden ? ' narrow:hidden' : ''}`}>Your program</span>
                 {codeHidden && <code className="hidden min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-pre text-[14px] text-ink2 narrow:block">{code.split('\n')[0]}</code>}
                 <button
                   type="button"
@@ -178,13 +204,31 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
               <div className={`grid gap-3${codeHidden ? ' narrow:hidden' : ''}`} id="program-editor">
                 <p className="text-[14px] text-ink2">Write a short Python program, click Run, and zoom in to see what your computer really does with it.</p>
                 <ExamplePicker shown={shownExample} onPick={pickExample} />
-                <ProgramEditor code={code} onChange={setCode} highlight={highlight} />
+                <ProgramEditor code={code} onChange={setCode} highlight={highlight} labelledBy="program-label" />
                 <div className="flex flex-wrap items-center gap-3">
-                  <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready' || running} onClick={run}>
+                  <button type="button" className={buttonClass({ primary: true, size: 'wide' })} disabled={status !== 'ready' || running || tooLong !== null} onClick={run}>
                     Run
                   </button>
-                  <p className="min-w-0 flex-1 text-[14px] text-ink2 empty:hidden" role="status">{STATUS_NOTES[status]}</p>
+                  <button type="button" className={buttonClass()} onClick={() => upload.current?.click()}>
+                    Upload a .py file
+                  </button>
+                  <input
+                    ref={upload}
+                    type="file"
+                    accept=".py,text/x-python"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      // Cleared, so choosing the same file again loads it again.
+                      e.target.value = '';
+                      if (file) uploadFile(file);
+                    }}
+                  />
+                  <p className="min-w-full text-[14px] text-ink2 empty:hidden" role="status">{STATUS_NOTES[status]}</p>
                 </div>
+                {tooLong && <p className="text-[14px] text-warn" role="status">{tooLong}</p>}
+                {uploadNote && <p className="text-[14px] text-ink2" role="status">{uploadNote}</p>}
+                {notStandardLibrary && <p className="text-[14px] text-warn" role="status">{notStandardLibrary}</p>}
                 {error && <p className="whitespace-pre-wrap font-mono text-[13px] text-warn" role="alert">{error}</p>}
                 <p className="flex flex-wrap gap-x-3 gap-y-1.5 text-[12px] text-ink3 narrow:hidden">
                   <span><kbd className={KBD_CLASSES}>↓</kbd> zoom in</span>
@@ -200,6 +244,11 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
 
           {/* `stage` is a hook for the tests, not a style. */}
           <main className={`stage min-w-0 px-[clamp(16px,4vw,48px)] pb-10 pt-6 narrow:px-4 narrow:pb-8 narrow:pt-5 ${TINTS[level - 1]}`} data-level={level} aria-busy={running}>
+            {outOfDate && (
+              <p className="mb-5 rounded-[10px] border border-rule2 bg-surface px-3.5 py-2.5 text-[14px] text-ink2" role="status">
+                You’ve changed your program since it ran, so the zoom view shows it as it was. Click Run to zoom into the new version.
+              </p>
+            )}
             <ZoomView
               level={level}
               analysis={analysis}
