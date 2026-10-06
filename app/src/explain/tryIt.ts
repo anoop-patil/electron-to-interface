@@ -8,6 +8,7 @@ import { level6 } from './interpreter';
 import { piecesOutput, straceRows } from './operatingSystem';
 import { sampleFor } from './reference';
 import { stepFacts } from './steps';
+import { syntaxErrorOf } from './stopped';
 import { nodeFacts, nodeKind } from './syntaxTree';
 
 /** Each zoom level's Try it yourself, from the Template file. The build checks it like the Templates (see checkContent.ts). */
@@ -56,10 +57,11 @@ function bytesRows(analysis: Analysis) {
   });
 }
 
-/** Level 1's note on what the output is: the lines the Program printed, or a traceback. */
+/** Level 1's note on what the output is: the lines the Program printed, a traceback, or Python's report of a syntax error. */
 function level1Notes(analysis: Analysis, { output, exitStatus }: CommandRun): Span[][] {
   const facts = programFacts(analysis);
   if (exitStatus === 0) return output ? [fillString(template('tryIt.level1.printed', 'program').text, facts)] : [];
+  if (syntaxErrorOf(analysis)) return [fillString(template('tryIt.level1.syntaxError', 'program').text, facts)];
   // A traceback has a line giving the file and line number where the error happened. Without one, as after
   // sys.exit("bye"), Python printed the output, not the Program, and there is nothing more to say.
   return /^ {2}File "/m.test(output) ? [fillString(template('tryIt.level1.error', 'program').text, facts)] : [];
@@ -286,11 +288,19 @@ interface Shown {
   notes: Span[][];
 }
 
-/** A command the browser's Python ran on the Program, or, for an Example, ran when the site was built: what it printed, and what the page works out from that. */
+/**
+ * A command the browser's Python ran on the Program, or, for an Example, ran when the site was built: what it printed,
+ * and what the page works out from that. A command after level 1's that stopped at the Program's syntax error printed
+ * only Python's report of it.
+ */
 function ranInBrowser(level: number, analysis: Analysis, command: string): Shown {
   const result = analysis.commands.find((other) => other.command === command);
   if (!result) throw new Error(`The Analysis has no output for ${command}`);
-  return { output: result.output, observed: analysis.example ? 'tryIt.built' : 'tryIt.observed', rows: ROWS[level]?.(analysis, result) ?? [], notes: NOTES[level]?.(analysis, result) ?? [] };
+  const shown = { output: result.output, observed: analysis.example ? 'tryIt.built' : 'tryIt.observed' } as const;
+  if (level > 1 && result.exitStatus !== 0 && syntaxErrorOf(analysis)) {
+    return { ...shown, rows: [], notes: [fillString(template('tryIt.stoppedAtSyntaxError', 'program').text, programFacts(analysis))] };
+  }
+  return { ...shown, rows: ROWS[level]?.(analysis, result) ?? [], notes: NOTES[level]?.(analysis, result) ?? [] };
 }
 
 /** The exit status of `python FILE`, level 1's command, or what an error would give, if the Analysis has no record of it. */

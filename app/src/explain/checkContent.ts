@@ -21,6 +21,7 @@ const SLOT_DEFS: Record<Subject, (keyof typeof schema.$defs)[]> = {
   output: ['OutputSlot'],
   character: ['CharacterSlot'],
   pixels: ['PixelsSlot'],
+  syntaxError: ['SyntaxErrorSlot'],
 };
 
 const slotsOf = (subject: Subject) =>

@@ -122,7 +122,7 @@ test('a different label set is an edit to the labels file alone: three labels in
   const { observed, reference, typical } = SHIPPED.labels.labels;
   const panels = {
     byteBits: 'observed', machineMap: 'typical', terminal: 'observed', tryItOutput: 'observed', tryItSample: 'reference', stepRuns: 'observed',
-    plates: 'observed', objects: 'observed', recipeCard: 'observed', afterRun: 'observed', noReference: 'typical', registers: 'reference',
+    plates: 'observed', objects: 'observed', recipeCard: 'observed', afterRun: 'observed', noReference: 'typical', syntaxError: 'observed', registers: 'reference',
     outputPieces: 'observed', reportPieces: 'observed',
   };
   const run = build(withLabels({ labels: { observed, reference, typical }, panels }));

@@ -1,7 +1,9 @@
 import { explainProgram, type Span } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
+import { stoppedAt } from '../explain/stopped';
 import { explainNotDrawn, explainSignposts, fieldLabel, isText, leafText, nodeById, STATEMENT_FIELDS, treeLabel, valueOf } from '../explain/syntaxTree';
 import type { Analysis, AstFact } from '../generated/analysis';
+import { SyntaxErrorPanel } from './SyntaxErrorPanel';
 
 /** What the tree needs to draw a box: the Analysis, the selected box, and what to do when the learner picks one. */
 interface TreeProps {
@@ -169,11 +171,16 @@ function OutlineItem({ node, depth, ...props }: BoxProps) {
   );
 }
 
-/** Zoom level 4: the Program's syntax tree, as boxes inside boxes on a wide screen, and as an indented outline on a phone. */
+/**
+ * Zoom level 4: the Program's syntax tree, as boxes inside boxes on a wide screen, and as an indented outline on a
+ * phone. A Program with a syntax error may have none: then its syntax error, if Python stopped at it here, or a sentence
+ * saying Python stopped earlier.
+ */
 export function SyntaxTreeZoomLevel(props: TreeProps) {
   const { analysis } = props;
   const [module] = analysis.ast;
   if (!module) {
+    if (stoppedAt(analysis) === 4) return <SyntaxErrorPanel analysis={analysis} showLine />;
     return (
       <p className="text-[14px] text-ink2">
         <ExplanationText spans={explainProgram('level4.noTree', analysis).text} />

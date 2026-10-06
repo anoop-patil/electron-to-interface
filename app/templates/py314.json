@@ -9,6 +9,10 @@
       "subject": "program",
       "text": "This Example is {lines} long, and Python ran it when this site was built, so you can zoom in straight away. At this level the program is still just text. Your computer stores it as [[byte|bytes]], which the next zoom level shows. Highlighted words, like that one, open a short explanation."
     },
+    "level1.introBuiltSyntaxError": {
+      "subject": "program",
+      "text": "This Example is {lines} long. Python read it when this site was built and stopped at a syntax error, so you can see straight away how far it got. At this level the program is still just text. Your computer stores it as [[byte|bytes]], which the next zoom level shows. Highlighted words, like that one, open a short explanation."
+    },
     "level1.caption": {
       "subject": "program",
       "text": "Your whole program: {lines}."
@@ -231,7 +235,108 @@
     },
     "level4.noTree": {
       "subject": "program",
-      "text": "Python couldn’t work out the structure of your program, because it has a syntax error. The Terminal shows where."
+      "text": "Python never worked out the structure of your program: it stopped at a syntax error at {stoppedAt}."
+    },
+    "syntaxError.term": {
+      "subject": "syntaxError",
+      "text": "{kind}: {message}"
+    },
+    "syntaxError.unterminatedString": {
+      "subject": "syntaxError",
+      "title": "Line {line}: a piece of text has no closing quote mark",
+      "text": "On line {line}, a piece of text starts at the place Python points at, but the line ends before a quote mark closes it. Python reads everything after an opening quote mark as text, so it can’t tell where yours was meant to stop. Put the closing quote mark where the text ends."
+    },
+    "syntaxError.unterminatedTriple": {
+      "subject": "syntaxError",
+      "title": "Line {line}: a piece of text is never closed",
+      "text": "On line {line}, three quote marks start a piece of text that can run over several lines. Python read on to the end of your program without finding the same three quote marks to close it."
+    },
+    "syntaxError.neverClosed": {
+      "subject": "syntaxError",
+      "title": "Line {line}: the bracket **{bracket}** is never closed",
+      "text": "Line {line} opens a bracket, **{bracket}**, and nothing closes it. Inside brackets, Python carries on reading over the ends of lines, so it read on to the end of your program looking for the matching **{closer}**, and didn’t find it."
+    },
+    "syntaxError.unmatched": {
+      "subject": "syntaxError",
+      "title": "Line {line}: the bracket **{bracket}** closes nothing",
+      "text": "Line {line} has a closing bracket, **{bracket}**, but no **{opener}** is open for it to close. Every closing bracket needs an opening one before it."
+    },
+    "syntaxError.mismatched": {
+      "subject": "syntaxError",
+      "title": "Line {line}: the brackets don’t match",
+      "text": "On line {line}, **{bracket}** tries to close a bracket that was opened with **{opener}**. A bracket has to close with its own shape: **{opener}** with **{closer}**."
+    },
+    "syntaxError.expectedColon": {
+      "subject": "syntaxError",
+      "title": "Line {line}: a colon is missing",
+      "text": "Python expected a colon, **:**, at the place it points at. A line that starts a block, such as one beginning with for, if, while, def or class, ends with a colon, which tells Python that the indented lines under it belong to it."
+    },
+    "syntaxError.invalidQuote": {
+      "subject": "syntaxError",
+      "title": "Line {line}: **{character}** is a curly quote mark",
+      "text": "Line {line} has **{character}**, a curly quote mark, which Python doesn’t accept in code. Curly quote marks often come along when code is copied from a document or a web page. Python’s quote marks are the straight ones, **\"** and **'**."
+    },
+    "syntaxError.invalidCharacter": {
+      "subject": "syntaxError",
+      "title": "Line {line}: Python doesn’t accept **{character}** here",
+      "text": "Line {line} has the character **{character}** ({codePoint}) outside a piece of text or a comment. In code, Python accepts only letters, digits, underscores, spaces and its own symbols."
+    },
+    "syntaxError.printParentheses": {
+      "subject": "syntaxError",
+      "title": "Line {line}: print needs brackets",
+      "text": "In Python 3, print is a function, so what it prints goes in brackets: print(...). Line {line} leaves the brackets out, as the older Python 2 allowed."
+    },
+    "syntaxError.forgotComma": {
+      "subject": "syntaxError",
+      "title": "Line {line}: a comma is probably missing",
+      "text": "On line {line}, **{at}** puts things side by side with nothing between them. Python guesses that a comma is missing, as between the things you give to print."
+    },
+    "syntaxError.equalsInTest": {
+      "subject": "syntaxError",
+      "title": "Line {line}: **=** can’t go here",
+      "text": "On line {line}, **=** would store a value in a name, but Python can’t store one here. To check whether two things are equal, as after if or while, write **==**."
+    },
+    "syntaxError.unexpectedIndent": {
+      "subject": "syntaxError",
+      "title": "Line {line} is indented more than Python expects",
+      "text": "Line {line} starts further right than Python expects there. A line moves further right only after a line that starts a block, such as a for or an if, and ends with a colon. Indentation shows Python which lines belong inside a block, so an indent with no block to belong to is a mistake."
+    },
+    "syntaxError.expectedIndent": {
+      "subject": "syntaxError",
+      "title": "Line {line} should be indented",
+      "text": "The {block} on line {blockLine} ends with a colon, so Python expects the lines that belong to it to be indented under it. Line {line} isn’t indented any further, so the block would be empty."
+    },
+    "syntaxError.expectedIndentAtEnd": {
+      "subject": "syntaxError",
+      "title": "Line {line} starts a block with nothing in it",
+      "text": "The {block} on line {line} ends with a colon, so Python expects the lines that belong to it to be indented under it. Your program ends there, so the block would be empty."
+    },
+    "syntaxError.unindentMismatch": {
+      "subject": "syntaxError",
+      "title": "Line {line}’s indentation doesn’t line up",
+      "text": "Line {line} moves back to the left, which ends a block, but it stops where no block it is still inside starts. A line that ends a block has to line up exactly with the lines of a block around it, or with the lines that aren’t indented at all."
+    },
+    "syntaxError.general": {
+      "subject": "syntaxError",
+      "title": "Python can’t read line {line}",
+      "text": "Python stopped at the place it points at on line {line}: the code there breaks Python’s rules for how code is written. Its message is **{message}**."
+    },
+    "syntaxError.noPlace": {
+      "subject": "syntaxError",
+      "title": "Python can’t read your program",
+      "text": "Your program breaks Python’s rules for how code is written, and Python doesn’t say where. Its message is **{message}**."
+    },
+    "syntaxError.stoppedTokens": {
+      "subject": "syntaxError",
+      "text": "Python stopped at this while splitting your code into [[token|tokens]], at {stoppedAt}, so the tokens stop short. It never worked out your program’s structure, made no steps and ran none of it."
+    },
+    "syntaxError.stoppedStructure": {
+      "subject": "syntaxError",
+      "text": "Python stopped at this when it tried to work out your program’s [[structure|structure]], at {stoppedAt}, so it made no steps and ran none of it."
+    },
+    "syntaxError.stoppedSteps": {
+      "subject": "syntaxError",
+      "text": "Python worked out your program’s structure, but stopped at this when it compiled it into [[code|steps]], at {stoppedAt}, so it made no steps and ran none of it."
     },
     "level4.signposts": {
       "subject": "program",
@@ -489,6 +594,14 @@
       "subject": "program",
       "text": "Your program stopped with an error. The last line names the error and says what went wrong; the lines above it say where. The path is where Python saved {file}, among its in-memory files. On your computer, you’ll see your own folder."
     },
+    "tryIt.level1.syntaxError": {
+      "subject": "program",
+      "text": "Python found a syntax error, so it ran none of your program. The last line names the error and says what went wrong; the lines above it say where. The path is where Python saved {file}, among its in-memory files. On your computer, you’ll see your own folder."
+    },
+    "tryIt.stoppedAtSyntaxError": {
+      "subject": "program",
+      "text": "This command couldn’t read your program either, because of its syntax error, so it printed an error message instead."
+    },
     "tryIt.level2.multiByte": {
       "subject": "byte",
       "text": "Numbers from 128 to 255 come in groups of 2 to 4. [[utf8|UTF-8]] stores each character beyond English letters and common symbols that way: **{char}** is {charBytes}."
@@ -601,13 +714,17 @@
       "subject": "program",
       "text": "Boxes describe meaning, but they aren’t something a computer can carry out step by step. So Python compiles them into lists of simple steps, called [[code|bytecode]]: {lists}. By default, CPython runs your program by reading these steps one at a time, rather than compiling it to your CPU’s own machine code. Then it runs the steps, and some run more than once."
     },
+    "level5.introNoSteps": {
+      "subject": "program",
+      "text": "Boxes describe meaning, but they aren’t something a computer can carry out step by step. So Python compiles them into lists of simple steps, called [[code|bytecode]], then runs the steps one at a time."
+    },
     "level5.caption": {
       "subject": "program",
       "text": "Your program has {steps}, and {ran} happened, in the order the strip shows. Select a step, or step through with Next."
     },
     "level5.noBytecode": {
       "subject": "program",
-      "text": "Python made no steps from your program, because it has a syntax error. The Terminal shows where."
+      "text": "Python made no steps from your program: it stopped at a syntax error at {stoppedAt}, before it got this far."
     },
     "level5.cutShort": {
       "subject": "program",
@@ -678,6 +795,10 @@
     "level6.intro": {
       "subject": "program",
       "text": "Here the zoom stops following your code and starts showing the program that reads it. By default, CPython never compiles your code to CPU instructions. It keeps your steps as bytecode, and its [[py|interpreter]], a program written in [[clang|C]] and compiled long before you ran anything, reads them one at a time and runs a piece of its own C code for each. Python 3.13 and later also come with an experimental JIT compiler that can turn busy steps into machine code, but it is off unless you switch it on."
+    },
+    "level6.noSteps": {
+      "subject": "program",
+      "text": "The interpreter never ran your program: Python stopped at a syntax error at {stoppedAt}, before it made any steps, so there were none to run."
     },
     "level6.yourProgram": {
       "subject": "program",
@@ -770,6 +891,10 @@
     "level7.intro": {
       "subject": "program",
       "text": "The interpreter is a program too, so it also needs something to run on. When Python itself was built, a [[compiler|compiler]] turned its C code into [[machine|machine code]], the only language your [[cpu|CPU]] understands. Each kind of step has its own piece of machine code: its handler."
+    },
+    "level7.noSteps": {
+      "subject": "program",
+      "text": "None of the interpreter’s handlers ran, so there is no machine code of theirs to follow: Python stopped at a syntax error at {stoppedAt}, before it made any steps."
     },
     "level7.provenance": {
       "subject": "step",
@@ -975,6 +1100,10 @@
       "subject": "program",
       "text": "The pieces in stage 1 are Derived: Python wrote this traceback after your program stopped, and the colors are what its traceback code adds for a terminal. The rest is how a typical Linux terminal handles them."
     },
+    "level8.observedSyntaxError": {
+      "subject": "program",
+      "text": "The pieces in stage 1 are Derived: Python found a syntax error, so it never ran your program, and wrote this traceback instead. The colors are what its traceback code adds for a terminal. The rest is how a typical Linux terminal handles them."
+    },
     "level8.doors": {
       "subject": "program",
       "text": "Your program’s three [[fd|doors]]"
@@ -997,6 +1126,11 @@
       "subject": "output",
       "title": "Python hands its report of the error to sys.stderr",
       "text": "Your program stopped with an error, so Python writes a report of it, the traceback, to **{stream}**, its “errors” object. This line came in {pieces}. Nothing has left Python yet."
+    },
+    "level8.piecesSyntaxError": {
+      "subject": "output",
+      "title": "Python hands its report of the syntax error to sys.stderr",
+      "text": "Python found a syntax error, so it never ran your program. It writes a report of the error, the traceback, to **{stream}**, its “errors” object. This line came in {pieces}. Nothing has left Python yet."
     },
     "level8.piecesExit": {
       "subject": "output",
@@ -1793,6 +1927,10 @@
     "tryIt.straceRow.exitError": {
       "subject": "program",
       "text": "Your program stopped. Any number but 0 means something went wrong."
+    },
+    "tryIt.straceRow.exitSyntaxError": {
+      "subject": "program",
+      "text": "Python stopped at the syntax error without running your program. Any number but 0 means something went wrong."
     }
   },
   "tryIt": {

@@ -139,7 +139,9 @@
       "properties": {
         "type": { "description": "The kind of error, such as ZeroDivisionError or SyntaxError.", "type": "string", "minLength": 1 },
         "message": { "description": "Python's message, such as division by zero. Empty for an error class the Program defines, whose message could only be had by running its code.", "type": "string" },
-        "line": { "description": "The line of the Program where it happened, counted from 1, if Python names one.", "type": "integer", "minimum": 1 }
+        "line": { "description": "The line of the Program where it happened, counted from 1, if Python names one.", "type": "integer", "minimum": 1 },
+        "start": { "description": "For a syntax error in the Program, where the code Python points at starts. A place past the end of a line, or of the Program, is moved back to the line's newline.", "$ref": "#/$defs/Position" },
+        "end": { "description": "For a syntax error in the Program, the first column after the code Python points at, if Python names an end after its start.", "$ref": "#/$defs/Position" }
       }
     },
     "CodeIndex": {
@@ -828,9 +830,28 @@
     },
     "Subject": {
       "title": "Subject",
-      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); output, one line of the Program's output, at zoom level 8 (OutputSlot); character, one character of a line of output, at zoom level 9 (CharacterSlot); or pixels, what the browser drew for that character and reports about the learner's screen (PixelsSlot).",
+      "description": "What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); output, one line of the Program's output, at zoom level 8 (OutputSlot); character, one character of a line of output, at zoom level 9 (CharacterSlot); or pixels, what the browser drew for that character and reports about the learner's screen (PixelsSlot); or syntaxError, the syntax error that stopped the Program before it ran (SyntaxErrorSlot).",
       "type": "string",
-      "enum": ["program", "byte", "line", "token", "node", "step", "handler", "output", "character", "pixels"]
+      "enum": ["program", "byte", "line", "token", "node", "step", "handler", "output", "character", "pixels", "syntaxError"]
+    },
+    "SyntaxErrorSlot": {
+      "title": "SyntaxErrorSlot",
+      "description": "A Fact about the syntax error that stopped the Program before it ran, that a Template can name. A slot that doesn't apply is empty.",
+      "oneOf": [
+        { "const": "kind", "description": "The kind of syntax error, as Python names it: SyntaxError, IndentationError." },
+        { "const": "message", "description": "Python's message: unterminated string literal (detected at line 3)." },
+        { "const": "line", "description": "The line Python points at, counted from 1." },
+        { "const": "code", "description": "That line, without the spaces that indent it or its newline: print(\"Hello, name)." },
+        { "const": "at", "description": "The code Python points at, as it is in the Program, with a newline drawn as ↵: \"." },
+        { "const": "bracket", "description": "For a message about a bracket, the bracket it is about: the one never closed, or the closing one that matches nothing." },
+        { "const": "opener", "description": "For a closing bracket, the opening bracket it doesn't match, or would match: (." },
+        { "const": "closer", "description": "The closing bracket that would match the opening one: )." },
+        { "const": "character", "description": "For a character Python doesn't accept, the character: “." },
+        { "const": "codePoint", "description": "That character's Unicode number: U+201C." },
+        { "const": "block", "description": "For a block with nothing indented in it, what starts the block, in Python's words: for statement, function definition." },
+        { "const": "blockLine", "description": "The line that starts that block, counted from 1." },
+        { "const": "stoppedAt", "description": "The zoom level where Python stopped, with its name: zoom level 3, Tokens." }
+      ]
     },
     "OutputSlot": {
       "title": "OutputSlot",
@@ -976,7 +997,8 @@
         { "const": "steps", "description": "How many steps all the code objects have, with the word: 26 steps." },
         { "const": "ran", "description": "How many steps ran in all, with the word: 42 step runs." },
         { "const": "sample", "description": "The Example whose native runs levels 7 and 8's Try it yourself show: the Program itself if it is one, else greet.py." },
-        { "const": "platform", "description": "The machine and the build of Python those ran on." }
+        { "const": "platform", "description": "The machine and the build of Python those ran on." },
+        { "const": "stoppedAt", "description": "For a Program with a syntax error, the zoom level where Python stopped, with its name: zoom level 3, Tokens. Empty for any other Program." }
       ]
     },
     "TokenSlot": {
@@ -1150,7 +1172,7 @@
           "description": "The label of each panel whose provenance differs from its level.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "tryItSample", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference", "registers", "outputPieces", "reportPieces"],
+          "required": ["byteBits", "machineMap", "terminal", "tryItOutput", "tryItSample", "stepRuns", "plates", "objects", "recipeCard", "afterRun", "noReference", "syntaxError", "registers", "outputPieces", "reportPieces"],
           "properties": {
             "byteBits": { "description": "Zoom level 2's panel How the number N is stored.", "type": "string" },
             "stepRuns": { "description": "Zoom level 5's strip of every step that ran, in order.", "type": "string" },
@@ -1159,6 +1181,7 @@
             "recipeCard": { "description": "Zoom level 5's recipe card: a code object's names, fixed values and variables.", "type": "string" },
             "afterRun": { "description": "Zoom level 5's note on the form a step had become after the Program ran again, unwatched.", "type": "string" },
             "noReference": { "description": "Zoom levels 6 and 7 for a step run the Reference Library has nothing for: a hand-written explanation of what the interpreter, or the CPU, does.", "type": "string" },
+            "syntaxError": { "description": "Zoom levels 6 and 7 for a Program with a syntax error: why they have nothing to show, which Python reported.", "type": "string" },
             "registers": { "description": "Zoom level 7's panel on the CPU's registers, worked out by reading the machine code.", "type": "string" },
             "outputPieces": { "description": "Zoom level 8's pieces the Program handed to sys.stdout and sys.stderr, recorded as it ran.", "type": "string" },
             "reportPieces": { "description": "Zoom level 8's pieces of a traceback, which Python writes after the Program stops, colored as for a terminal.", "type": "string" },

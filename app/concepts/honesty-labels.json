@@ -45,6 +45,7 @@
     "recipeCard": "observed",
     "afterRun": "observed",
     "noReference": "typical",
+    "syntaxError": "observed",
     "registers": "derived",
     "outputPieces": "observed",
     "reportPieces": "derived"

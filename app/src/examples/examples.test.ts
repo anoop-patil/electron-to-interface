@@ -6,8 +6,8 @@ import { EXAMPLES } from './examples';
 
 const programOf = (source: string) => readFile(source, 'utf-8');
 
-test('the Examples are hello world, a for loop, greet.py, a list comprehension and a class, in that order', () => {
-  expect(EXAMPLES.map(({ label }) => label)).toEqual(['hello world', 'for loop', 'function', 'list comprehension', 'class']);
+test('the Examples are hello world, a for loop, greet.py, a list comprehension, a class and a syntax error, in that order', () => {
+  expect(EXAMPLES.map(({ label }) => label)).toEqual(['hello world', 'for loop', 'function', 'list comprehension', 'class', 'syntax error']);
   expect(EXAMPLES[2].source).toBe('../prototype/examples/greet.py');
 });
 

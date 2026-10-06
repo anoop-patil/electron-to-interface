@@ -109,6 +109,16 @@ test('a traceback’s pieces are Derived: Python writes them after the Program s
   expect(explainTryIt(8, failing)!.output).toBe(`sys.stdout ← 'Hi'  '\\n'`);
 });
 
+test('a syntax error’s traceback is Python’s report on a program it never ran', () => {
+  const stopped = python.analyze('print("Hi)');
+
+  expect(level8(stopped, 'out-0-1')!.piecesNote).toBe('level8.observedSyntaxError');
+  expect(at(stopped, 'out-0-1').title).toBe('Python hands its report of the syntax error to sys.stderr');
+  expect(at(stopped, 'out-0-1').text).toMatch(/^Python found a syntax error, so it never ran your program\./);
+  const exit = explainTryIt(8, stopped)!.rows.at(-1)!;
+  expect([exit.printed, plain(exit.text)]).toEqual(['+++ exited with 1 +++', 'Python stopped at the syntax error without running your program. Any number but 0 means something went wrong.']);
+});
+
 test('a flush is a row of its own in Try it yourself', () => {
   expect(explainTryIt(8, python.analyze('print("Loading", end="", flush=True)\nprint(" done")'))!.output).toBe(
     `sys.stdout ← 'Loading'  ''\nsys.stdout.flush()\nsys.stdout ← ' done'  '\\n'`,

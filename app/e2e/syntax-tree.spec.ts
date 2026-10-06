@@ -102,8 +102,20 @@ test('a Program with a syntax error has no tree, and level 4 says why', async ({
   await page.goto('/zoom/4');
   await run(page, 'print("Hi"');
 
-  await expect(structure(page)).toContainText('Python couldn’t work out the structure of your program, because it has a syntax error.');
+  await expect(structure(page)).toContainText('Python never worked out the structure of your program: it stopped at a syntax error at zoom level 3, Tokens.');
   await expect(boxes(page)).toHaveCount(0);
+});
+
+test('a syntax error Python found while working out the structure is explained at level 4, with the place it points at marked', async ({ page }) => {
+  await page.goto('/zoom/4');
+  await run(page, 'for i in range(3)\n    print(i)');
+
+  const panel = structure(page).getByRole('region', { name: 'Line 1: a colon is missing' });
+  await expect(panel).toContainText("SyntaxError: expected ':'");
+  await expect(panel).toContainText('A line that starts a block, such as one beginning with for, if, while, def or class, ends with a colon');
+  // The colon belongs where the newline is.
+  await expect(panel.locator('mark')).toHaveText('↵');
+  await expect(page.locator('.editor-highlight mark')).toHaveText('↵');
 });
 
 test('a long expression on one line nests too deep to draw in full, and says so', async ({ page }) => {

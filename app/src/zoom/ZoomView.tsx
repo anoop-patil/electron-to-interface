@@ -2,7 +2,7 @@ import { useState, type Ref } from 'react';
 import { buttonClass } from '../button';
 import { levelLabel, panelLabel } from '../concepts/concepts';
 import { HonestyChip } from '../concepts/HonestyChip';
-import { explainByte, explainProgram, explainToken, levelIntro } from '../explain/explain';
+import { explainByte, explainProgram, explainToken, levelIntro, type TemplateId } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
 import { explainLevel6, level6, level6AfterRun } from '../explain/interpreter';
 import { explainLevel7, level7, level7AfterRun, level7IsReference } from '../explain/machine';
@@ -10,6 +10,7 @@ import { explainLevel8, level8 } from '../explain/operatingSystem';
 import { explainLevel9, level9 } from '../explain/pixels';
 import { explainAfterRun, explainStep, stepSelectionAt } from '../explain/steps';
 import { explainNode } from '../explain/syntaxTree';
+import { stoppedAt, syntaxErrorOf } from '../explain/stopped';
 import { explainTryIt } from '../explain/tryIt';
 import type { Analysis } from '../generated/analysis';
 import { BitsPanel, BytesZoomLevel } from './BytesZoomLevel';
@@ -21,6 +22,7 @@ import { LAST_LEVEL, levelInfo } from './levels';
 import { OperatingSystemZoomLevel } from './OperatingSystemZoomLevel';
 import { PixelsZoomLevel } from './PixelsZoomLevel';
 import { charsOf } from './selection';
+import { SyntaxErrorPanel } from './SyntaxErrorPanel';
 import { SyntaxTreeZoomLevel } from './SyntaxTreeZoomLevel';
 import { TokensZoomLevel } from './TokensZoomLevel';
 import { TryItYourself, type TryItTab } from './TryItYourself';
@@ -36,6 +38,9 @@ const ArrowUp = () => (
     <path d="M12 19V5M6 11l6-6 6 6" />
   </svg>
 );
+
+/** What levels 5 to 7 say when the Program has no steps, because it has a syntax error. */
+const NO_STEPS: Record<number, TemplateId> = { 5: 'level5.noBytecode', 6: 'level6.noSteps', 7: 'level7.noSteps' };
 
 /** One zoom level at a time: its heading, its introduction, its visual, the Explanation of what is selected, the Zoom in and Back buttons, and Try it yourself. */
 export function ZoomView({
@@ -90,8 +95,9 @@ export function ZoomView({
   else if (selectedStep) visual = <BytecodeZoomLevel analysis={analysis} selected={selectedStep} onSelect={onSelect} onGo={onGo} />;
   else if (interpreter) visual = <InterpreterZoomLevel analysis={analysis} view={interpreter} onSelect={onSelect} onGo={onGo} />;
   else if (cpu) visual = <CpuZoomLevel analysis={analysis} view={cpu} onSelect={onSelect} onGo={onGo} />;
-  // Levels 5 to 7 have no steps to show when the Program has a syntax error.
-  else visual = <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram('level5.noBytecode', analysis).text} /></p>;
+  // Levels 5 to 7 have no steps to show when the Program has a syntax error. Level 5 explains it if Python stopped there.
+  else if (level === 5 && stoppedAt(analysis) === 5) visual = <SyntaxErrorPanel analysis={analysis} showLine />;
+  else visual = <p className="text-[14px] text-ink2"><ExplanationText spans={explainProgram(NO_STEPS[level], analysis).text} /></p>;
 
   const intro = analysis && levelIntro(level, analysis);
   let explanation = null;
@@ -108,9 +114,12 @@ export function ZoomView({
   if (analysis && interpreter) afterRun = level6AfterRun(analysis, interpreter);
   if (analysis && cpu) afterRun = level7AfterRun(analysis, cpu);
   // A zoom level carries its Honesty label once it shows something. Levels 6 and 7 with nothing from the Reference
-  // Library to show explain how it usually works.
+  // Library to show explain how it usually works; for a Program with a syntax error, they say why they show nothing.
   const typical = interpreter?.handlers.length === 0 || (cpu && !level7IsReference(cpu));
-  const label = analysis ? (typical ? panelLabel('noReference') : levelLabel(level)) : null;
+  const stopped = analysis && (level === 6 || level === 7) && syntaxErrorOf(analysis);
+  let label = analysis && levelLabel(level);
+  if (typical) label = panelLabel('noReference');
+  if (stopped) label = panelLabel('syntaxError');
   const tryIt = analysis && explainTryIt(level, analysis, selection);
 
   return (

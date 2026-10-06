@@ -73,11 +73,34 @@ def test_an_error_inside_a_function_is_placed_on_the_line_that_raised_it():
 def test_a_syntax_error_stops_the_program_before_anything_runs():
     analysis = analyze('print("Hi"')
 
-    assert analysis["error"] == {"type": "SyntaxError", "message": "'(' was never closed", "line": 1}
+    assert analysis["error"] == {"type": "SyntaxError", "message": "'(' was never closed", "line": 1, "start": {"line": 1, "column": 5}}
     assert analysis["stdout"] == ""
     assert analysis["stderr"].endswith("SyntaxError: '(' was never closed\n")
     assert analysis["events"] == []
     assert analysis["runs"] == []
+
+
+def test_a_syntax_error_names_the_code_python_points_at_counting_characters():
+    # é is two bytes, but one character, as tokenize counts columns. The colon belongs where the newline is.
+    assert analyze('x = "é" +')["error"]["start"] == {"line": 1, "column": 9}
+    analysis = analyze('for c in "é"\n    print(c)')
+
+    assert analysis["error"] == {
+        "type": "SyntaxError", "message": "expected ':'", "line": 1, "start": {"line": 1, "column": 12}, "end": {"line": 1, "column": 13},
+    }
+    assert analyze("if x = 1:\n    pass")["error"]["end"] == {"line": 1, "column": 8}
+
+
+def test_an_indentation_error_is_a_syntax_error_with_no_end():
+    analysis = analyze("x = 1\n    y = 2")
+
+    assert analysis["error"] == {"type": "IndentationError", "message": "unexpected indent", "line": 2, "start": {"line": 2, "column": 3}}
+
+
+def test_a_syntax_error_raised_while_the_program_runs_is_placed_where_the_program_raised_it():
+    analysis = analyze('x = 1\neval("1 +")')
+
+    assert analysis["error"] == {"type": "SyntaxError", "message": "invalid syntax", "line": 2}
 
 
 def test_sys_exit_is_not_an_error():

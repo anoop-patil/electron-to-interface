@@ -4,6 +4,7 @@ import { bitsOf } from '../concepts/bits';
 import { charLabel, linesOf } from '../zoom/characters';
 import { codeName } from './bytecode';
 import { sampleFor } from './reference';
+import { syntaxErrorOf, whereStopped } from './stopped';
 
 /** The Templates for Python 3.14. The build checks them against the schema, the slots and the Concept cards (see checkContent.ts). */
 const TEMPLATES = (templateFile as Templates).templates;
@@ -77,6 +78,7 @@ export function programFacts(analysis: Analysis): Record<ProgramSlot, string> {
     ran: counted(analysis.runs.length, 'step run', 'step runs'),
     sample: sample.name,
     platform: sample.samples['7'].platform,
+    stoppedAt: whereStopped(analysis),
   };
 }
 
@@ -105,9 +107,16 @@ export const explainProgram = (id: TemplateId, analysis: Analysis) => fill(templ
 /** The Template that introduces each zoom level. */
 const INTROS: Record<number, TemplateId> = { 1: 'level1.intro', 2: 'level2.intro', 3: 'level3.intro', 4: 'level4.intro', 5: 'level5.intro', 6: 'level6.intro', 7: 'level7.intro', 8: 'level8.intro', 9: 'level9.intro' };
 
-/** A zoom level's introduction. Level 1's says the learner typed the Program and clicked Run, unless it is an Example, which Python ran when the site was built. */
+/**
+ * A zoom level's introduction. Level 1's says the learner typed the Program and clicked Run, unless it is an Example,
+ * which Python ran when the site was built. For a Program with a syntax error, which Python never ran, level 1's and
+ * level 5's say so.
+ */
 export function levelIntro(level: number, analysis: Analysis) {
-  const id = level === 1 && analysis.example ? 'level1.introBuilt' : INTROS[level];
+  const stopped = syntaxErrorOf(analysis) !== null;
+  let id: TemplateId | undefined = INTROS[level];
+  if (level === 1 && analysis.example) id = stopped ? 'level1.introBuiltSyntaxError' : 'level1.introBuilt';
+  if (level === 5 && stopped) id = 'level5.introNoSteps';
   return id ? explainProgram(id, analysis) : null;
 }
 

@@ -17,3 +17,4 @@
 ## Comments
 
 - Ticket 10 wrote level 5's Templates by hand: `step.*` for about 80 opnames and variants, `level5.*` for the page and `map.level5.*` for the Machine map. They aren't to be overwritten silently.
+- Ticket 17 wrote the syntax-error Templates by hand: `syntaxError.*`, picked by Python's message in `src/explain/syntaxError.ts`. They aren't to be overwritten silently.

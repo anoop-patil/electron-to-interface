@@ -4,6 +4,7 @@ import type { CantRun } from './engine/support';
 import { ExamplePicker } from './examples/ExamplePicker';
 import { EXAMPLES, loadExample } from './examples/examples';
 import helloSource from '../examples/hello.py?raw';
+import { errorSpan } from './explain/syntaxError';
 import type { Analysis } from './generated/analysis';
 import { buttonClass } from './button';
 import { ConceptsButton } from './concepts/ConceptsButton';
@@ -93,9 +94,11 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
 
   // What the zoom level on screen shows selected: the learner's Selection, or the closest match to it at this level.
   const levelSelection = analysis && selectionAt(analysis, selectedFactId, level);
-  // The editor highlights the code the Selection comes from, while the code is still what was run.
-  const chars = analysis && levelSelection && code === shown?.code ? charsOf(analysis, levelSelection) : null;
-  const highlight: Highlight | null = analysis && chars ? { program: analysis.program, ...chars } : null;
+  // The editor marks the code the Selection comes from, and the code a syntax error points at, while the code is still what was run.
+  const unedited = analysis && code === shown?.code ? analysis : null;
+  const selected = unedited && levelSelection ? charsOf(unedited, levelSelection) : null;
+  const errorChars = unedited && errorSpan(unedited);
+  const highlight: Highlight | null = unedited && (selected || errorChars) ? { program: unedited.program, selected, error: errorChars } : null;
   // The Example on show, while its code is unedited.
   const shownExample = analysis?.example !== undefined && code === shown?.code ? analysis.example : null;
 

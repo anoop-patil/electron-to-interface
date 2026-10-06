@@ -42,6 +42,44 @@ test('picking an Example puts its code in the editor and shows it at once, run, 
   }
 });
 
+test('the syntax-error Example shows how far Python got, explains the error where the code is and where Python stopped, and says why later levels are empty', async ({ page }) => {
+  await pythonNeverLoads(page);
+  await page.goto('/');
+
+  await examples(page).getByRole('button', { name: 'syntax error' }).click();
+  await expect(page.getByRole('textbox', { name: 'Your program' })).toHaveValue('names = ["Ada", "Grace"]\nfor name in names:\n    print("Hello, name)\nprint("Done")');
+  await expect(terminal(page).locator('pre')).toContainText('SyntaxError: unterminated string literal (detected at line 3)');
+
+  // Level 1: the quote mark Python points at is marked in the code and the editor, and the error is explained.
+  const code = zoomLevel(page, 1, 'Your code');
+  await expect(code).toContainText('Python read it when this site was built and stopped at a syntax error');
+  await expect(code.locator('mark')).toHaveText('"');
+  await expect(page.locator('.editor-highlight [data-line="3"] mark')).toHaveText('"');
+  const explained = code.getByRole('region', { name: 'Line 3: a piece of text has no closing quote mark' });
+  await expect(explained).toContainText('SyntaxError: unterminated string literal (detected at line 3)');
+  await expect(explained).toContainText('Put the closing quote mark where the text ends.');
+
+  // Level 3: the tokens stop at the bracket before the quote mark, and the error is explained there too.
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  const tokens = zoomLevel(page, 3, 'Tokens');
+  await expect(tokens.getByRole('list', { name: 'Line 3' }).getByRole('button')).toHaveText(['INDENT4 spaces', 'NAMEprint', 'OP(']);
+  await expect(tokens.getByRole('list', { name: 'Line 4' })).toHaveCount(0);
+  await expect(tokens.getByRole('region', { name: 'Line 3: a piece of text has no closing quote mark' })).toContainText('so the tokens stop short');
+
+  // Levels 4 to 7 say why they have nothing to show.
+  for (const [level, title, says] of [
+    [4, 'Structure', 'Python never worked out the structure of your program: it stopped at a syntax error at zoom level 3, Tokens.'],
+    [5, 'Bytecode', 'Python made no steps from your program: it stopped at a syntax error at zoom level 3, Tokens, before it got this far.'],
+    [6, 'The interpreter', 'The interpreter never ran your program'],
+    [7, 'CPU instructions', 'None of the interpreter’s handlers ran'],
+  ] as const) {
+    await page.keyboard.press('ArrowDown');
+    await expect(zoomLevel(page, level, title)).toContainText(says);
+  }
+  await expect(zoomLevel(page, 7, 'CPU instructions').getByRole('button', { name: 'How we know: Observed' })).toBeVisible();
+});
+
 test('an Example’s Try it yourself says Python ran the command when the site was built', async ({ page }) => {
   await pythonNeverLoads(page);
   await page.goto('/zoom/7');

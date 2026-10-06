@@ -17,6 +17,7 @@ export const EXAMPLES: Example[] = [
   { id: 'greet', label: 'function', source: '../prototype/examples/greet.py' },
   { id: 'comprehension', label: 'list comprehension', source: 'examples/comprehension.py' },
   { id: 'class', label: 'class', source: 'examples/class.py' },
+  { id: 'syntax', label: 'syntax error', source: 'examples/syntax.py' },
 ];
 
 /** Where the site serves an Example's Analysis, below its base URL. */

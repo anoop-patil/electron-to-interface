@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { beforeAll, expect, test } from 'vitest';
 import { startPython } from '../engine/python';
 import { exampleOf } from '../explain/reference';
+import { stoppedAt } from '../explain/stopped';
 import type { Analysis } from '../generated/analysis';
 import { analyzeExamples } from './build';
 import { EXAMPLES } from './examples';
@@ -21,11 +22,25 @@ test('each Example’s Analysis is made by Python 3.14.2, for its own Program, a
   }
 });
 
-test('each Example runs to the end and prints, so every zoom level has something to show', () => {
-  for (const analysis of analyses) {
+test('each Example but the syntax error runs to the end and prints, so every zoom level has something to show', () => {
+  for (const analysis of analyses.filter(({ example }) => example !== 'syntax')) {
     expect(analysis, analysis.example).toMatchObject({ error: null, stderr: '', runsCutShort: false, eventsCutShort: false, writesCutShort: false });
     expect(analysis.stdout, analysis.example).not.toBe('');
   }
+});
+
+test('the syntax-error Example stops at its tokens, at the quote mark that starts the text it never closes', () => {
+  const analysis = analyses.find(({ example }) => example === 'syntax')!;
+
+  expect(analysis.error).toEqual({
+    type: 'SyntaxError',
+    message: 'unterminated string literal (detected at line 3)',
+    line: 3,
+    start: { line: 3, column: 10 },
+  });
+  expect(stoppedAt(analysis)).toBe(3);
+  expect(analysis.tokens.at(-1)?.text).toBe('(');
+  expect(analysis).toMatchObject({ stdout: '', runs: [], events: [], runsCutShort: false, eventsCutShort: false, writesCutShort: false });
 });
 
 test('hello world and greet.py match the step runs the Reference Library recorded, so levels 6 and 7 show them', () => {

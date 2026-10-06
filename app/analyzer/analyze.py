@@ -411,7 +411,7 @@ def _record_run(file_name, folder):
         "stderr": stderr.getvalue(),
         "writes": writes.pieces,
         "writesCutShort": writes.cut_short,
-        "error": _error_fact(error, path),
+        "error": _error_fact(error, path, source),
         "events": recorder.events,
         "runs": recorder.runs,
         **(recorder.replay.facts(recorder.runs) if recorder.replay else {"frames": [], "objects": []}),
@@ -420,20 +420,57 @@ def _record_run(file_name, folder):
     }
 
 
-def _error_fact(error, path):
-    """The error that stopped the Program: its kind, its message, and the line of the Program it happened on."""
+def _error_fact(error, path, source):
+    """
+    The error that stopped the Program: its kind, its message, and the line of the Program it happened on. For a
+    syntax error in the Program itself, also the code Python points at.
+    """
     if error is None:
         return None
-    if isinstance(error, SyntaxError):
-        fact, line = {"type": type(error).__name__, "message": error.msg}, error.lineno
+    if type(error) in _SYNTAX_ERRORS:
+        # Python's own syntax errors, so reading their fields runs none of the Program's code.
+        fact = {"type": type(error).__name__, "message": error.msg if isinstance(error.msg, str) else ""}
+        if error.filename == path:
+            return {**fact, "line": error.lineno, **_syntax_error_place(error, source)} if error.lineno else fact
     else:
-        fact, line = {"type": _class_name(type(error)), "message": _safe_message(error)}, None
-        tb = error.__traceback__
-        while tb:
-            if tb.tb_frame.f_code.co_filename == path:
-                line = tb.tb_lineno
-            tb = tb.tb_next
+        fact = {"type": _class_name(type(error)), "message": _safe_message(error)}
+    # The last line of the Program's own file the traceback passes through. For a syntax error in code the Program
+    # ran, such as eval("1 +"), that is the line that ran it.
+    line = None
+    tb = error.__traceback__
+    while tb:
+        if tb.tb_frame.f_code.co_filename == path:
+            line = tb.tb_lineno
+        tb = tb.tb_next
     return {**fact, "line": line} if line else fact
+
+
+_SYNTAX_ERRORS = (SyntaxError, IndentationError, TabError)
+
+
+def _syntax_error_place(error, source):
+    """
+    The code a syntax error points at, as tokenize counts positions: its start, and its end, if Python names one after
+    the start. A place past the end of a line, or of the Program, moves back to the line's newline.
+    """
+    if not error.offset:
+        return {}
+    # Python counts columns in the characters it decoded, in the encoding a coding comment can name.
+    try:
+        encoding = tokenize.detect_encoding(io.BytesIO(source).readline)[0]
+    except SyntaxError:
+        encoding = "utf-8"
+    lines = source.decode(encoding, errors="replace").split("\n")[:-1]
+
+    def place(line, offset, past_newline):
+        line = min(line, len(lines))
+        return {"line": line, "column": max(0, min(offset - 1, len(lines[line - 1]) + past_newline))}
+
+    start = place(error.lineno, error.offset, 0)
+    if not error.end_lineno or not error.end_offset or error.end_offset < 1:
+        return {"start": start}
+    end = place(error.end_lineno, error.end_offset, 1)
+    return {"start": start, "end": end} if (end["line"], end["column"]) > (start["line"], start["column"]) else {"start": start}
 
 
 def _code_objects(code):

@@ -168,5 +168,5 @@ test('a Program with a syntax error has no steps, and says so', async ({ page })
   await page.goto('/zoom/5');
   await run(page, 'print("Hi"');
 
-  await expect(bytecode(page)).toContainText('Python made no steps from your program, because it has a syntax error.');
+  await expect(bytecode(page)).toContainText('Python made no steps from your program: it stopped at a syntax error at zoom level 3, Tokens, before it got this far.');
 });

@@ -176,6 +176,24 @@ test('level 3 explains no lines when tokenize’s output doesn’t match the Pro
   expect(tryIt.read).toEqual([]);
 });
 
+test('for a Program with a syntax error, level 1 explains Python’s report, and each command that stopped at it says so', () => {
+  const program = 'print("Hi)\n';
+  const report = '  File "/home/pyodide/program.py", line 1\n    print("Hi)\n          ^\nSyntaxError: unterminated string literal (detected at line 1)\n';
+  const stopped = { output: report, exitStatus: 1 };
+  const commands = tryItCommands('program.py').map((command) => ({ command, ...(command === BYTES ? { output: '[112]\n', exitStatus: 0 } : stopped) }));
+  const analysis = programAnalysis(program, commands, { error: { type: 'SyntaxError', message: 'unterminated string literal (detected at line 1)', line: 1, start: { line: 1, column: 6 } } });
+
+  expect(plain(explainTryIt(1, analysis)!.read[0])).toBe(
+    'Python found a syntax error, so it ran none of your program. The last line names the error and says what went wrong; the lines above it say where. The path is where Python saved program.py, among its in-memory files. On your computer, you’ll see your own folder.',
+  );
+  expect(explainTryIt(2, analysis)!.read.map(plain)).not.toContain('This command couldn’t read your program either, because of its syntax error, so it printed an error message instead.');
+  for (const level of [3, 4, 5, 6, 7]) {
+    expect(plain(explainTryIt(level, analysis)!.read[0]), `level ${level}`).toBe('This command couldn’t read your program either, because of its syntax error, so it printed an error message instead.');
+  }
+  // Level 7's notes on the time it measured don't apply: it measured none.
+  expect(explainTryIt(7, analysis)!.read.map(plain).join(' ')).not.toContain('counted');
+});
+
 test('when tokenize stops with an error, level 3 shows what it printed and explains no lines', () => {
   const error = 'program.py:1:0: error: unexpected EOF in multi-line statement\n';
   const tryIt = explainTryIt(3, analysisOf('print("Hi"\n', { [TOKENIZE]: { output: error, exitStatus: 1 } }))!;

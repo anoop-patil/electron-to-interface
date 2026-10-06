@@ -2,6 +2,7 @@ import type { Analysis, OutputSlot } from '../generated/analysis';
 import { selectionAt } from '../zoom/selection';
 import { counted, fillString, joined, template, type Explanation, type Span, type TemplateId } from './explain';
 import { lineById, outputLines, STAGES, stageId, stageOf, streamOf, systemCalls, type OutputLine } from './output';
+import { syntaxErrorOf } from './stopped';
 
 /** Level 8's four zones, left to right: the Program, the system call, the operating system and the terminal app. */
 export type Zone = 0 | 1 | 2 | 3;
@@ -126,6 +127,7 @@ function stageTemplates(analysis: Analysis, line: OutputLine, stage: number): Te
   switch (stage) {
     case 1:
       if (!line.report) return [line.door === 1 ? 'level8.pieces' : 'level8.piecesError'];
+      if (syntaxErrorOf(analysis)) return ['level8.piecesSyntaxError'];
       return [analysis.error ? 'level8.piecesTraceback' : 'level8.piecesExit'];
     case 2:
       return [bufferTemplate(analysis, line), ...(line.colorBytes > 0 ? ['level8.bufferColor' as const] : []), ...(path ? ['level8.bufferPath' as const] : [])];
@@ -188,7 +190,8 @@ export function level8(analysis: Analysis, selection: string | null): Level8 | n
   const stage = stageOf(id);
   const zone = ZONES[stage - 1];
   const derived = line.report && analysis.error !== null;
-  const piecesNote = derived ? 'level8.observedReport' : analysis.example ? 'level8.built' : 'level8.observed';
+  let piecesNote: TemplateId = analysis.example ? 'level8.built' : 'level8.observed';
+  if (derived) piecesNote = syntaxErrorOf(analysis) ? 'level8.observedSyntaxError' : 'level8.observedReport';
   return { lines: outputLines(analysis), line, stage, stages, zone, packet: packetOf(line, zone), derived, piecesNote };
 }
 
@@ -237,7 +240,9 @@ export function straceRows(analysis: Analysis, exitStatus: number) {
   const calls = systemCalls(analysis);
   const [first] = calls;
   const program = (id: TemplateId) => fillString(template(id, 'program').text, {});
-  const exit = { printed: `+++ exited with ${exitStatus} +++`, text: program(exitStatus === 0 ? 'tryIt.straceRow.exit' : 'tryIt.straceRow.exitError') };
+  let exitId: TemplateId = exitStatus === 0 ? 'tryIt.straceRow.exit' : 'tryIt.straceRow.exitError';
+  if (exitStatus !== 0 && syntaxErrorOf(analysis)) exitId = 'tryIt.straceRow.exitSyntaxError';
+  const exit = { printed: `+++ exited with ${exitStatus} +++`, text: program(exitId) };
   if (!first) return [exit];
   const doors = [...new Set(calls.map((call) => call.door))].sort();
   const counts = calls.slice(0, 3).map((call) => String(call.bytes));

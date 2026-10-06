@@ -182,7 +182,7 @@ Phase 1 ships zoom levels 1–5 fully Observed, levels 6–9 as hand-written exp
 
 - 5-second execution timeout, enforced by terminating and recreating the worker.
 - `input()` returns an empty string, with a visible note.
-- Syntax errors: show levels 1–3 as far as they get, then explain the error in plain English.
+- Syntax errors: show levels 1–3 as far as they get, then explain the error in plain English, at level 1 and at the zoom level where Python stopped, marking the place Python points at in the code and the editor. Later levels say why they have nothing to show.
 - Limits: 20 lines and the standard library only; any Python feature is allowed (see The learner's program).
 
 ## Phase 2: Templates written with AI at build time

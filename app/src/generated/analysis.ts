@@ -75,13 +75,43 @@ export type VariableChange =
  */
 export type CodeIndex1 = number;
 /**
- * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); output, one line of the Program's output, at zoom level 8 (OutputSlot); character, one character of a line of output, at zoom level 9 (CharacterSlot); or pixels, what the browser drew for that character and reports about the learner's screen (PixelsSlot).
+ * What a Template explains, which decides its slots: program, the whole Program (ProgramSlot); byte, one ByteFact (ByteSlot); line, one line of the Program (LineSlot); token, one TokenFact (TokenSlot); node, one AstFact (NodeSlot); step, one Step and, where one is selected, one of its step runs (StepSlot); handler, one handler that ran for a step run, at zoom level 7 (HandlerSlot, and the step run's StepSlot); output, one line of the Program's output, at zoom level 8 (OutputSlot); character, one character of a line of output, at zoom level 9 (CharacterSlot); or pixels, what the browser drew for that character and reports about the learner's screen (PixelsSlot); or syntaxError, the syntax error that stopped the Program before it ran (SyntaxErrorSlot).
  *
  * This interface was referenced by `Analysis`'s JSON-Schema
  * via the `definition` "Subject".
  */
 export type Subject =
-  "program" | "byte" | "line" | "token" | "node" | "step" | "handler" | "output" | "character" | "pixels";
+  | "program"
+  | "byte"
+  | "line"
+  | "token"
+  | "node"
+  | "step"
+  | "handler"
+  | "output"
+  | "character"
+  | "pixels"
+  | "syntaxError";
+/**
+ * A Fact about the syntax error that stopped the Program before it ran, that a Template can name. A slot that doesn't apply is empty.
+ *
+ * This interface was referenced by `Analysis`'s JSON-Schema
+ * via the `definition` "SyntaxErrorSlot".
+ */
+export type SyntaxErrorSlot =
+  | "kind"
+  | "message"
+  | "line"
+  | "code"
+  | "at"
+  | "bracket"
+  | "opener"
+  | "closer"
+  | "character"
+  | "codePoint"
+  | "block"
+  | "blockLine"
+  | "stoppedAt";
 /**
  * A Fact about one line of the Program's output, and how it reaches the terminal, that a Template can name. A slot that doesn't apply is empty.
  *
@@ -223,7 +253,8 @@ export type ProgramSlot =
   | "steps"
   | "ran"
   | "sample"
-  | "platform";
+  | "platform"
+  | "stoppedAt";
 /**
  * A Fact about one token that a Template can name.
  *
@@ -614,6 +645,22 @@ export interface ProgramError {
    * The line of the Program where it happened, counted from 1, if Python names one.
    */
   line?: number;
+  start?: Position1;
+  end?: Position2;
+}
+/**
+ * A place in the Program, as tokenize gives it: the line, counted from 1, and the column, counted in characters from 0. A token's end is the first column after it.
+ */
+export interface Position1 {
+  line: number;
+  column: number;
+}
+/**
+ * A place in the Program, as tokenize gives it: the line, counted from 1, and the column, counted in characters from 0. A token's end is the first column after it.
+ */
+export interface Position2 {
+  line: number;
+  column: number;
 }
 /**
  * One step recorded while the Program ran, in the Program's own code: a call, a line, a return or an exception.
@@ -1392,6 +1439,10 @@ export interface HonestyLabels {
      * Zoom levels 6 and 7 for a step run the Reference Library has nothing for: a hand-written explanation of what the interpreter, or the CPU, does.
      */
     noReference: string;
+    /**
+     * Zoom levels 6 and 7 for a Program with a syntax error: why they have nothing to show, which Python reported.
+     */
+    syntaxError: string;
     /**
      * Zoom level 7's panel on the CPU's registers, worked out by reading the machine code.
      */

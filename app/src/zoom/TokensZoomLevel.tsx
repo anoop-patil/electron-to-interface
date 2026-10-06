@@ -1,6 +1,8 @@
 import { explainProgram, indentOf } from '../explain/explain';
 import { ExplanationText } from '../explain/ExplanationText';
+import { stoppedAt } from '../explain/stopped';
 import type { Analysis, TokenFact } from '../generated/analysis';
+import { SyntaxErrorPanel } from './SyntaxErrorPanel';
 
 const CHIP_CLASSES =
   'flex min-h-[52px] cursor-pointer flex-col items-start justify-center gap-px whitespace-pre rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-mono text-[17px] leading-[normal] text-ink';
@@ -61,7 +63,7 @@ function rowsOf(tokens: TokenFact[]): Row[] {
   return rows;
 }
 
-/** Zoom level 3: the Program's tokens, as chips, one row for each line. */
+/** Zoom level 3: the Program's tokens, as chips, one row for each line, and the syntax error, if Python stopped at it here. */
 export function TokensZoomLevel({
   analysis,
   selectedToken,
@@ -110,6 +112,7 @@ export function TokensZoomLevel({
           <ExplanationText spans={explainProgram('level3.encoding', analysis).text} />
         </p>
       )}
+      {stoppedAt(analysis) === 3 && <SyntaxErrorPanel analysis={analysis} showLine />}
     </>
   );
 }

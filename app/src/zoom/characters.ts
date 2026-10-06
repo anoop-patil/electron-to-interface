@@ -38,12 +38,25 @@ export interface CharSpan {
   end: number;
 }
 
-/** A line's characters either side of a marked run, and those in it. With nothing marked, all of them come before. */
-export function splitLine(line: Line, marked: CharSpan | null) {
-  const { start, end } = marked ?? { start: Infinity, end: Infinity };
-  return {
-    before: line.chars.filter(({ index }) => index < start),
-    marked: line.chars.filter(({ index }) => index >= start && index < end),
-    after: line.chars.filter(({ index }) => index >= end),
-  };
+/** What a stretch of code is marked as: the code the Selection comes from, or the code a syntax error points at. */
+export type Mark = 'selected' | 'error';
+
+/** A stretch of a line's characters, all marked the same way, or not marked (null). */
+export interface Stretch {
+  mark: Mark | null;
+  chars: Line['chars'];
+}
+
+/** A line's characters, in stretches. A character both selected and pointed at by a syntax error shows as selected. */
+export function stretchesOf(line: Line, marks: Record<Mark, CharSpan | null>): Stretch[] {
+  const holds = (span: CharSpan | null, index: number) => span !== null && index >= span.start && index < span.end;
+  const markOf = (index: number): Mark | null => (holds(marks.selected, index) ? 'selected' : holds(marks.error, index) ? 'error' : null);
+  const stretches: Stretch[] = [];
+  for (const char of line.chars) {
+    const mark = markOf(char.index);
+    const last = stretches.at(-1);
+    if (last && last.mark === mark) last.chars.push(char);
+    else stretches.push({ mark, chars: [char] });
+  }
+  return stretches;
 }
