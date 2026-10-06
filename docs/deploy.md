@@ -1,12 +1,12 @@
 # Deploying the site
 
-The site is static files on Cloudflare Pages, at `electrontointerface.com`, with no backend (ADR 0002). The domain is registered with Cloudflare Registrar, a fixed yearly price (ADR 0001).
+The site is static files on Cloudflare Pages, live at `https://electrontointerface.com`, with no backend (ADR 0002). The domain is registered with Cloudflare Registrar, a fixed yearly price (ADR 0001).
 
 ## How a deploy happens
 
 - Every push to `main` runs the `deploy` job in `.github/workflows/ci.yml`, after the typecheck, Vitest, Playwright and pytest jobs pass.
 - The job runs `npm run build` and uploads `app/dist` to the Pages project `electrontointerface` with Wrangler. The first deploy creates the project.
-- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, and that Pyodide's files are cached for a year.
+- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, that Pyodide's files are cached for a year, and that Web Analytics counts each zoom level's path but never sends what follows `#`, where a Share link carries the learner's code.
 - The job needs two GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, a token allowed only to edit Cloudflare Pages, and `CLOUDFLARE_ACCOUNT_ID`.
 
 To run the smoke test by hand, from `app/`:
@@ -23,13 +23,15 @@ LIVE_URL=https://electrontointerface.com npx playwright test --config playwright
 
 ## Analytics
 
-Cloudflare Web Analytics is turned on in the Pages project (Metrics, then Web Analytics), and Pages adds its script to each deploy. It sets no cookies and counts page paths, so each zoom level, `/zoom/1` to `/zoom/9`, counts as its own page view, which measures zoom depth (ADR 0002). On our own domain the script loads from `static.cloudflareinsights.com` and reports to `/cdn-cgi/rum` on our site, which the Content Security Policy (ticket 23) must allow.
+Cloudflare Web Analytics is turned on in the Pages project (Metrics, then Web Analytics), and Pages adds its script to each deploy. It sets no cookies. Each zoom level, `/zoom/1` to `/zoom/9`, counts as its own page view, which measures zoom depth (ADR 0002). It sends the path without the fragment, so a Share link's code stays in the browser (ADR 0004); the smoke test checks this on every deploy, since the script is Cloudflare's and can change. The script loads from `https://static.cloudflareinsights.com/beacon.min.js` and reports to `https://cloudflareinsights.com/cdn-cgi/rum`, which the Content Security Policy (ticket 23) must allow.
 
 ## Launch checklist
+
+All done on 2026-10-06.
 
 1. Buy `electrontointerface.com` with Cloudflare Registrar, with auto-renew and the transfer lock on.
 2. Create the API token and add both secrets to GitHub.
 3. Push to `main`, and check that the `deploy` job passes. The site is then at `electrontointerface.pages.dev`.
-4. In the Pages project, add `electrontointerface.com` as a custom domain, and `www.electrontointerface.com` redirecting to it.
+4. In the Pages project, add `electrontointerface.com` as a custom domain. For `www`, add a proxied `A` record, `www` to `192.0.2.1`, and a Redirect Rule sending `https://www.electrontointerface.com/*` to `https://electrontointerface.com/${1}` with a 301, keeping the query string.
 5. Turn on Web Analytics in the Pages project, then deploy again (rerun the job), since Pages adds the script on the next deploy.
-6. Run the smoke test against `https://electrontointerface.com`. Open `/zoom/7` in a browser and check, after a few minutes, that the visit shows in Web Analytics under its path.
+6. Run the smoke test against `https://electrontointerface.com`.

@@ -11,4 +11,4 @@
 
 ## Comments
 
-- Ticket 22: Pages adds Cloudflare Web Analytics' script to each deploy. The policy must let the page load `https://static.cloudflareinsights.com/beacon.min.js`; on our own domain the script reports to `/cdn-cgi/rum` on our site, which `'self'` covers (`docs/deploy.md`).
+- Ticket 22: Pages adds Cloudflare Web Analytics' script to each deploy. The policy must let the page load `https://static.cloudflareinsights.com/beacon.min.js` and connect to `https://cloudflareinsights.com`, where it reports (`/cdn-cgi/rum`), as observed on the live site. The live smoke test fails if the beacon stops reporting, so it will catch a policy that blocks it.

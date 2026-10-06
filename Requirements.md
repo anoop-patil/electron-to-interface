@@ -279,7 +279,7 @@ Each milestone ships on its own; the next one starts only when every box above i
 **M1: Real Facts in the browser**
 
 - [x] A learner types a multi-line program and clicks Run; the worker returns its bytes, tokens, AST, bytecode, Events and stdout, rendered raw.
-- [ ] Python 3.14.2 is displayed; Pyodide is served from our own domain.
+- [x] Python 3.14.2 is displayed; Pyodide is served from our own domain.
 - [ ] The Analysis validates against the JSON Schema.
 
 **M2: Phase 1 complete**
@@ -294,7 +294,7 @@ Each milestone ships on its own; the next one starts only when every box above i
 - [x] Share links round-trip a 20-line program and require a Run click.
 - [ ] The CSP blocks connections to other domains from the page and the worker; `import js` fails in user code.
 - [ ] The error-report scrubbing test passes.
-- [ ] Deploys to Cloudflare Pages with no backend.
+- [x] Deploys to Cloudflare Pages with no backend.
 
 **M3: Templates (Phase 2)**
 
