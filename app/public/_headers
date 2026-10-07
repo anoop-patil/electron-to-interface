@@ -1,6 +1,22 @@
-# Cloudflare Pages reads this file. Each path below changes whenever its contents do (Vite puts a hash in assets/
-# names, and Pyodide's files sit under their version), so browsers may keep them for a year. Everything else gets
-# Pages' default, which makes the browser check for a newer copy on every visit.
+# Cloudflare Pages reads this file, and `vite preview` serves the same headers (src/pagesHeaders.ts). Where several
+# rules match a path, Pages joins their values for the same header with a comma.
+
+# The Content Security Policy. The page loads and connects only to our own site, except for Cloudflare Web Analytics,
+# whose script Pages adds to each deploy: it loads from static.cloudflareinsights.com and reports to
+# cloudflareinsights.com. 'wasm-unsafe-eval' lets the worker start Pyodide's WebAssembly; nothing may run eval.
+# Styles may be inline because the editor, CodeMirror, adds its own in a <style> element; a style still can't load
+# anything from another site, since images and fonts come only from ours.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'
+
+# The Web Worker that runs the learner's code gets a second policy on top, so it can connect only to our own site,
+# not even to Web Analytics. A browser enforces both policies, so only what both allow.
+/assets/worker/*
+  Content-Security-Policy: script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'
+
+# Each path below changes whenever its contents do (Vite puts a hash in assets/ names, and Pyodide's files sit under
+# their version), so browsers may keep them for a year. Everything else gets Pages' default, which makes the browser
+# check for a newer copy on every visit.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 

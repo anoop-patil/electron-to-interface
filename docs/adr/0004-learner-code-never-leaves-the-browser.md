@@ -7,4 +7,4 @@ We promise learners that their code never leaves their browser, and we treat tha
 - Error monitoring (Sentry's free tier) sends only our own JavaScript stack traces: no editor contents, no Python values, no breadcrumbs that could include either. An automated test puts a marker string in the editor, triggers an error and fails if the marker appears in the outgoing report.
 - Analytics (Cloudflare Web Analytics) sees only page paths such as `/zoom/7`, never code.
 - A "Report a problem" button opens a prefilled GitHub issue, and the learner decides what to include.
-- Pyodide is served from our own domain, not a third-party CDN, and the Content Security Policy allows connections only to our own domain.
+- Pyodide is served from our own domain, not a third-party CDN, and the Content Security Policy allows connections only to our own domain. The page may also reach Cloudflare Web Analytics; the worker that runs the learner's code may not.

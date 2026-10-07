@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { anyZoomLevel, run, zoomLevel } from './helpers';
 
 /** The test program set, which src/zoom/unusualPrograms.test.ts also zooms through for every element. */

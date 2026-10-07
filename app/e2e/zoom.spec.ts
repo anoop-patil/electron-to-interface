@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 import { gauge, run, zoomLevel } from './helpers';
 
 const currentTick = (page: Page) => gauge(page).locator('[aria-current="step"]');

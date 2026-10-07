@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 import { editor, editorCode } from './helpers';
 
 const runButton = (page: Page) => page.getByRole('button', { name: 'Run', exact: true });

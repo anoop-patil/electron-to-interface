@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './test';
 import { run, zoomLevel } from './helpers';
 
 const tokens = (page: Page) => zoomLevel(page, 3, 'Tokens');

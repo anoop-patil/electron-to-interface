@@ -1,4 +1,4 @@
-import { expect, test, type FrameLocator, type Page } from '@playwright/test';
+import { expect, test, type FrameLocator, type Page } from './test';
 import { gauge, run } from './helpers';
 
 const map = (page: Page | FrameLocator) => page.getByRole('region', { name: 'Your computer' });

@@ -6,7 +6,7 @@ The site is static files on Cloudflare Pages, live at `https://electrontointerfa
 
 - Every push to `main` runs the `deploy` job in `.github/workflows/ci.yml`, after the typecheck, Vitest, Playwright and pytest jobs pass.
 - The job runs `npm run build` and uploads `app/dist` to the Pages project `electrontointerface` with Wrangler. The first deploy creates the project.
-- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, that Pyodide's files are cached for a year, that the link-preview image is served, and that Web Analytics counts each zoom level's path but never sends what follows `#`, where a Share link carries the learner's code.
+- It then waits, up to 5 minutes, until that deploy's own URL answers over HTTPS, and runs the smoke test, `app/e2e/live/smoke.spec.ts`, against it. It checks that `/zoom/7` loads the app, that hello world runs on Python 3.14.2 served from the same site, that Pyodide's files are cached for a year, that the link-preview image is served, that Web Analytics counts each zoom level's path but never sends what follows `#`, where a Share link carries the learner's code, and that the page and the worker can't fetch from other sites (`app/e2e/live/lockdown.spec.ts`). Any smoke test fails if the page breaks its Content Security Policy.
 - The job needs two GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, a token allowed only to edit Cloudflare Pages, and `CLOUDFLARE_ACCOUNT_ID`.
 
 To run the smoke test by hand, from `app/`:
@@ -21,9 +21,13 @@ LIVE_URL=https://electrontointerface.com npx playwright test --config playwright
 - **Caching:** `app/public/_headers` lets browsers keep `assets/` and `pyodide/` for a year. Vite puts a hash in each `assets/` file name, and Pyodide's files sit under their version, `pyodide/314.0.7/`, so a changed file always has a new path. Everything else, `index.html` and the Example Analyses included, is checked for a newer copy on every visit.
 - **Limits:** Pages takes files up to 25 MiB and 20,000 files per site on the free plan. The largest file, `pyodide.asm.wasm`, is 9.6 MB, and the build has about 20 files.
 
+## Content Security Policy
+
+`app/public/_headers` gives every page a Content Security Policy. The page may load and connect only to our own site, plus Web Analytics' script and reports. The Web Worker that runs the learner's code, under `assets/worker/`, gets a second policy on top that allows connections only to our own site. Pages joins the two with a comma, and the browser enforces both. If Cloudflare starts adding another script, or the beacon moves, the smoke test fails, and the policy needs the new address.
+
 ## Analytics
 
-Cloudflare Web Analytics is turned on in the Pages project (Metrics, then Web Analytics), and Pages adds its script to each deploy. It sets no cookies. Each zoom level, `/zoom/1` to `/zoom/9`, counts as its own page view, which measures zoom depth (ADR 0002). It sends the path without the fragment, so a Share link's code stays in the browser (ADR 0004); the smoke test checks this on every deploy, since the script is Cloudflare's and can change. The script loads from `https://static.cloudflareinsights.com/beacon.min.js` and reports to `https://cloudflareinsights.com/cdn-cgi/rum`, which the Content Security Policy (ticket 23) must allow.
+Cloudflare Web Analytics is turned on in the Pages project (Metrics, then Web Analytics), and Pages adds its script to each deploy. It sets no cookies. Each zoom level, `/zoom/1` to `/zoom/9`, counts as its own page view, which measures zoom depth (ADR 0002). It sends the path without the fragment, so a Share link's code stays in the browser (ADR 0004); the smoke test checks this on every deploy, since the script is Cloudflare's and can change. The script loads from `https://static.cloudflareinsights.com/beacon.min.js` and reports to `https://cloudflareinsights.com/cdn-cgi/rum`, which the Content Security Policy allows.
 
 ## Link previews
 

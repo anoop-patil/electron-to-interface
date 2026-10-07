@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 import { run } from './helpers';
 
 const terminal = (page: Page) => page.getByRole('region', { name: 'Terminal' });

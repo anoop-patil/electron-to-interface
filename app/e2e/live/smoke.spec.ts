@@ -1,4 +1,4 @@
-import { expect, test, type Response } from '@playwright/test';
+import { expect, test, type Response } from '../test';
 import { run, zoomLevel } from '../helpers';
 
 // Runs against the deployed site (playwright.live.config.ts), after each deploy and by hand at launch.

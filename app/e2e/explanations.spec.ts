@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { run, zoomLevel } from './helpers';
 
 test('zoom levels 1 and 2 explain the Program that was run, filled in from its Facts', async ({ page }) => {

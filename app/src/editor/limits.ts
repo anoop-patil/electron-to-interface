@@ -39,12 +39,14 @@ export function lineLimitNote(code: string) {
 }
 
 /**
- * What the editor says after a Run that stopped at an import of a package outside Python's standard library, the only
- * one there is here; null after any other Run.
+ * What the editor says after a Run that stopped at an import of a module that is blocked here, or of a package outside
+ * Python's standard library, the only one there is here; null after any other Run.
  */
 export function importNote({ error }: Analysis) {
   if (!error?.module || error.standardLibrary !== false) return null;
   const where = error.line ? ` on line ${error.line}` : '';
+  if (error.blocked)
+    return `Your program stopped${where} because it imports ${error.module}, which is blocked here. It would let Python use your browser, so no program here can import it, not even one from a Share link.`;
   return `Your program stopped${where} because it imports ${error.module}, which isn’t part of Python’s standard library. Only the standard library is available here: it comes with the Python running in your browser, and nothing else can be installed.`;
 }
 

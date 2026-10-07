@@ -659,6 +659,10 @@ export interface ProgramError {
    * Whether that module's top-level name is in Python's standard library (sys.stdlib_module_names).
    */
   standardLibrary?: boolean;
+  /**
+   * Present when that module is one the analyzer blocks while code runs (js, pyodide, pyodide_js and micropip), so a Program can't use the learner's browser.
+   */
+  blocked?: true;
 }
 /**
  * A place in the Program, as tokenize gives it: the line, counted from 1, and the column, counted in characters from 0. A token's end is the first column after it.

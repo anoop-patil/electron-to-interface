@@ -146,7 +146,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
   // The code has changed since the Analysis on show was made, so the zoom view is out of date until the next Run.
   const outOfDate = shown !== null && code !== shown.code;
   const tooLong = lineLimitNote(code);
-  const notStandardLibrary = analysis && importNote(analysis);
+  const stoppedAtImport = analysis && importNote(analysis);
   const readInput = analysis && inputNote(analysis);
   const linkWaiting = fromLink?.kind === 'program';
   const unreadLink = fromLink && fromLink.kind !== 'program' ? unreadLinkNote(fromLink) : null;
@@ -337,7 +337,7 @@ export function App({ engine, cantRun = null }: { engine: Engine | null; cantRun
                   </div>
                 )}
                 {stopped && <p className="text-[14px] text-warn" role="status">{stopNote(stopped)}</p>}
-                {notStandardLibrary && <p className="text-[14px] text-warn" role="status">{notStandardLibrary}</p>}
+                {stoppedAtImport && <p className="text-[14px] text-warn" role="status">{stoppedAtImport}</p>}
                 {readInput && <p className="text-[14px] text-ink2" role="status">{readInput}</p>}
                 {error && <p className="whitespace-pre-wrap font-mono text-[13px] text-warn" role="alert">{error}</p>}
                 <p className="flex flex-wrap gap-x-3 gap-y-1.5 text-[12px] text-ink3 narrow:hidden">

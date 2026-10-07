@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 import { anyZoomLevel, gauge, run, zoomLevel } from './helpers';
 
 test('desktop: the editor is on the left and the zoom view on the right', async ({ page }) => {

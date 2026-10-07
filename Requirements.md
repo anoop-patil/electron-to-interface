@@ -247,7 +247,7 @@ For scale: live Haiku 4.5 explanations at 3M requests/month would cost about $2,
 
 With no runtime backend there's no server to attack and no metered endpoint to abuse. The remaining risk is code running in the learner's own browser, especially code arriving through a Share link.
 
-- **Content Security Policy** on the page and the worker: connections only to our own domain. Python cannot use the learner's browser to reach other sites.
+- **Content Security Policy** on the page and the worker: connections only to our own domain, plus Cloudflare Web Analytics from the page. Python cannot use the learner's browser to reach other sites.
 - **Blocked modules** in the Python that runs user code: `js`, `pyodide`, `micropip`.
 - **Share links require a Run click** before any code runs.
 - **5-second timeout**, enforced by killing the worker.
@@ -293,7 +293,7 @@ Each milestone ships on its own; the next one starts only when every box above i
 - [ ] Clicking any element highlights related Facts across zoom levels.
 - [x] Each zoom level has its own URL path.
 - [x] Share links round-trip a 20-line program and require a Run click.
-- [ ] The CSP blocks connections to other domains from the page and the worker; `import js` fails in user code.
+- [x] The CSP blocks connections to other domains from the page and the worker; `import js` fails in user code.
 - [ ] The error-report scrubbing test passes.
 - [x] Deploys to Cloudflare Pages with no backend.
 

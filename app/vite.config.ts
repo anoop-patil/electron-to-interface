@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { cp, mkdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -7,6 +9,7 @@ import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { checkedContent } from './src/explain/checkContent';
 import { exampleAnalyses } from './src/examples/build';
+import { readPagesHeaders } from './src/pagesHeaders';
 
 const PYODIDE_FILES = ['pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json'];
 
@@ -46,9 +49,31 @@ function cpythonLicense(): Plugin {
   };
 }
 
+/**
+ * Serves `vite preview` with the headers in the build's _headers, as Cloudflare Pages serves the site, so the
+ * Playwright tests run under the Content Security Policy learners get. The dev server goes without: Vite's hot reload
+ * needs an inline script.
+ */
+function pagesHeaders(): Plugin {
+  return {
+    name: 'pages-headers',
+    configurePreviewServer(server) {
+      const headersFor = readPagesHeaders(readFileSync(join(server.config.root, server.config.build.outDir, '_headers'), 'utf-8'));
+      server.middlewares.use((request, response, next) => {
+        for (const [name, value] of headersFor(new URL(request.url ?? '/', 'http://localhost').pathname)) response.setHeader(name, value);
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), selfHostedPyodide(), cpythonLicense(), checkedContent(), exampleAnalyses()],
+  plugins: [react(), tailwindcss(), selfHostedPyodide(), cpythonLicense(), checkedContent(), exampleAnalyses(), pagesHeaders()],
   optimizeDeps: { exclude: ['pyodide'] },
-  worker: { format: 'es' },
+  // The worker's files go in their own folder, which public/_headers gives a stricter Content Security Policy.
+  worker: {
+    format: 'es',
+    rolldownOptions: { output: { entryFileNames: 'assets/worker/[name]-[hash].js', chunkFileNames: 'assets/worker/[name]-[hash].js' } },
+  },
   test: { include: ['src/**/*.test.ts'] },
 });

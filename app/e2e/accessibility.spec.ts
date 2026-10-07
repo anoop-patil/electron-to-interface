@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 import { anyZoomLevel, gauge, run, zoomLevel } from './helpers';
 
 async function expectNoViolations(page: Page) {

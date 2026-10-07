@@ -128,6 +128,51 @@ def test_the_run_prints_what_the_try_it_yourself_command_prints():
     assert analysis["stdout"] + analysis["stderr"] == analysis["commands"][0]["output"]
 
 
+# Blocked modules
+
+def test_importing_js_stops_the_program_with_a_message_that_says_it_is_blocked(working_folder):
+    analysis = analyze('print("before")\nimport js')
+
+    path = str(working_folder / "program.py")
+    assert analysis["stdout"] == "before\n"
+    # The traceback reads like Python's own: it passes through the Program's file and nothing of the analyzer's.
+    assert analysis["stderr"] == (
+        "Traceback (most recent call last):\n"
+        f'  File "{path}", line 2, in <module>\n'
+        "    import js\n"
+        "ModuleNotFoundError: js is blocked here, so a program can't use your browser\n"
+    )
+    assert analysis["error"] == {
+        "type": "ModuleNotFoundError", "message": "js is blocked here, so a program can't use your browser", "line": 2,
+        "module": "js", "standardLibrary": False, "blocked": True,
+    }
+
+
+def test_js_pyodide_pyodide_js_and_micropip_are_blocked_however_they_are_imported():
+    for program in ["from js import fetch", "import pyodide.ffi", "import pyodide_js", "import micropip", '__import__("js")',
+                    'import importlib\nimportlib.import_module("pyodide")', "def f():\n    import js\nf()", 'exec("import js", {})']:
+        error = analyze(program)["error"]
+        assert error["type"] == "ModuleNotFoundError", program
+        assert error["blocked"] is True, program
+
+
+def test_try_it_yourself_commands_are_blocked_too():
+    analysis = analyze("import js", commands=["python program.py"])
+
+    assert analysis["commands"][0]["output"].endswith("ModuleNotFoundError: js is blocked here, so a program can't use your browser\n")
+
+
+def test_other_imports_work_and_are_not_marked_blocked():
+    import builtins
+    import importlib
+
+    original = builtins.__import__, importlib.import_module
+    assert analyze("import json\nfrom os import path\nimport importlib\nimportlib.import_module('math')")["error"] is None
+    assert "blocked" not in analyze("import no_such_package")["error"]
+    # The block lasts only while code runs.
+    assert (builtins.__import__, importlib.import_module) == original
+
+
 # Step runs: the order the steps ran in
 
 def test_for_greet_py_the_step_runs_match_the_capture_of_prototype_v8():

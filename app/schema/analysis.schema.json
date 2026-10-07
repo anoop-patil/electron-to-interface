@@ -148,7 +148,8 @@
         "start": { "description": "For a syntax error in the Program, where the code Python points at starts. A place past the end of a line, or of the Program, is moved back to the line's newline.", "$ref": "#/$defs/Position" },
         "end": { "description": "For a syntax error in the Program, the first column after the code Python points at, if Python names an end after its start.", "$ref": "#/$defs/Position" },
         "module": { "description": "For an import Python couldn't find (its own ModuleNotFoundError), the module it looked for, such as numpy.", "type": "string", "minLength": 1 },
-        "standardLibrary": { "description": "Whether that module's top-level name is in Python's standard library (sys.stdlib_module_names).", "type": "boolean" }
+        "standardLibrary": { "description": "Whether that module's top-level name is in Python's standard library (sys.stdlib_module_names).", "type": "boolean" },
+        "blocked": { "description": "Present when that module is one the analyzer blocks while code runs (js, pyodide, pyodide_js and micropip), so a Program can't use the learner's browser.", "const": true }
       }
     },
     "CodeIndex": {

@@ -269,3 +269,14 @@ test('the clock is told each time the Program or a command starts and stops runn
   const runs = 1 + tryItCommands('program.py').length;
   expect(ticks).toEqual(Array.from({ length: runs }, () => [true, false]).flat());
 });
+
+test('a Program can’t import the modules that would let it use the browser, but Pyodide’s own modules still work', () => {
+  for (const program of ['import js', 'from pyodide.ffi import to_js', 'import pyodide_js', 'import micropip', 'import importlib\nimportlib.import_module("js")']) {
+    expect(python.analyze(program).error, program).toMatchObject({ type: 'ModuleNotFoundError', blocked: true });
+  }
+  // asyncio runs on Pyodide's own event loop, whose run_until_complete imports pyodide_js. It then needs WebAssembly
+  // stack switching, which Node.js lacks, so here it stops with a RuntimeError.
+  const asyncio = python.analyze('import asyncio\nasync def f():\n    return 1\nloop = asyncio.new_event_loop()\nprint(loop.run_until_complete(f()))');
+  expect(asyncio.stderr).toContain('/pyodide/webloop.py');
+  expect(asyncio.stderr).not.toContain('blocked');
+});

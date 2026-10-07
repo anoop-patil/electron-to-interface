@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 import { run, zoomLevel } from './helpers';
 
 const BYTES_COMMAND = `python -c "print(list(open('program.py', 'rb').read()))"`;

@@ -54,6 +54,16 @@ test('a Program that stops importing a package outside the standard library says
   );
 });
 
+test('a Program that stops importing a blocked module says it is blocked, even from a Share link', () => {
+  const stopped = analysisOf('import js\n', [], {
+    error: { type: 'ModuleNotFoundError', message: "js is blocked here, so a program can't use your browser", line: 1, module: 'js', standardLibrary: false, blocked: true },
+  });
+
+  expect(importNote(stopped)).toBe(
+    'Your program stopped on line 1 because it imports js, which is blocked here. It would let Python use your browser, so no program here can import it, not even one from a Share link.',
+  );
+});
+
 test('only an import Python couldn’t find outside the standard library gets the note', () => {
   const stoppedBy = (error: Analysis['error']) => importNote(analysisOf('x\n', [], { error }));
 

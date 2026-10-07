@@ -8,6 +8,7 @@ import ast
 import builtins
 import codecs
 import dis
+import importlib
 import importlib.machinery
 import importlib.util
 import io
@@ -315,6 +316,7 @@ def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stde
     sys.path.insert(0, path_entry)
     sys.modules["__main__"] = main
     os.chdir(folder)
+    builtins.__import__, importlib.import_module = _blocking_import, _blocking_import_module
     try:
         compiled = source if isinstance(source, types.CodeType) else compile(source, file_name, "exec")
         if recorder:
@@ -334,12 +336,57 @@ def _run_as_main(source, file_name, argv, path_entry, main, folder, stdout, stde
     except BaseException as error:
         # Leave out this function's own frame, so the traceback starts in the learner's file, as Python's does.
         tb = error.__traceback__.tb_next
+        _leave_out_blocker(tb)
         traceback.print_exception(type(error), error, tb, file=stderr)
         _free_trees_in(tb)
         return 1, error
     finally:
+        builtins.__import__, importlib.import_module = _IMPORT, _IMPORT_MODULE
         sys.stdin, sys.stdout, sys.stderr, sys.argv, sys.path[:], sys.modules["__main__"], cwd = saved
         os.chdir(cwd)
+
+
+# Python's bridges to the browser it runs in. Code run here can't import them, so a Program, even one from a Share
+# link, can't use the learner's browser. This only makes `import js` fail with a clear message: a Program can still
+# find its way round it. What stops Python reaching other sites is the Content Security Policy (public/_headers).
+BLOCKED_MODULES = frozenset({"js", "pyodide", "pyodide_js", "micropip"})
+_IMPORT, _IMPORT_MODULE = builtins.__import__, importlib.import_module
+
+
+def _blocked(name, importer):
+    """Whether an import of `name` by code whose globals are `importer` is blocked. Pyodide's own modules may import each other."""
+    if name.partition(".")[0] not in BLOCKED_MODULES:
+        return False
+    importer_name = importer.get("__name__") if isinstance(importer, dict) else None
+    return not (isinstance(importer_name, str) and importer_name.partition(".")[0] in BLOCKED_MODULES | {"_pyodide"})
+
+
+def _blocked_error(name):
+    module = name.partition(".")[0]
+    return ModuleNotFoundError(f"{module} is blocked here, so a program can't use your browser", name=module)
+
+
+def _blocking_import(name, globals=None, locals=None, fromlist=(), level=0):
+    """builtins.__import__ while code runs: it runs each import statement."""
+    if level == 0 and _blocked(name, globals):
+        raise _blocked_error(name)
+    return _IMPORT(name, globals, locals, fromlist, level)
+
+
+def _blocking_import_module(name, package=None):
+    """importlib.import_module while code runs."""
+    if not name.startswith(".") and _blocked(name, sys._getframe(1).f_globals):
+        raise _blocked_error(name)
+    return _IMPORT_MODULE(name, package)
+
+
+def _leave_out_blocker(tb):
+    """Takes the frames of the two functions above out of a traceback, so a blocked import reads like Python's own error."""
+    while tb and tb.tb_next:
+        if tb.tb_next.tb_frame.f_code in (_blocking_import.__code__, _blocking_import_module.__code__):
+            tb.tb_next = tb.tb_next.tb_next
+        else:
+            tb = tb.tb_next
 
 
 def _free_trees_in(tb):
@@ -495,6 +542,8 @@ def _error_fact(error, path, source):
         # Python's own error for an import it couldn't find, so reading its name runs none of the Program's code.
         fact["module"] = error.name
         fact["standardLibrary"] = error.name.partition(".")[0] in sys.stdlib_module_names
+        if error.name in BLOCKED_MODULES:
+            fact["blocked"] = True
     # The last line of the Program's own file the traceback passes through. For a syntax error in code the Program
     # ran, such as eval("1 +"), that is the line that ran it.
     line = None
