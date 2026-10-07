@@ -1,5 +1,5 @@
 # Cloudflare Pages reads this file, and `vite preview` serves the same headers (src/pagesHeaders.ts). Where several
-# rules match a path, Pages joins their values for the same header with a comma.
+# rules set the same header for a path, Pages sends it once for each.
 
 # The Content Security Policy. The page loads and connects only to our own site, except for Cloudflare Web Analytics,
 # whose script Pages adds to each deploy: it loads from static.cloudflareinsights.com and reports to
@@ -10,7 +10,7 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'
 
 # The Web Worker that runs the learner's code gets a second policy on top, so it can connect only to our own site,
-# not even to Web Analytics. A browser enforces both policies, so only what both allow.
+# not even to Web Analytics. The browser enforces both policies, so only what both allow.
 /assets/worker/*
   Content-Security-Policy: script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'
 

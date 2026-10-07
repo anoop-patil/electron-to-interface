@@ -18,7 +18,10 @@ export function readPagesHeaders(file: string) {
     rules.at(-1)!.headers.push([header[1], header[2].trim()]);
   }
 
-  /** The headers Pages sends for `path`: where several rules set the same header, their values joined with a comma. */
+  /**
+   * The headers Pages sends for `path`. Where several rules set the same header, Pages sends it once for each; this
+   * joins their values with a comma, which HTTP reads as the same thing.
+   */
   return (path: string) => {
     const headers = new Map<string, string>();
     for (const rule of rules) {

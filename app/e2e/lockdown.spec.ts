@@ -13,7 +13,7 @@ test('the page can fetch from our own site, and not from any other', async ({ pa
 test('the worker that runs the learner’s code can fetch only from our own site, not even from Web Analytics', async ({ page }) => {
   const script = page.waitForResponse(/\/assets\/worker\/worker-.*\.js$/);
   await page.goto('/zoom/1');
-  // Two policies, joined with a comma; the browser enforces both.
+  // Two policies; the browser enforces both.
   expect((await script).headers()['content-security-policy']).toMatch(/, script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'$/);
   const worker = await pythonWorker(page);
 

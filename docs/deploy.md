@@ -23,7 +23,7 @@ LIVE_URL=https://electrontointerface.com npx playwright test --config playwright
 
 ## Content Security Policy
 
-`app/public/_headers` gives every page a Content Security Policy. The page may load and connect only to our own site, plus Web Analytics' script and reports. The Web Worker that runs the learner's code, under `assets/worker/`, gets a second policy on top that allows connections only to our own site. Pages joins the two with a comma, and the browser enforces both. If Cloudflare starts adding another script, or the beacon moves, the smoke test fails, and the policy needs the new address.
+`app/public/_headers` gives every page a Content Security Policy. The page may load and connect only to our own site, plus Web Analytics' script and reports. The Web Worker that runs the learner's code, under `assets/worker/`, gets a second policy on top that allows connections only to our own site. Pages sends the worker's script with both, and the browser enforces both. If Cloudflare starts adding another script, or the beacon moves, the smoke test fails, and the policy needs the new address.
 
 ## Analytics
 
